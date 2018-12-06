@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+package schema;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/LiveRamp/gazette/v2/pkg/protocol/protocol.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.protosizer_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+enum DimensionType {
+  INVALID_DIM_TYPE = 0;
+  VARINT           = 1;
+  FLOAT            = 3;
+  STRING           = 4;
+  TIMESTAMP        = 5;
+}
+
+enum MetricType {
+  INVALID_METRIC_TYPE = 0;
+  VARINT_SUM          = 1;
+  VARINT_GUAGE        = 2;
+  FLOAT_SUM           = 3;
+  STRING_HLL          = 4;
+}
+
+// MappingSpec specifies a Mapping of input Messages to InputRecords.
+message MappingSpec {
+  // Unique tag of the Mapping. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "MapTag" ];
+  // Short, unique name of the Mapping.
+  string name = 2;
+  // Longer, free-form description of the Mapping.
+  string desc = 3;
+}
+
+// DimensionSpec specifies a semantic dimension which may be extracted from
+// InputRecords.
+message DimensionSpec {
+  // Unique tag of the dimension. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "DimTag" ];
+  // Type of the Dimension. Immutable.
+  DimensionType type = 2;
+  // Short, unique name of the Dimension.
+  string name = 3;
+  // Longer, free-form description of the Dimension.
+  string desc = 4;
+}
+
+// MetricSpec specifies a semantic metric which may be derived from
+// a specified dimension.
+message MetricSpec {
+  // Unique tag of the Metric. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "MetTag" ];
+  // Type of the Metric. Immutable.
+  MetricType type = 2;
+  // Dimension tag from which the Metric is extracted.
+  int64 dim_tag = 3 [(gogoproto.casttype) = "DimTag" ];
+  // Short, unique name of the Metric.
+  string name = 4;
+  // Longer, free-form description of the Metric.
+  string desc = 5;
+}
+
+// Shape describes the structure of a collection of records.
+message Shape {
+  reserved 1, 4;
+
+  // Ordered Dimensions of each row.
+  repeated int64 dimensions = 2 [(gogoproto.casttype) = "DimTag" ];
+  // Ordered Metrics of each row.
+  repeated int64 metrics = 3 [(gogoproto.casttype) = "MetTag" ];
+}
+
+// RelationSpec describes a combination of a Mapping, Dimensions, and Metrics.
+// Relations are incrementally built by processing input Tuples through the
+// Mapping, and extracting unique keys by composing the result of each Dimension
+// extractor. Metrics of each mapped Tuple is then folded on its unique key
+// to produce Relation Aggregates.
+message RelationSpec {
+  // Unique tag of the Relation. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "RelTag" ];
+  // Short, unique name of the Relation.
+  string name = 2;
+  // Longer, free-form description of the Relation.
+  string desc = 3;
+  // LabelSelector identifies journals processed by this Relation.
+  protocol.LabelSelector selector = 4 [(gogoproto.nullable) = false];
+  // Mapping applied to input events.
+  int64 mapping = 5 [(gogoproto.casttype) = "MapTag" ];
+  // Shape of the Relation. Immutable.
+  Shape shape = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+  // Optional Retention of Relation rows.
+  message Retention {
+    // Duration after which a row is eligible for removal.
+    google.protobuf.Duration remove_after = 1 [
+      (gogoproto.stdduration) = true,
+      (gogoproto.nullable) = false];
+
+    // Dimension, which must be part of the Relation and of type Timestamp,
+    // to which |remove_after| is added to determine the effective removal
+    // horizon.
+    int64 relative_to = 2 [(gogoproto.casttype) = "DimTag" ];
+  }
+  Retention retention = 7;
+}
+
+// Config of a set of Relations and their Metrics, Dimensions, and Mappings.
+// The complete Config must be referentially consistent: any Mapping, Dimension
+// or Metric used in a Relation must be defined. Similarly, Dimensions
+// referenced from Metrics must be defined, and of the proper associated type.
+message Config {
+    repeated MappingSpec mappings = 1 [(gogoproto.nullable) = false ];
+
+    repeated DimensionSpec dimensions = 2 [(gogoproto.nullable) = false ];
+
+    repeated MetricSpec metrics = 3 [(gogoproto.nullable) = false ];
+
+    repeated RelationSpec relations = 4 [(gogoproto.nullable) = false ];
+}
+
+// QuerySpec describes a result which should be computed from a Relation.
+// In particular it defines the "shape" (in Dimensions and Metrics) of the
+// desired result, and any filters which should be applied.
+message QuerySpec {
+  // Shape of the Query result.
+  //
+  // Dimensions of the underlying Relation which should be grouped over and
+  // returned with the Query result set. Other Dimensions of the relation not
+  // included in the Query Shape are aggregated across.
+  //
+  // Where possible, use a strict ordered prefix of underlying Relation
+  // Dimensions. This is much more efficient to evaluate, as grouping can
+  // utilize the natural index order, and no further recombining or sorting is
+  // required. When using a prefix, the Query result set is incrementally
+  // streamed as it is evaluated, and even extremely large result sets can be
+  // queried efficiently.
+  //
+  // If Dimensions are not a strict prefix, the Query evaluator must perform
+  // recombination and sorting steps, and results will be sent only after
+  // all underlying table rows have been read. Implementations may also limit
+  // the size of the result sets they will buffer, returning an error for
+  // Queries which exceed it.
+  Shape shape = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+
+  // A Filter is a sequence of ordered non-overlapping ranges for a dimension.
+  // Filters may be applied to any subset of relation dimensions, including
+  // those not present in the Query Relation.
+  message Filter {
+    // Dimension to which the filter is applied.
+    int64 dimension = 1 [(gogoproto.casttype) = "DimTag" ];
+
+    // Admissible Dimension ranges. The subtype of each Range must match that
+    // of the Relation Dimension itself.
+    repeated Range ranges = 2 [(gogoproto.nullable) = false];
+  }
+  repeated Filter filters = 2 [(gogoproto.nullable) = false];
+}
+
+// Range is Begin & End values (inclusive) as a union type. If Begin is omitted,
+// it is interpreted as matching any lesser value. Similarly if End is omitted,
+// it is interpreted as matching any greater value.
+message Range {
+  reserved 1;
+
+  message Int {
+    int64 begin = 1;
+    int64 end = 2;
+  }
+  Int int = 2;
+
+  message Float {
+    double begin = 1;
+    double end = 2;
+  }
+  Float float = 3;
+
+  message String {
+    string begin = 1;
+    string end = 2;
+  }
+  String string = 4;
+
+  // Timestamp may be specified in Unix epoch seconds, or as a Timestamp.
+  // Only one variant may be used.
+  message Timestamp {
+    int64 begin_unix = 1;
+    int64 end_unix = 2;
+
+    google.protobuf.Timestamp begin = 3 [
+      (gogoproto.stdtime) = true,
+      (gogoproto.nullable) = false];
+    google.protobuf.Timestamp end = 4 [
+      (gogoproto.stdtime) = true,
+      (gogoproto.nullable) = false];
+  }
+  Timestamp timestamp = 5;
+}
