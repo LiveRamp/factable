@@ -1,0 +1,274 @@
+syntax = "proto3";
+
+package factable;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/LiveRamp/gazette/v2/pkg/protocol/protocol.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.protosizer_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+enum DimensionType {
+  INVALID_DIM_TYPE = 0;
+  VARINT           = 1;
+  FLOAT            = 3;
+  STRING           = 4;
+  TIMESTAMP        = 5;
+}
+
+enum MetricType {
+  INVALID_METRIC_TYPE = 0;
+  VARINT_SUM          = 1;
+  VARINT_GUAGE        = 2;
+  FLOAT_SUM           = 3;
+  STRING_HLL          = 4;
+}
+
+// MappingSpec defines a Mapping of input Messages to InputRecords. In many
+// cases, Relations will opt to use an identity Mapping. For events having
+// de-normalized & nested event structures, Mappings provide a means to
+// "unpack" into multiple normalized RelationRows. For example a "purchase"
+// event having several product SKUs might map to a RelationRow{purchase, SKU}
+// tuple for each purchased product.
+message MappingSpec {
+  // Unique tag of the Mapping. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "MapTag" ];
+  // Short, unique name of the Mapping.
+  string name = 2;
+  // Longer, free-form description of the Mapping.
+  string desc = 3;
+}
+
+// DimensionSpec defines a Dimension which may be extracted from a RelationRow.
+message DimensionSpec {
+  // Unique tag of the dimension. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "DimTag" ];
+  // Type of the Dimension. Immutable.
+  DimensionType type = 2;
+  // Short, unique name of the Dimension.
+  string name = 3;
+  // Longer, free-form description of the Dimension.
+  string desc = 4;
+}
+
+// MetricSpec defines a Metric which may be derived from a specified Dimension.
+message MetricSpec {
+  // Unique tag of the Metric. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "MetTag" ];
+  // Type of the Metric. Immutable.
+  MetricType type = 2;
+  // Dimension tag from which the Metric is extracted. Immutable.
+  int64 dim_tag = 3 [(gogoproto.casttype) = "DimTag" ];
+  // Short, unique name of the Metric.
+  string name = 4;
+  // Longer, free-form description of the Metric.
+  string desc = 5;
+}
+
+// RelationSpec composes a journal LabelSelector, which defines a collection of
+// input events, with a mapping that transforms each event into one or more
+// RelationRows.
+message RelationSpec {
+  // Unique tag of the Relation. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "RelTag" ];
+  // Mapping which transforms journal events into Relation rows. Immutable.
+  int64 mapping = 2 [(gogoproto.casttype) = "MapTag" ];
+  // Short, unique name of the Relation.
+  string name = 3;
+  // Longer, free-form description of the Relation.
+  string desc = 4;
+  // LabelSelector identifies journals which, taken together, compose the "rows" of the Relation.
+  protocol.LabelSelector selector = 5 [(gogoproto.nullable) = false];
+  // Dimensions of the Relation. Dimensions may be added and removed over time,
+  // but all Dimensions or derived Metrics of current MaterializedViewSpecs must
+  // refer to current Dimensions of the RelationSpec.
+  repeated int64 dimensions = 6 [(gogoproto.casttype) = "DimTag" ];
+}
+
+// ViewSpec defines a summarized view over a Relation, composing a subset of
+// Relation dimensions with a set of derived Metrics.
+message ViewSpec {
+  option (gogoproto.verbose_equal) = true;
+
+  // Tag of the Relation summarized by the View.
+  int64 rel_tag = 1 [(gogoproto.casttype) = "RelTag" ];
+  // Ordered Dimensions of each View row.
+  repeated int64 dimensions = 2 [(gogoproto.casttype) = "DimTag" ];
+  // Ordered Metrics of each View row.
+  repeated int64 metrics = 3 [(gogoproto.casttype) = "MetTag" ];
+}
+
+// MaterializedViewSpec defines a materialization of a ViewSpec. Its Metrics
+// are continuously aggregated as RelationRows are processed, and the total
+// storage commitment is limited to the cardinality of the View Dimensions.
+message MaterializedViewSpec {
+  // Unique tag of the MaterializedView. Immutable.
+  int64 tag = 1 [(gogoproto.casttype) = "MVTag" ];
+  // View materialized by the MaterializedView. Immutable.
+  ViewSpec view = 2 [(gogoproto.nullable) = false];
+  // Short, unique name of the MaterializedView.
+  string name = 3;
+  // Longer, free-form description of the MaterializedView.
+  string desc = 4;
+
+  // Optional retention of MaterializedView rows.
+  message Retention {
+    // Duration after which a row is eligible for removal.
+    google.protobuf.Duration remove_after = 1 [
+      (gogoproto.stdduration) = true,
+      (gogoproto.nullable) = false];
+
+    // Dimension, which must be part of the MaterializedView and of type
+    // Timestamp, to which |remove_after| is added to determine the effective
+    // removal horizon.
+    int64 relative_to = 2 [(gogoproto.casttype) = "DimTag" ];
+  }
+  Retention retention = 5;
+}
+
+// QuerySpec describes a result which should be computed from a Relation.
+// In particular it defines the "shape" (in Dimensions and Metrics) of the
+// desired result, and any filters which should be applied.
+message QuerySpec {
+  // View of the Query result.
+  //
+  // Dimensions of the Relation which should be grouped over and returned with
+  // the Query result set. Other Dimensions included in the MaterializedView but
+  // not included in the Query Shape are aggregated across.
+  //
+  // Where possible, use a strict ordered prefix of underlying MaterializedView
+  // Dimensions. This is much more efficient to evaluate, as grouping can
+  // utilize the natural index order, and no further recombining or sorting is
+  // required. When using a prefix, the Query result set is incrementally
+  // streamed as it is evaluated, and even extremely large result sets can be
+  // queried efficiently.
+  //
+  // If Dimensions are not a strict prefix, the Query evaluator must perform
+  // recombination and sorting steps, and results will be sent only after
+  // all underlying view rows have been read. Implementations may also limit
+  // the size of the result sets they will buffer, returning an error for
+  // Queries which exceed it.
+  ViewSpec view = 1 [(gogoproto.nullable) = false];
+
+  // A Filter is a sequence of ordered non-overlapping ranges for a Dimension.
+  // Filters may be applied to any subset of MaterializedView Dimensions,
+  // including those not present in the Query View.
+  message Filter {
+    // Dimension to which the Filter is applied.
+    int64 dimension = 1 [(gogoproto.casttype) = "DimTag" ];
+
+    // Admissible Dimension ranges. The subtype of each Range must match that
+    // of the Relation Dimension itself.
+    repeated Range ranges = 2 [(gogoproto.nullable) = false];
+  }
+  repeated Filter filters = 2 [(gogoproto.nullable) = false];
+}
+
+// Range is Begin & End values (inclusive) as a union type. If Begin is omitted,
+// it is interpreted as matching any lesser value. Similarly if End is omitted,
+// it is interpreted as matching any greater value.
+message Range {
+  message Int {
+    int64 begin = 1;
+    int64 end = 2;
+  }
+  Int int = 1;
+
+  message Float {
+    double begin = 1;
+    double end = 2;
+  }
+  Float float = 2;
+
+  message String {
+    string begin = 1;
+    string end = 2;
+  }
+  String str = 3;
+
+  message Time {
+    google.protobuf.Timestamp begin = 1 [
+      (gogoproto.stdtime) = true,
+      (gogoproto.nullable) = false];
+    google.protobuf.Timestamp end = 2 [
+      (gogoproto.stdtime) = true,
+      (gogoproto.nullable) = false];
+  }
+  Time time = 4;
+}
+
+message QueryRequest {
+  // Header attached by a proxy-ing peer. Not directly set by clients.
+  protocol.Header header = 1;
+  // MaterializedView to query.
+  int64 view = 2 [(gogoproto.casttype) = "MVTag"];
+  // Shard to query. Set iff |header| is also set.
+  string shard = 3 [(gogoproto.casttype) = "github.com/LiveRamp/gazette/v2/pkg/consumer.ShardID"];
+  // Query specification.
+  QuerySpec query = 4 [(gogoproto.nullable) = false];
+}
+
+message QueryResponse {
+  // Response header. Set on the first QueryResponse only.
+  protocol.Header header = 1;
+  // Encoded table rows.
+  bytes content = 2;
+}
+
+// SchemaSpec defines a set of Relations and their Mappings, Dimensions, Metrics,
+// and MaterializedViews. The complete Schema must be referentially consistent:
+// any Mapping, Dimension or Metric used in a Relation or MaterializedView must
+// be defined. Similarly, Dimensions referenced from Metrics must be defined,
+// and of the proper associated type.
+message SchemaSpec {
+  repeated MappingSpec          mappings = 1 [(gogoproto.nullable) = false ];
+  repeated DimensionSpec        dimensions = 2 [(gogoproto.nullable) = false ];
+  repeated MetricSpec           metrics = 3 [(gogoproto.nullable) = false ];
+  repeated RelationSpec         relations = 4 [(gogoproto.nullable) = false ];
+  repeated MaterializedViewSpec views = 5 [(gogoproto.nullable) = false ];
+}
+
+// GetSchemaResponse is the response of the GetSchema RPC.
+message GetSchemaResponse {
+  // Name of this Factable release instance.
+  string instance = 3;
+  // ModRevision of the current SchemaSpec
+  int64 mod_revision = 1;
+  // Current value of the SchemaSpec. Zero-valued if |mod_revision| is zero.
+  SchemaSpec spec = 2 [(gogoproto.nullable) = false];
+  // LabelSelector over Extractor output / VTable input "delta" partitions.
+  protocol.LabelSelector delta_partitions = 4 [(gogoproto.nullable) = false];
+}
+
+// UpdateSchemaRequest is the request of the UpdateSchema RPC.
+message UpdateSchemaRequest {
+  // Expected Name of the Factable release instance.
+  string expect_instance = 1;
+  // Expected ModRevision of the current SchemaSpec. Zero if the SchemaSpec
+  // is being created for the first time.
+  int64 expect_mod_revision = 2;
+  // Updated SchemaSpec to apply.
+  SchemaSpec update = 3 [(gogoproto.nullable) = false];
+}
+
+// Schema service provides operations over the shared SchemaSpec,
+// which defines the data-model used by factable.
+service Schema {
+  // GetSchema retrieves the current SchemaSpec.
+  rpc GetSchema(google.protobuf.Empty) returns (GetSchemaResponse);
+  // UpdateSchema updates the SchemaSpec to a new value.
+  rpc UpdateSchema(UpdateSchemaRequest) returns (google.protobuf.Empty);
+}
+
+// Query service provides a query capability over MaterializedViews.
+service Query {
+  rpc Query(QueryRequest) returns (stream QueryResponse);
+}
