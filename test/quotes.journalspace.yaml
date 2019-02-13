@@ -1,0 +1,33 @@
+name: examples/factable/
+replication: 2
+labels:
+  - name: example-journals
+fragment:
+  length: 1048576
+  stores:
+    - s3://examples/fragments/?profile=minio&endpoint=http%3A%2F%2FMINIO_RELEASE%3A9000
+  refresh_interval: 1m0s
+  compression_codec: SNAPPY
+children:
+
+  # Singular quotes input journal, holding raw quotes lines.
+  # This journal name matches const quotes.InputJournal.
+  - name: examples/factable/quotes/input
+    labels:
+    - name: app.gazette.dev/message-type
+      value: Quote
+    - name: content-type
+      value: application/x-ndjson
+
+  # Partitions holding VTable DeltaEvents.
+  - name: examples/factable/vtable/deltas/
+    labels:
+    - name: app.gazette.dev/message-type
+      value: DeltaEvent
+    - name: content-type
+      value: application/x-protobuf-fixed
+
+    children:
+    - name: examples/factable/vtable/deltas/part-000
+    - name: examples/factable/vtable/deltas/part-001
+    - name: examples/factable/vtable/deltas/part-002

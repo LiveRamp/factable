@@ -1,0 +1,11 @@
+dependencies:
+- name: consumer
+  version: 2.0.2
+  repository: file://../../vendor/github.com/LiveRamp/gazette/v2/charts/consumer
+  alias: extractor
+
+- name: consumer
+  version: 2.0.2
+  repository: file://../../vendor/github.com/LiveRamp/gazette/v2/charts/consumer
+  alias: vtable
+
