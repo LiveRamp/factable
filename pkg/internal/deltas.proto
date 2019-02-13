@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package internal;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.protosizer_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+message DeltaEvent {
+    // Extractor ID emitting the DeltaEvent. Often this will be a ShardID.
+    // Backfill jobs use a unique and per-job ID.
+    string extractor = 1;
+    // Sequence number of the DeltaEvent, with respect to the |combiner|.
+    // |seq_no| is monotonically increasing for row DeltaEvents. Commit
+    // DeltaEvents use the |seq_no| of the last row DeltaEvent.
+    int64 seq_no = 2;
+
+    bytes row_key = 3;
+    bytes row_value = 4;
+}
+
+// Transactions manages per-extractor transactions of DeltaEvents.
+message Transactions {
+    // Transaction state of a single Extractor or back-fill loader.
+    message State {
+        repeated DeltaEvent events = 1 [(gogoproto.nullable) = false];
+    }
+    // Extractor indexes states on Extractor ShardID.
+    map<string, State> extractor = 1 [(gogoproto.nullable) = false];
+}
