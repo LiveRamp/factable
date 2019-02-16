@@ -56,6 +56,6 @@ EOF
 # Load the "quotes" example schema.
 ${DOCKER} run --rm --interactive liveramp/factable quotes-publisher write-schema | \
   EXTRACTOR_ADDRESS=$(release_address $(helm_release ${NAMESPACE} factable) extractor) \
-  ${FACTCTL} schema update --instance $(helm_release ${NAMESPACE} factable) --revision 0 --format json --path /dev/stdin
+  ${FACTCTL} schema update --instance $(helm_release ${NAMESPACE} factable) --revision 0 --format yaml --path /dev/stdin
 
 # go install git.liveramp.net/jgraet/factable/cmd/examples/quotes-publisher && ~/go/bin/quotes-publisher publish --quotes pkg/

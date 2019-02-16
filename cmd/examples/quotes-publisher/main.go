@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 
 	"git.liveramp.net/jgraet/factable/pkg/testing/quotes"
@@ -12,6 +11,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 // cfg is the top-level configuration object of quotes-publisher.
@@ -49,9 +49,11 @@ type writeSchema struct {
 func (cfg writeSchema) Execute(args []string) error {
 	mbp.InitLog(cfg.base.Log)
 
-	var enc = json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	return enc.Encode(quotes.BuildSchemaSpec())
+	var enc = yaml.NewEncoder(os.Stdout)
+	if err := enc.Encode(quotes.BuildSchemaSpec()); err != nil {
+		return err
+	}
+	return enc.Close()
 }
 
 func main() {
