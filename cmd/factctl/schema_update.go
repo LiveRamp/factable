@@ -16,7 +16,7 @@ import (
 
 type cmdSchemaUpdate struct {
 	Path     string `long:"path" required:"true" description:"Local path to schema file to apply"`
-	Format   string `long:"format" short:"o" choice:"yaml" choice:"json" choice:"proto" default:"proto" description:"Input format"`
+	Format   string `long:"format" short:"o" choice:"yaml" choice:"json" choice:"proto" default:"yaml" description:"Input format"`
 	Instance string `long:"instance" description:"Expected Factable release instance which is being updated"`
 	Revision int64  `long:"revision" description:"Expected revision of the current schema to be updated"`
 

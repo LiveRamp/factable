@@ -42,35 +42,35 @@ func (s *VTableSuite) TestAccumulateCases(c *gc.C) {
 
 	// Write a row fixture to the database which accumulate() will read later.
 	c.Check(rdb.DB.Put(rdb.WriteOptions,
-		factable.PackKey(quotes.MVWordStats, "present", "record"),
+		factable.PackKey(quotes.MVWordStatsTag, "present", "record"),
 		factable.PackValue(100, 200, 300),
 	), gc.IsNil)
 
 	// Case: New record not already in DB or updates.
 	c.Check(accumulate(state, rdb, DeltaEvent{
-		RowKey:   factable.PackKey(quotes.MVWordStats, "missing", "record"),
+		RowKey:   factable.PackKey(quotes.MVWordStatsTag, "missing", "record"),
 		RowValue: factable.PackValue(1, 2, 3),
 	}), gc.IsNil)
 	// Case: Record which is in DB but not updates.
 	c.Check(accumulate(state, rdb, DeltaEvent{
-		RowKey:   factable.PackKey(quotes.MVWordStats, "present", "record"),
+		RowKey:   factable.PackKey(quotes.MVWordStatsTag, "present", "record"),
 		RowValue: factable.PackValue(4, 5, 6),
 	}), gc.IsNil)
 
 	// Expect |state.updates| represents merged records.
 	c.Check(state.updates, gc.DeepEquals, map[string][]factable.Aggregate{
-		string(factable.PackKey(quotes.MVWordStats, "missing", "record")): boxInts(1, 2, 3),
-		string(factable.PackKey(quotes.MVWordStats, "present", "record")): boxInts(104, 5, 306),
+		string(factable.PackKey(quotes.MVWordStatsTag, "missing", "record")): boxInts(1, 2, 3),
+		string(factable.PackKey(quotes.MVWordStatsTag, "present", "record")): boxInts(104, 5, 306),
 	})
 
 	// Case: Record which is in updates but not DB.
 	c.Check(accumulate(state, rdb, DeltaEvent{
-		RowKey:   factable.PackKey(quotes.MVWordStats, "missing", "record"),
+		RowKey:   factable.PackKey(quotes.MVWordStatsTag, "missing", "record"),
 		RowValue: factable.PackValue(7, 8, 9),
 	}), gc.IsNil)
 	// Case: Record which is in updates, and stale in DB.
 	c.Check(accumulate(state, rdb, DeltaEvent{
-		RowKey:   factable.PackKey(quotes.MVWordStats, "present", "record"),
+		RowKey:   factable.PackKey(quotes.MVWordStatsTag, "present", "record"),
 		RowValue: factable.PackValue(10, 11, 12),
 	}), gc.IsNil)
 	// Case: Record having a RelTag which is not in current schema. Expect it's ignored.
@@ -81,8 +81,8 @@ func (s *VTableSuite) TestAccumulateCases(c *gc.C) {
 
 	// Expect |state.updates| represents record updates.
 	c.Check(state.updates, gc.DeepEquals, map[string][]factable.Aggregate{
-		string(factable.PackKey(quotes.MVWordStats, "missing", "record")): boxInts(8, 8, 12),
-		string(factable.PackKey(quotes.MVWordStats, "present", "record")): boxInts(114, 11, 318),
+		string(factable.PackKey(quotes.MVWordStatsTag, "missing", "record")): boxInts(8, 8, 12),
+		string(factable.PackKey(quotes.MVWordStatsTag, "present", "record")): boxInts(114, 11, 318),
 	})
 
 	res.Done()
@@ -104,13 +104,13 @@ func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
 	c.Check(enc.Encode(&DeltaEvent{
 		Extractor: "extractor-A",
 		SeqNo:     1,
-		RowKey:    factable.PackKey(quotes.MVWordStats, "a", "record"),
+		RowKey:    factable.PackKey(quotes.MVWordStatsTag, "a", "record"),
 		RowValue:  factable.PackValue(1, 2, 3),
 	}), gc.IsNil)
 	c.Check(enc.Encode(&DeltaEvent{
 		Extractor: "extractor-B",
 		SeqNo:     1,
-		RowKey:    factable.PackKey(quotes.MVWordStats, "a", "record"),
+		RowKey:    factable.PackKey(quotes.MVWordStatsTag, "a", "record"),
 		RowValue:  factable.PackValue(4, 5, 6),
 	}), gc.IsNil)
 	c.Check(enc.Encode(&DeltaEvent{Extractor: "extractor-A", SeqNo: 1}), gc.IsNil) // Commit.
@@ -119,7 +119,7 @@ func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
 	// Expect that we can read extractor-A's delta, but not extractor-B.
 	c.Check(consumertest.WaitForShards(tc.Ctx, tc.Journals, cmr.Service.Loopback, pb.LabelSelector{}), gc.IsNil)
 	expectDB(c, cmr, map[string][]byte{
-		string(factable.PackKey(quotes.MVWordStats, "a", "record")): factable.PackValue(1, 2, 3),
+		string(factable.PackKey(quotes.MVWordStatsTag, "a", "record")): factable.PackValue(1, 2, 3),
 	})
 
 	// Write a new uncommitted update from extractor-A, and a commit for extractor-B.
@@ -129,7 +129,7 @@ func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
 	c.Check(enc.Encode(&DeltaEvent{
 		Extractor: "extractor-A",
 		SeqNo:     2,
-		RowKey:    factable.PackKey(quotes.MVWordStats, "a", "record"),
+		RowKey:    factable.PackKey(quotes.MVWordStatsTag, "a", "record"),
 		RowValue:  factable.PackValue(100, 200, 300),
 	}), gc.IsNil)
 	c.Check(enc.Encode(&DeltaEvent{Extractor: "extractor-B", SeqNo: 1}), gc.IsNil) // Commit.
@@ -138,7 +138,7 @@ func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
 	// Expect that we read both initial deltas, but not extractor-A's new one.
 	c.Check(consumertest.WaitForShards(tc.Ctx, tc.Journals, cmr.Service.Loopback, pb.LabelSelector{}), gc.IsNil)
 	expectDB(c, cmr, map[string][]byte{
-		string(factable.PackKey(quotes.MVWordStats, "a", "record")): factable.PackValue(5, 5, 9),
+		string(factable.PackKey(quotes.MVWordStatsTag, "a", "record")): factable.PackValue(5, 5, 9),
 	})
 
 	// Crash this consumer, and start a new one.
@@ -156,7 +156,7 @@ func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
 	// Expect that we merged all records.
 	c.Check(consumertest.WaitForShards(tc.Ctx, tc.Journals, cmr.Service.Loopback, pb.LabelSelector{}), gc.IsNil)
 	expectDB(c, cmr, map[string][]byte{
-		string(factable.PackKey(quotes.MVWordStats, "a", "record")): factable.PackValue(105, 200, 309),
+		string(factable.PackKey(quotes.MVWordStatsTag, "a", "record")): factable.PackValue(105, 200, 309),
 	})
 
 	cmr.RevokeLease(c)

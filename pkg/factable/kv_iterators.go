@@ -132,7 +132,7 @@ func (m mergeIter) Less(i, j int) bool {
 // NewCombinerIterator runs the |input| iterator through a Combiner represented
 // by the |inputShape| and |query|. The returned iterator steps over keys & values
 // emitted by the Combiner, driving the |input| iterator forward as required.
-func NewCombinerIterator(it KVIterator, schema Schema, input ViewSpec, query QuerySpec) (*combIter, error) {
+func NewCombinerIterator(it KVIterator, schema Schema, input ResolvedView, query ResolvedQuery) (*combIter, error) {
 	var cb, err = NewCombiner(schema, input, query)
 	if err != nil {
 		return nil, err

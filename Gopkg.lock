@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b7e923a22b926882535ad5616f97e1ae292fa8e8ebd3a93cb6433667adff383f"
+  digest = "1:f4c068b8b368ff28732fe7f2329b5b4cd9983d99a021ff343e6946dda7202f5d"
   name = "github.com/LiveRamp/gazette"
   packages = [
     "v2/cmd/gazctl/editor",
@@ -56,11 +56,11 @@
     "v2/pkg/server",
   ]
   pruneopts = ""
-  revision = "a636f8701208ef9c034a7ba6ee14e0cf67ded067"
+  revision = "ac9a4d48986ec6ed4086b9e4612b028c6dfd9b56"
   source = "https://github.com/LiveRamp/gazette.git"
 
 [[projects]]
-  digest = "1:286aa86fc22d2335eeae697277340d021937bef97f8f9850aff1be9cbcf84700"
+  digest = "1:9fec98899724a3809740252dd1f33d84b5ebfbbeab2b49b74d605bff98280548"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -99,8 +99,8 @@
     "service/sts",
   ]
   pruneopts = ""
-  revision = "25f89dc67cc7eddac939028c7128499dcfcab46b"
-  version = "v1.16.33"
+  revision = "416a7057457ed9af569ea3682f7319ec3466044d"
+  version = "v1.17.3"
 
 [[projects]]
   branch = "master"
@@ -300,12 +300,12 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:2a5888946cdbc8aa360fd43301f9fc7869d663f60d5eedae7d4e6e5e4f06f2bf"
+  digest = "1:6a6322a15aa8e99bd156fbba0aae4e5d67b4bb05251d860b348a45dfdcba9cce"
   name = "github.com/golang/snappy"
   packages = ["."]
   pruneopts = ""
-  revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+  revision = "2a8bb927dd31d8daada140a5d09578521ce5c36a"
+  version = "v0.0.1"
 
 [[projects]]
   branch = "master"
@@ -501,16 +501,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:56fd4809f7725ba6ae448e09033d34e848d173a50e48149bde0df68bb2f319ae"
+  digest = "1:1b7cd41afad7e1250d0582c2a12bccf995893b4e2a4265daf0f6a385005a87db"
   name = "github.com/prometheus/procfs"
   packages = [
     ".",
     "internal/util",
+    "iostats",
     "nfs",
     "xfs",
   ]
   pruneopts = ""
-  revision = "f8d8b3f739bd91a7c0462cb55235ef63c79c9abc"
+  revision = "e4d4a2206da023361ed100d85c5f2cf9c8364e9f"
 
 [[projects]]
   digest = "1:e10b98ac70958ff019b2bfe175d568a42f60be1acedce7ce98d56d34ee81bf8e"
@@ -635,7 +636,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5462386895a322b94a79a5de7314310edbd5f4d15f851ae032f146b2c951b3de"
+  digest = "1:2f4d3a61f2c7faf6760476a600db3daefccfadd2480c2b9f330666b39a08474c"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
@@ -643,7 +644,7 @@
     "ssh/terminal",
   ]
   pruneopts = ""
-  revision = "74369b46fc6756741c016591724fd1cb8e26845f"
+  revision = "a4c6cb3142f211c99e4bf4cd769535b29a9b616f"
 
 [[projects]]
   branch = "master"
@@ -664,7 +665,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ab59ae99282f00d97bc86eea793a0550d9753018f52fd469c1186b2fe843d6a4"
+  digest = "1:c356ecb4bbf83ff7741c6b5d66b6da81e97767a8ebb8ba5cf5276610efe73a20"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
@@ -674,18 +675,18 @@
     "jwt",
   ]
   pruneopts = ""
-  revision = "3e8b2be1363542a95c52ea0796d4a40dacfb5b95"
+  revision = "9b3c75971fc92dd27c6436a37c05c831498658f1"
 
 [[projects]]
   branch = "master"
-  digest = "1:7b42c9a7f12584d8f351c3f3757f6a9f6894cd7ea987170fe472ce3a8f9bb6b8"
+  digest = "1:f812c5666fb8d762eb129c84116449155b135b93c348290ed46cc78e43606119"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "983097b1a8a340cd1cc7df17d735154d89e10b1a"
+  revision = "ec7b60b042fd2c54ad5ceaac0c891bd88843f4a2"
 
 [[projects]]
   digest = "1:5acd3512b047305d49e8763eef7ba423901e85d5dd2fd1e71778a0ea8de10bd4"

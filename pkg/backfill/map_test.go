@@ -40,27 +40,27 @@ func (s *MapSuite) TestExtractNoAggregation(c *gc.C) {
 	// Expect to see one output aggregate for each processed RelationRow.
 	var expect = [][2][]byte{
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(1, 1, 1, factable.BuildStrHLL("four")),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(0, 1, 2, factable.BuildStrHLL("one")),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(0, 1, 1, factable.BuildStrHLL("two")),
 		},
 		{
-			factable.PackKey(quotes.MVWordStats, "four", "John Doe"),
+			factable.PackKey(quotes.MVWordStatsTag, "four", "John Doe"),
 			factable.PackValue(1, 1234, 1),
 		},
 		{
-			factable.PackKey(quotes.MVWordStats, "one", "John Doe"),
+			factable.PackKey(quotes.MVWordStatsTag, "one", "John Doe"),
 			factable.PackValue(1, 1234, 2),
 		},
 		{
-			factable.PackKey(quotes.MVWordStats, "two", "John Doe"),
+			factable.PackKey(quotes.MVWordStatsTag, "two", "John Doe"),
 			factable.PackValue(1, 1234, 1),
 		},
 	}
@@ -81,19 +81,19 @@ func (s *MapSuite) TestExtractWithAggregation(c *gc.C) {
 	// Expect to see one aggregate for each rolled-up view key.
 	var expect = [][2][]byte{
 		{
-			factable.PackKey(quotes.MVWordStats, "four", "John Doe"),
+			factable.PackKey(quotes.MVWordStatsTag, "four", "John Doe"),
 			factable.PackValue(1, 1234, 1),
 		},
 		{
-			factable.PackKey(quotes.MVWordStats, "one", "John Doe"),
+			factable.PackKey(quotes.MVWordStatsTag, "one", "John Doe"),
 			factable.PackValue(1, 1234, 2),
 		},
 		{
-			factable.PackKey(quotes.MVWordStats, "two", "John Doe"),
+			factable.PackKey(quotes.MVWordStatsTag, "two", "John Doe"),
 			factable.PackValue(1, 1234, 1),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(1, 3, 4, factable.BuildStrHLL("one", "two", "four")),
 		},
 	}
@@ -156,7 +156,7 @@ func buildTaskFixture(c *gc.C, jobSpec *JobSpec) (task MapTaskSpec, cleanup func
 			CompressionCodec: pb.CompressionCodec_NONE,
 			BackingStore:     pb.FragmentStore("file:///"),
 		},
-		MVTags: []factable.MVTag{quotes.MVQuoteStats, quotes.MVWordStats},
+		MVTags: []factable.MVTag{quotes.MVQuoteStatsTag, quotes.MVWordStatsTag},
 	}
 	c.Check(ioutil.WriteFile(filepath.Join(dir, task.Fragment.ContentName()), []byte(data), 0600), gc.IsNil)
 	task.URL = string(task.Fragment.BackingStore) + task.Fragment.ContentName()

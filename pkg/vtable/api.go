@@ -8,28 +8,32 @@ import (
 	"git.liveramp.net/jgraet/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/consumer"
 	"github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-func (t *VTable) Query(req *factable.QueryRequest, stream factable.Query_QueryServer) error {
+func (t *VTable) ResolveQuery(ctx context.Context, spec *factable.QuerySpec) (*factable.ResolvedQuery, error) {
+	var resolved, err = t.schemaFn().ResolveQuery(*spec)
+	return &resolved, err
+}
+
+func (t *VTable) ExecuteQuery(req *factable.ExecuteQueryRequest, stream factable.Query_ExecuteQueryServer) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}
 	var schema = t.schemaFn()
 
-	if viewSpec, ok := schema.Views[req.View]; !ok {
-		return fmt.Errorf("view not found: %d", req.View)
+	if viewSpec, ok := schema.Views[req.Query.MvTag]; !ok {
+		return fmt.Errorf("MvTag not found (%d)", req.Query.MvTag)
 	} else if req.Shard != "" {
 		return t.queryShard(req, stream, schema, viewSpec)
 	} else {
-		return t.queryTable(req, stream, schema, viewSpec)
+		return t.queryTable(req, stream, schema)
 	}
 }
 
-func (t *VTable) queryTable(req *factable.QueryRequest, stream factable.Query_QueryServer,
-	schema *factable.Schema, viewSpec factable.MaterializedViewSpec) error {
-
+func (t *VTable) queryTable(req *factable.ExecuteQueryRequest, stream factable.Query_ExecuteQueryServer, schema *factable.Schema) error {
 	// Enumerate all VTable shards.
 	var shards, err = t.svc.List(stream.Context(), &consumer.ListRequest{})
 	if err != nil {
@@ -61,7 +65,7 @@ func (t *VTable) queryTable(req *factable.QueryRequest, stream factable.Query_Qu
 	}()
 
 	for _, shard := range shards.Shards {
-		var shardClient factable.Query_QueryClient
+		var shardClient factable.Query_ExecuteQueryClient
 
 		req.Header = &protocol.Header{
 			ProcessId: shard.Route.Members[shard.Route.Primary],
@@ -70,7 +74,7 @@ func (t *VTable) queryTable(req *factable.QueryRequest, stream factable.Query_Qu
 		}
 		req.Shard = shard.Spec.Id
 
-		if shardClient, err = vtable.Query(
+		if shardClient, err = vtable.ExecuteQuery(
 			protocol.WithDispatchRoute(ctx, shard.Route, req.Header.ProcessId),
 			req,
 		); err != nil {
@@ -83,7 +87,7 @@ func (t *VTable) queryTable(req *factable.QueryRequest, stream factable.Query_Qu
 
 	// We must merge across shardIterators, and combine to unique output rows.
 	var it factable.KVIterator = factable.NewMergeIterator(shardIterators...)
-	var q = factable.QuerySpec{View: req.Query.View}
+	var q = factable.ResolvedQuery{View: req.Query.View}
 
 	if it, err = factable.NewCombinerIterator(it, *schema, q.View, q); err != nil {
 		// Pass.
@@ -96,7 +100,7 @@ func (t *VTable) queryTable(req *factable.QueryRequest, stream factable.Query_Qu
 	return err
 }
 
-func (t *VTable) queryShard(req *factable.QueryRequest, stream factable.Query_QueryServer,
+func (t *VTable) queryShard(req *factable.ExecuteQueryRequest, stream factable.Query_ExecuteQueryServer,
 	schema *factable.Schema, mvSpec factable.MaterializedViewSpec) error {
 
 	var res, err = t.svc.Resolver.Resolve(consumer.ResolveArgs{
@@ -116,19 +120,18 @@ func (t *VTable) queryShard(req *factable.QueryRequest, stream factable.Query_Qu
 	// We expect to read KV rows from the underlying DB having the view
 	// shape, with the addition of a prefixed MVTag dimension. Tack on a
 	// filter which also constrains that dimension to the target view.
-	req.Query.Filters = append(req.Query.Filters, factable.QuerySpec_Filter{
-		Dimension: factable.DimMVTag,
-		Ranges: []factable.Range{
-			{Int: &factable.Range_Int{
-				Begin: int64(req.View),
-				End:   int64(req.View),
-			}},
+	req.Query.Filters = append(req.Query.Filters, factable.ResolvedQuery_Filter{
+		DimTag: factable.DimMVTag,
+		Ranges: []factable.ResolvedQuery_Filter_Range{
+			{
+				Begin: encoding.EncodeVarintAscending(nil, int64(req.Query.MvTag)),
+				End:   encoding.EncodeVarintAscending(nil, int64(req.Query.MvTag)),
+			},
 		},
 	})
-	var prefixView = factable.ViewSpec{
-		RelTag:     mvSpec.View.RelTag,
-		Dimensions: append([]factable.DimTag{factable.DimMVTag}, mvSpec.View.Dimensions...),
-		Metrics:    mvSpec.View.Metrics,
+	var prefixView = factable.ResolvedView{
+		DimTags: append([]factable.DimTag{factable.DimMVTag}, mvSpec.ResolvedView.DimTags...),
+		MetTags: mvSpec.ResolvedView.MetTags,
 	}
 	var it factable.KVIterator
 	var store = res.Store.(*consumer.RocksDBStore)
@@ -139,16 +142,16 @@ func (t *VTable) queryShard(req *factable.QueryRequest, stream factable.Query_Qu
 	if it, err = factable.NewCombinerIterator(it, *schema, prefixView, req.Query); err != nil {
 		return err
 	}
-	// If the |req.Query.View.Dimensions| is not a strict prefix of |mvSpec.View.Dimensions|,
+	// If the |req.Query.View.DimTags| is not a strict prefix of |mvSpec.ResolvedView.DimTags|,
 	// than Stage 2 output is not in naturally sorted order, and may included
 	// repetitions of rows.
-	if !isPrefix(req.Query.View.Dimensions, mvSpec.View.Dimensions) {
+	if !isPrefix(req.Query.View.DimTags, mvSpec.ResolvedView.DimTags) {
 		// Stage 3: Sort Stage 2 output, ordered on the desired query shape.
 		it = factable.NewSortingIterator(it, t.arenaSize, t.maxArenas)
 
 		// Stage 4: Re-combine the sorted output into unique output rows. This
 		// combiner pass accepts and emits the query's Shape, and has no filters.
-		var q = factable.QuerySpec{View: req.Query.View}
+		var q = factable.ResolvedQuery{View: req.Query.View}
 		if it, err = factable.NewCombinerIterator(it, *schema, q.View, q); err != nil {
 			return err
 		}

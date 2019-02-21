@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/cockroachdb/cockroach/util/encoding"
 	gc "github.com/go-check/check"
 	"github.com/tecbot/gorocksdb"
 )
@@ -53,14 +54,15 @@ func (s *IteratorsSuite) TestRocksIteratorCases(c *gc.C) {
 	// Case: layer on a NewCombinerIterator. Expect that iterator uses the Seeker
 	// interface provided by RocksDB.
 	var (
-		input = ViewSpec{
-			Dimensions: []DimTag{dimAnInt, dimAnIntTwo, dimAnIntThree},
-			Metrics:    []MetTag{metAnIntSum, metAnIntGauge},
+		input = ResolvedView{
+			DimTags: []DimTag{dimAnIntTag, dimAnIntTwoTag, dimAnIntThreeTag},
+			MetTags: []MetTag{metAnIntSumTag, metAnIntGaugeTag},
 		}
-		query = QuerySpec{
+		query = ResolvedQuery{
 			View: input,
-			Filters: []QuerySpec_Filter{
-				{Dimension: dimAnInt, Ranges: []Range{{Int: &Range_Int{Begin: startAt + 5}}}},
+			Filters: []ResolvedQuery_Filter{
+				{DimTag: dimAnIntTag, Ranges: []ResolvedQuery_Filter_Range{
+					{Begin: encoding.EncodeVarintAscending(nil, startAt+5)}}},
 			},
 		}
 	)
@@ -73,7 +75,7 @@ func (s *IteratorsSuite) TestRocksIteratorCases(c *gc.C) {
 	verify(c, it, NewSliceIterator(seq[len(seq)/2:]...), false, false)
 
 	// Case: all input rows combined into a single output row.
-	query.View.Dimensions = nil
+	query.View.DimTags = nil
 
 	it, err = NewCombinerIterator(NewRocksDBIterator(db, ro, nil, nil), schema, input, query)
 	c.Assert(err, gc.IsNil)
@@ -87,8 +89,10 @@ func (s *IteratorsSuite) TestRocksIteratorCases(c *gc.C) {
 	c.Check(err, gc.Equals, KVIteratorDone)
 
 	// Case: all input is filtered.
-	query.Filters = []QuerySpec_Filter{
-		{Dimension: dimAnInt, Ranges: []Range{{Int: &Range_Int{End: startAt - 1}}}},
+	query.Filters = []ResolvedQuery_Filter{
+		{DimTag: dimAnIntTag, Ranges: []ResolvedQuery_Filter_Range{
+			{End: encoding.EncodeVarintAscending(nil, startAt-1)},
+		}},
 	}
 
 	it, err = NewCombinerIterator(NewRocksDBIterator(db, ro, nil, nil), schema, input, query)

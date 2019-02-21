@@ -13,36 +13,39 @@ import (
 type CombinerSuite struct{}
 
 func (s *CombinerSuite) TestNewCombinerWithFixture(c *gc.C) {
-	var (
-		input = ViewSpec{
-			RelTag:     relTest,
-			Dimensions: []DimTag{dimAnInt, dimAFloat, dimATimestamp, dimAStr, dimOtherStr},
-			Metrics:    []MetTag{metAnIntGauge, metAFloatSum, metOtherStrUniq, metAnIntSum},
-		}
-		query = QuerySpec{
-			View: ViewSpec{
-				RelTag:     relTest,
-				Dimensions: []DimTag{dimATimestamp, dimAFloat},
-				Metrics:    []MetTag{metOtherStrUniq, metAFloatSum},
-			},
-			Filters: []QuerySpec_Filter{
-				{
-					Dimension: dimAStr,
-					Ranges:    []Range{{Str: &Range_String{Begin: "beg", End: "end"}}},
-				},
-			},
-		}
-	)
-
-	var schema, err = NewSchema(makeExtractors(), makeTestConfig())
+	var schema, err = NewSchema(makeExtractors(), makeTestConfig(MaterializedViewSpec{
+		Name:     mvTest,
+		Relation: relTest,
+		View: ViewSpec{
+			Dimensions: []string{dimAnInt, dimAFloat, dimATime, dimAStr, dimOtherStr},
+			Metrics:    []string{metAnIntGauge, metAFloatSum, metOtherStrUniq, metAnIntSum},
+		},
+		Tag: 100,
+	}))
 	c.Assert(err, gc.IsNil)
+
+	var input = schema.Views[100].ResolvedView
+
+	query, err := schema.ResolveQuery(QuerySpec{
+		MaterializedView: mvTest,
+		View: ViewSpec{
+			Dimensions: []string{dimATime, dimAFloat},
+			Metrics:    []string{metOtherStrUniq, metAFloatSum},
+		},
+		Filters: []QuerySpec_Filter{
+			{
+				Dimension: dimAStr,
+				Strings:   []QuerySpec_Filter_String{{Begin: "beg", End: "end"}},
+			},
+		}})
+	c.Check(err, gc.IsNil)
 
 	cb, err := NewCombiner(schema, input, query)
 	c.Check(err, gc.IsNil)
 
 	// Expect trailing input dimension was dropped (as it's not needed).
-	c.Check(cb.input.dimension.tags, gc.DeepEquals, input.Dimensions[:4])
-	c.Check(cb.input.dimension.ranges, gc.DeepEquals, [][][2][]byte{
+	c.Check(cb.input.dimension.tags, gc.DeepEquals, input.DimTags[:4])
+	c.Check(cb.input.dimension.ranges, gc.DeepEquals, [][]ResolvedQuery_Filter_Range{
 		{{nil, nil}},
 		{{nil, nil}},
 		{{nil, nil}},
@@ -51,32 +54,30 @@ func (s *CombinerSuite) TestNewCombinerWithFixture(c *gc.C) {
 	c.Check(cb.output.dimOrder, gc.DeepEquals, []int{2, 1})
 
 	// Expect trailing input metric was dropped, and first metric is not aggregated over.
-	c.Check(cb.input.metric.tags, gc.DeepEquals, input.Metrics[:3])
+	c.Check(cb.input.metric.tags, gc.DeepEquals, input.MetTags[:3])
 	c.Check(cb.input.metric.reorder, gc.DeepEquals, []int{-1, 1, 0})
-	c.Check(cb.output.metrics, gc.DeepEquals, query.View.Metrics)
+	c.Check(cb.output.metrics, gc.DeepEquals, query.View.MetTags)
 }
 
 func (s *CombinerSuite) TestNewCombinerErrorCases(c *gc.C) {
 	var (
-		input = ViewSpec{
-			RelTag:     relTest,
-			Dimensions: []DimTag{dimAnInt, dimAFloat, 9999, dimAnInt},
-			Metrics:    []MetTag{metAnIntGauge, metOtherStrUniq, 9999, metAnIntSum},
+		input = ResolvedView{
+			DimTags: []DimTag{dimAnIntTag, dimAFloatTag, 9999, dimAnIntTag},
+			MetTags: []MetTag{metAnIntGaugeTag, metOtherStrUniqTag, 9999, metAnIntSumTag},
 		}
-		query = QuerySpec{
-			View: ViewSpec{
-				RelTag:     relTest,
-				Dimensions: []DimTag{dimAnInt, dimAFloat, 9999, dimAnInt},
-				Metrics:    []MetTag{metAnIntGauge, metOtherStrUniq, 9999, metAFloatSum},
+		query = ResolvedQuery{
+			View: ResolvedView{
+				DimTags: []DimTag{dimAnIntTag, dimAFloatTag, 9999, dimAnIntTag},
+				MetTags: []MetTag{metAnIntGaugeTag, metOtherStrUniqTag, 9999, metAFloatSumTag},
 			},
-			Filters: []QuerySpec_Filter{
+			Filters: []ResolvedQuery_Filter{
 				{
-					Dimension: 9999,
-					Ranges:    []Range{{Str: &Range_String{Begin: "beg", End: "end"}}},
+					DimTag: 9999,
+					Ranges: []ResolvedQuery_Filter_Range{{Begin: []byte("begin")}},
 				},
 				{
-					Dimension: dimAStr,
-					Ranges:    []Range{{Str: &Range_String{Begin: "beg", End: "end"}}},
+					DimTag: dimAStrTag,
+					Ranges: []ResolvedQuery_Filter_Range{{Begin: []byte("begin")}},
 				},
 			},
 		}
@@ -91,82 +92,85 @@ func (s *CombinerSuite) TestNewCombinerErrorCases(c *gc.C) {
 	}
 
 	verifyErr(`Input Dimension tag 9999 not in Schema`)
-	input.Dimensions[2] = dimAStr
+	input.DimTags[2] = dimAStrTag
 	verifyErr(`Input Dimension tag [\d]+ appears more than once`)
-	input.Dimensions[3] = dimOtherStr
+	input.DimTags[3] = dimOtherStrTag
 	verifyErr(`Query Dimension tag 9999 not in input ViewSpec .*`)
-	query.View.Dimensions[2] = dimAStr
+	query.View.DimTags[2] = dimAStrTag
 	verifyErr(`Query Dimension tag [\d]+ appears more than once`)
-	query.View.Dimensions[3] = dimOtherStr
+	query.View.DimTags[3] = dimOtherStrTag
 
 	verifyErr(`Filter Dimension tag 9999 not in input ViewSpec .*`)
-	query.Filters[0].Dimension = dimAnInt
-	verifyErr(`Dimension tag [\d]+ expected Range_Int`)
-	query.Filters[0].Dimension = dimAStr
+	query.Filters[0].DimTag = dimAStrTag
 	verifyErr(`Filter Dimension tag [\d]+ appears more than once`)
-	query.Filters[0].Dimension = dimOtherStr
+	query.Filters[0].DimTag = dimOtherStrTag
 
 	verifyErr(`Query Metric tag 9999 not in Schema`)
-	query.View.Metrics[2] = metAnIntGauge
+	query.View.MetTags[2] = metAnIntGaugeTag
 	verifyErr(`Query Metric tag [\d]+ appears more than once`)
-	query.View.Metrics[2] = metAnIntSum
+	query.View.MetTags[2] = metAnIntSumTag
 	verifyErr(`Input Metric tag 9999 not in Schema`)
-	input.Metrics[2] = metAnIntSum
+	input.MetTags[2] = metAnIntSumTag
 	verifyErr(`Query Metrics not in Input ViewSpec .*`)
-	input.Metrics[3] = metAFloatSum
+	input.MetTags[3] = metAFloatSumTag
 
 	_, err = NewCombiner(schema, input, query)
 	c.Check(err, gc.IsNil)
 }
 
 func (s *CombinerSuite) TestTransitionCases(c *gc.C) {
-	// Use a RelationSpec fixture with a fixed dimension ordering for this test.
-	var mvSpec = MaterializedViewSpec{
-		Name: "mv",
-		Tag:  mvOne,
-		View: ViewSpec{RelTag: relTest, Dimensions: []DimTag{dimAStr, dimAnInt, dimOtherStr}},
-	}
-	var schema, err = NewSchema(makeExtractors(), makeTestConfig(mvSpec))
+	// Create a view fixture with 3 dimensions of mixed types, and a query filters
+	// fixture which constrains the permitted ranges of each dimension.
+	var schema, err = NewSchema(makeExtractors(), makeTestConfig(MaterializedViewSpec{
+		Name:     mvTest,
+		Relation: relTest,
+		View: ViewSpec{
+			Dimensions: []string{dimAStr, dimAnInt, dimOtherStr},
+		},
+		Tag: 100,
+	}))
 	c.Assert(err, gc.IsNil)
 
-	// Create a Query fixture with 3 dimensions of mixed types, and a filters
-	// fixture which constrains the permitted ranges of each dimension.
-	var (
-		filters = []QuerySpec_Filter{
+	query, err := schema.ResolveQuery(QuerySpec{
+		MaterializedView: mvTest,
+		Filters: []QuerySpec_Filter{
 			{
 				Dimension: dimAStr,
-				Ranges: []Range{
-					{Str: &Range_String{End: "cc"}},
-					{Str: &Range_String{Begin: "ee", End: "gg"}},
-					{Str: &Range_String{Begin: "jj"}},
+				Strings: []QuerySpec_Filter_String{
+					{End: "cc"},
+					{Begin: "ee", End: "gg"},
+					{Begin: "jj"},
 				},
 			},
 			{
 				Dimension: dimAnInt,
-				Ranges: []Range{
-					{Int: &Range_Int{Begin: 100, End: 200}},
-					{Int: &Range_Int{Begin: 300, End: 400}},
+				Ints: []QuerySpec_Filter_Int{
+					{Begin: 100, End: 200},
+					{Begin: 300, End: 400},
 				},
 			},
 			{
 				Dimension: dimOtherStr,
-				Ranges: []Range{
-					{Str: &Range_String{Begin: "C", End: "D"}},
-					{Str: &Range_String{Begin: "F", End: "G"}},
+				Strings: []QuerySpec_Filter_String{
+					{Begin: "C", End: "D"},
+					{Begin: "F", End: "G"},
 				},
 			},
-		}
-	)
+		},
+	})
+	c.Check(err, gc.IsNil)
+
+	cb, err := NewCombiner(schema, schema.Views[100].ResolvedView, query)
+	c.Check(err, gc.IsNil)
+
 	var mkKey = func(d1 string, d2 int64, d3 string) (b []byte) {
 		b = encoding.EncodeStringAscending(b, d1)
 		b = encoding.EncodeVarintAscending(b, d2)
 		b = encoding.EncodeStringAscending(b, d3)
 		return b
 	}
-	// Walk a combinerFSM through a number of transition() cases,
+	// Walk the Combiner through a number of transition() cases,
 	// verifying expected intermediate states.
-	cb, err := NewCombiner(schema, mvSpec.View, QuerySpec{Filters: filters})
-	c.Assert(err, gc.IsNil)
 
 	var cases = []struct {
 		key      []byte
@@ -276,7 +280,7 @@ func (s *CombinerSuite) TestTransitionCases(c *gc.C) {
 
 func (s *CombinerSuite) TestSeekKeyConstruction(c *gc.C) {
 	var (
-		ranges = [][][2][]byte{
+		ranges = [][]ResolvedQuery_Filter_Range{
 			{ // Dimension 1:
 				{[]byte("aa"), []byte("zz")},
 			},
@@ -324,7 +328,7 @@ func (s *CombinerSuite) TestSeekKeyConstruction(c *gc.C) {
 		c.Check(string(b), gc.Equals, tc.expect)
 	}
 	// Prepare a new fixture, which now includes open begin/end ranges.
-	ranges = [][][2][]byte{
+	ranges = [][]ResolvedQuery_Filter_Range{
 		{ // Dimension 1:
 			{[]byte("aa"), nil},
 		},
@@ -366,10 +370,7 @@ func (s *CombinerSuite) TestSeekKeyConstruction(c *gc.C) {
 }
 
 func (s *CombinerSuite) TestFilterExamples(c *gc.C) {
-	var schema, err = NewSchema(makeExtractors(), makeTestConfig())
-	c.Assert(err, gc.IsNil)
-
-	var cb = buildCombiner(c, schema, []DimTag{})
+	var cb = buildFixtureCombiner(c, []string{})
 
 	var cases = []struct {
 		key             []byte
@@ -441,13 +442,10 @@ func (s *CombinerSuite) TestFilterExamples(c *gc.C) {
 }
 
 func (s *CombinerSuite) TestGroupingExamples(c *gc.C) {
-	var schema, err = NewSchema(makeExtractors(), makeTestConfig())
-	c.Assert(err, gc.IsNil)
-
 	var value = encoding.EncodeVarintAscending(nil, 1)
 
 	// Cases iterating over all dimensions.
-	var cb = buildCombiner(c, schema, []DimTag{dimAnIntTwo, dimAnIntThree, dimAnInt})
+	var cb = buildFixtureCombiner(c, []string{dimAnIntTwo, dimAnIntThree, dimAnInt})
 
 	var cases = []struct {
 		key         []byte
@@ -488,7 +486,7 @@ func (s *CombinerSuite) TestGroupingExamples(c *gc.C) {
 	c.Check(cb.Value(nil), gc.DeepEquals, encoding.EncodeVarintAscending(nil, 1))
 
 	// Cases using a subset of dimensions.
-	cb = buildCombiner(c, schema, []DimTag{dimAnInt, dimAnIntTwo})
+	cb = buildFixtureCombiner(c, []string{dimAnInt, dimAnIntTwo})
 	cases = []struct {
 		key         []byte
 		expectSkip  bool
@@ -510,7 +508,7 @@ func (s *CombinerSuite) TestGroupingExamples(c *gc.C) {
 	c.Check(cb.Value(nil), gc.DeepEquals, encoding.EncodeVarintAscending(nil, 1))
 
 	// Cases using an iterator having no grouped dimensions.
-	cb = buildCombiner(c, schema, []DimTag{})
+	cb = buildFixtureCombiner(c, []string{})
 	cases = []struct {
 		key         []byte
 		expectSkip  bool
@@ -565,53 +563,70 @@ const (
 	// Starting from this point ensures encodings are a mix of byte lengths.
 	startAt = 109
 
-	// Define mapping, dimension, and metric tag fixtures for test use.
-	mapIdent        MapTag = iota
-	mapFixed        MapTag = iota
-	dimAStr         DimTag = iota
-	dimAnInt        DimTag = iota
-	dimAnIntTwo     DimTag = iota
-	dimAnIntThree   DimTag = iota
-	dimOtherStr     DimTag = iota
-	dimAFloat       DimTag = iota
-	dimATimestamp   DimTag = iota
-	metAnIntSum     MetTag = iota
-	metAnIntGauge   MetTag = iota
-	metAFloatSum    MetTag = iota
-	metAStrUniq     MetTag = iota
-	metOtherStrUniq MetTag = iota
-	relTest         RelTag = iota
-	mvOne           MVTag  = iota
+	// Define mapping, dimension, metric, relation, & view name fixtures for test use.
+	mapIdent        = "mapIdent"
+	mapFixed        = "mapFixed"
+	dimAStr         = "dimAStr"
+	dimAnInt        = "dimAnInt"
+	dimAnIntTwo     = "dimAnIntTwo"
+	dimAnIntThree   = "dimAnIntThree"
+	dimOtherStr     = "dimOtherStr"
+	dimAFloat       = "dimAFloat"
+	dimATime        = "dimATime"
+	metAnIntSum     = "metAnIntSum"
+	metAnIntGauge   = "metAnIntGauge"
+	metAFloatSum    = "metAFloatSum"
+	metAStrUniq     = "metAStrUniq"
+	metOtherStrUniq = "metOtherStrUniq"
+	relTest         = "relTest"
+	mvTest          = "mvTest"
+
+	mapIdentTag        = 1
+	mapFixedTag        = iota
+	dimAStrTag         = iota
+	dimAnIntTag        = iota
+	dimAnIntTwoTag     = iota
+	dimAnIntThreeTag   = iota
+	dimOtherStrTag     = iota
+	dimAFloatTag       = iota
+	dimATimeTag        = iota
+	metAnIntSumTag     = iota
+	metAnIntGaugeTag   = iota
+	metAFloatSumTag    = iota
+	metAStrUniqTag     = iota
+	metOtherStrUniqTag = iota
+	relTestTag         = iota
+	mvTestTag          = iota
 )
 
 func makeTestConfig(views ...MaterializedViewSpec) SchemaSpec {
 	return SchemaSpec{
 		Mappings: []MappingSpec{
-			{Tag: mapFixed, Name: "fixed-mapping"},
-			{Tag: mapIdent, Name: "ident-mapping"},
+			{Name: mapIdent, Tag: mapIdentTag},
+			{Name: mapFixed, Tag: mapFixedTag},
 		},
 		Dimensions: []DimensionSpec{
-			{Name: "a-float", Tag: dimAFloat, Type: DimensionType_FLOAT},
-			{Name: "a-str", Tag: dimAStr, Type: DimensionType_STRING},
-			{Name: "a-timestamp", Tag: dimATimestamp, Type: DimensionType_TIMESTAMP},
-			{Name: "an-int", Tag: dimAnInt, Type: DimensionType_VARINT},
-			{Name: "an-int-two", Tag: dimAnIntTwo, Type: DimensionType_VARINT},
-			{Name: "an-int-three", Tag: dimAnIntThree, Type: DimensionType_VARINT},
-			{Name: "other-str", Tag: dimOtherStr, Type: DimensionType_STRING},
+			{Name: dimAFloat, Type: DimensionType_FLOAT, Tag: dimAFloatTag},
+			{Name: dimAStr, Type: DimensionType_STRING, Tag: dimAStrTag},
+			{Name: dimATime, Type: DimensionType_TIMESTAMP, Tag: dimATimeTag},
+			{Name: dimAnInt, Type: DimensionType_VARINT, Tag: dimAnIntTag},
+			{Name: dimAnIntTwo, Type: DimensionType_VARINT, Tag: dimAnIntTwoTag},
+			{Name: dimAnIntThree, Type: DimensionType_VARINT, Tag: dimAnIntThreeTag},
+			{Name: dimOtherStr, Type: DimensionType_STRING, Tag: dimOtherStrTag},
 		},
 		Metrics: []MetricSpec{
-			{Name: "a-float-sum", Tag: metAFloatSum, DimTag: dimAFloat, Type: MetricType_FLOAT_SUM},
-			{Name: "an-int-gauge", Tag: metAnIntGauge, DimTag: dimAnInt, Type: MetricType_VARINT_GUAGE},
-			{Name: "an-int-sum", Tag: metAnIntSum, DimTag: dimAnInt, Type: MetricType_VARINT_SUM},
-			{Name: "a-str-uniq", Tag: metAStrUniq, DimTag: dimAStr, Type: MetricType_STRING_HLL},
-			{Name: "other-str-uniq", Tag: metOtherStrUniq, DimTag: dimOtherStr, Type: MetricType_STRING_HLL},
+			{Name: metAFloatSum, Type: MetricType_FLOAT_SUM, Dimension: dimAFloat, Tag: metAFloatSumTag},
+			{Name: metAnIntGauge, Type: MetricType_VARINT_GAUGE, Dimension: dimAnInt, Tag: metAnIntGaugeTag},
+			{Name: metAnIntSum, Type: MetricType_VARINT_SUM, Dimension: dimAnInt, Tag: metAnIntSumTag},
+			{Name: metAStrUniq, Type: MetricType_STRING_HLL, Dimension: dimAStr, Tag: metAStrUniqTag},
+			{Name: metOtherStrUniq, Type: MetricType_STRING_HLL, Dimension: dimOtherStr, Tag: metOtherStrUniqTag},
 		},
 		Relations: []RelationSpec{
 			{
-				Name:       "relTest",
-				Tag:        relTest,
+				Name:       relTest,
 				Mapping:    mapIdent,
-				Dimensions: []DimTag{dimAStr, dimAnInt, dimAnIntTwo, dimAnIntThree, dimOtherStr, dimAFloat, dimATimestamp},
+				Dimensions: []string{dimAStr, dimAnInt, dimAnIntTwo, dimAnIntThree, dimOtherStr, dimAFloat, dimATime},
+				Tag:        relTestTag,
 			},
 		},
 		Views: views,
@@ -629,62 +644,72 @@ func makeExtractors() *ExtractFns {
 	return &ExtractFns{
 		NewMessage: func(spec *protocol.JournalSpec) (message.Message, error) { return &testRecord{}, nil },
 		Mapping: map[MapTag]func(env message.Envelope) []RelationRow{
-			mapIdent: func(env message.Envelope) []RelationRow { return []RelationRow{{"extra", "stuff", env.Message}} },
-			mapFixed: func(env message.Envelope) []RelationRow { return []RelationRow{{"more", "stuff", env.Message}} },
+			mapIdentTag: func(env message.Envelope) []RelationRow { return []RelationRow{{"extra", "stuff", env.Message}} },
+			mapFixedTag: func(env message.Envelope) []RelationRow { return []RelationRow{{"more", "stuff", env.Message}} },
 		},
 		Int: map[DimTag]func(r RelationRow) int64{
-			dimAnInt:      func(r RelationRow) int64 { return r[2].(testRecord).anInt },
-			dimAnIntTwo:   func(r RelationRow) int64 { return r[2].(testRecord).anInt },
-			dimAnIntThree: func(r RelationRow) int64 { return r[2].(testRecord).anInt },
+			dimAnIntTag:      func(r RelationRow) int64 { return r[2].(testRecord).anInt },
+			dimAnIntTwoTag:   func(r RelationRow) int64 { return r[2].(testRecord).anInt },
+			dimAnIntThreeTag: func(r RelationRow) int64 { return r[2].(testRecord).anInt },
 		},
 		String: map[DimTag]func(r RelationRow) string{
-			dimAStr:     func(r RelationRow) string { return r[2].(testRecord).aStr },
-			dimOtherStr: func(r RelationRow) string { return r[2].(testRecord).otherStr },
+			dimAStrTag:     func(r RelationRow) string { return r[2].(testRecord).aStr },
+			dimOtherStrTag: func(r RelationRow) string { return r[2].(testRecord).otherStr },
 		},
 		Float: map[DimTag]func(r RelationRow) float64{
-			dimAFloat: func(r RelationRow) float64 { return r[2].(testRecord).aFloat },
+			dimAFloatTag: func(r RelationRow) float64 { return r[2].(testRecord).aFloat },
 		},
 		Time: map[DimTag]func(r RelationRow) time.Time{
-			dimATimestamp: func(r RelationRow) time.Time { return r[2].(testRecord).aTime },
+			dimATimeTag: func(r RelationRow) time.Time { return r[2].(testRecord).aTime },
 		},
 	}
 }
 
-func buildCombiner(c *gc.C, schema Schema, dimensions []DimTag) *Combiner {
+func buildFixtureCombiner(c *gc.C, dimensions []string) *Combiner {
+	var schema, err = NewSchema(makeExtractors(), makeTestConfig(MaterializedViewSpec{
+		Name:     mvTest,
+		Relation: relTest,
+		View: ViewSpec{
+			Dimensions: []string{dimAnInt, dimAnIntTwo, dimAnIntThree},
+			Metrics:    []string{metAnIntSum},
+		},
+		Tag: 100,
+	}))
+	c.Assert(err, gc.IsNil)
+
+	var input = schema.Views[100].ResolvedView
+
 	var box = func(a int64) int64 {
 		return a + startAt
 	}
 
-	var input = ViewSpec{
-		RelTag:     relTest,
-		Dimensions: []DimTag{dimAnInt, dimAnIntTwo, dimAnIntThree},
-		Metrics:    []MetTag{metAnIntSum},
-	}
-	var query = QuerySpec{
+	query, err := schema.ResolveQuery(QuerySpec{
+		MaterializedView: "mvTest",
 		View: ViewSpec{
-			RelTag:     relTest,
 			Dimensions: dimensions,
-			Metrics:    []MetTag{metAnIntSum},
+			Metrics:    []string{metAnIntSum},
 		},
 		Filters: []QuerySpec_Filter{
 			// Filter stride of 8.
-			{Dimension: dimAnInt, Ranges: []Range{
-				{Int: &Range_Int{End: box(7)}},
+			{Dimension: dimAnInt, Ints: []QuerySpec_Filter_Int{
+				{End: box(7)},
 			}},
 			// Filter stride of 4.
-			{Dimension: dimAnIntTwo, Ranges: []Range{
-				{Int: &Range_Int{End: box(3)}},
-				{Int: &Range_Int{Begin: box(8), End: box(11)}},
+			{Dimension: dimAnIntTwo, Ints: []QuerySpec_Filter_Int{
+				{End: box(3)},
+				{Begin: box(8), End: box(11)},
 			}},
 			// Filter stride of 2.
-			{Dimension: dimAnIntThree, Ranges: []Range{
-				{Int: &Range_Int{End: box(1)}},
-				{Int: &Range_Int{Begin: box(4), End: box(5)}},
-				{Int: &Range_Int{Begin: box(8), End: box(9)}},
-				{Int: &Range_Int{Begin: box(12), End: box(13)}},
+			{Dimension: dimAnIntThree, Ints: []QuerySpec_Filter_Int{
+				{End: box(1)},
+				{Begin: box(4), End: box(5)},
+				{Begin: box(8), End: box(9)},
+				{Begin: box(12), End: box(13)},
 			}},
 		},
-	}
+	})
+	c.Assert(err, gc.IsNil)
+
 	cb, err := NewCombiner(schema, input, query)
 	c.Assert(err, gc.IsNil)
 

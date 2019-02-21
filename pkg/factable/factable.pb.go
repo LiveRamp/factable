@@ -66,7 +66,7 @@ func (x DimensionType) String() string {
 	return proto.EnumName(DimensionType_name, int32(x))
 }
 func (DimensionType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{0}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{0}
 }
 
 type MetricType int32
@@ -74,7 +74,7 @@ type MetricType int32
 const (
 	MetricType_INVALID_METRIC_TYPE MetricType = 0
 	MetricType_VARINT_SUM          MetricType = 1
-	MetricType_VARINT_GUAGE        MetricType = 2
+	MetricType_VARINT_GAUGE        MetricType = 2
 	MetricType_FLOAT_SUM           MetricType = 3
 	MetricType_STRING_HLL          MetricType = 4
 )
@@ -82,14 +82,14 @@ const (
 var MetricType_name = map[int32]string{
 	0: "INVALID_METRIC_TYPE",
 	1: "VARINT_SUM",
-	2: "VARINT_GUAGE",
+	2: "VARINT_GAUGE",
 	3: "FLOAT_SUM",
 	4: "STRING_HLL",
 }
 var MetricType_value = map[string]int32{
 	"INVALID_METRIC_TYPE": 0,
 	"VARINT_SUM":          1,
-	"VARINT_GUAGE":        2,
+	"VARINT_GAUGE":        2,
 	"FLOAT_SUM":           3,
 	"STRING_HLL":          4,
 }
@@ -98,7 +98,7 @@ func (x MetricType) String() string {
 	return proto.EnumName(MetricType_name, int32(x))
 }
 func (MetricType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{1}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{1}
 }
 
 // MappingSpec defines a Mapping of input Messages to InputRecords. In many
@@ -108,19 +108,19 @@ func (MetricType) EnumDescriptor() ([]byte, []int) {
 // event having several product SKUs might map to a RelationRow{purchase, SKU}
 // tuple for each purchased product.
 type MappingSpec struct {
-	// Unique tag of the Mapping. Immutable.
-	Tag MapTag `protobuf:"varint,1,opt,name=tag,proto3,casttype=MapTag" json:"tag,omitempty"`
 	// Short, unique name of the Mapping.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Longer, free-form description of the Mapping.
-	Desc string `protobuf:"bytes,3,opt,name=desc,proto3" json:"desc,omitempty"`
+	Desc string `protobuf:"bytes,2,opt,name=desc,proto3" json:"desc,omitempty"`
+	// Unique tag of the Mapping.
+	Tag MapTag `protobuf:"varint,3,opt,name=tag,proto3,casttype=MapTag" json:"tag,omitempty"`
 }
 
 func (m *MappingSpec) Reset()         { *m = MappingSpec{} }
 func (m *MappingSpec) String() string { return proto.CompactTextString(m) }
 func (*MappingSpec) ProtoMessage()    {}
 func (*MappingSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{0}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{0}
 }
 func (m *MappingSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -151,21 +151,21 @@ var xxx_messageInfo_MappingSpec proto.InternalMessageInfo
 
 // DimensionSpec defines a Dimension which may be extracted from a RelationRow.
 type DimensionSpec struct {
-	// Unique tag of the dimension. Immutable.
-	Tag DimTag `protobuf:"varint,1,opt,name=tag,proto3,casttype=DimTag" json:"tag,omitempty"`
+	// Short, unique name of the Dimension.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Type of the Dimension. Immutable.
 	Type DimensionType `protobuf:"varint,2,opt,name=type,proto3,enum=factable.DimensionType" json:"type,omitempty"`
-	// Short, unique name of the Dimension.
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	// Longer, free-form description of the Dimension.
-	Desc string `protobuf:"bytes,4,opt,name=desc,proto3" json:"desc,omitempty"`
+	Desc string `protobuf:"bytes,3,opt,name=desc,proto3" json:"desc,omitempty"`
+	// Unique tag of the dimension.
+	Tag DimTag `protobuf:"varint,4,opt,name=tag,proto3,casttype=DimTag" json:"tag,omitempty"`
 }
 
 func (m *DimensionSpec) Reset()         { *m = DimensionSpec{} }
 func (m *DimensionSpec) String() string { return proto.CompactTextString(m) }
 func (*DimensionSpec) ProtoMessage()    {}
 func (*DimensionSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{1}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{1}
 }
 func (m *DimensionSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -196,23 +196,25 @@ var xxx_messageInfo_DimensionSpec proto.InternalMessageInfo
 
 // MetricSpec defines a Metric which may be derived from a specified Dimension.
 type MetricSpec struct {
-	// Unique tag of the Metric. Immutable.
-	Tag MetTag `protobuf:"varint,1,opt,name=tag,proto3,casttype=MetTag" json:"tag,omitempty"`
-	// Type of the Metric. Immutable.
-	Type MetricType `protobuf:"varint,2,opt,name=type,proto3,enum=factable.MetricType" json:"type,omitempty"`
-	// Dimension tag from which the Metric is extracted. Immutable.
-	DimTag DimTag `protobuf:"varint,3,opt,name=dim_tag,json=dimTag,proto3,casttype=DimTag" json:"dim_tag,omitempty"`
 	// Short, unique name of the Metric.
-	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Dimension from which the Metric is extracted.
+	Dimension string `protobuf:"bytes,2,opt,name=dimension,proto3" json:"dimension,omitempty"`
+	// Type of the Metric. Immutable.
+	Type MetricType `protobuf:"varint,3,opt,name=type,proto3,enum=factable.MetricType" json:"type,omitempty"`
 	// Longer, free-form description of the Metric.
-	Desc string `protobuf:"bytes,5,opt,name=desc,proto3" json:"desc,omitempty"`
+	Desc string `protobuf:"bytes,4,opt,name=desc,proto3" json:"desc,omitempty"`
+	// Unique tag of the Metric.
+	Tag MetTag `protobuf:"varint,5,opt,name=tag,proto3,casttype=MetTag" json:"tag,omitempty"`
+	// Resolved DimTag of |dimension|. Immutable.
+	DimTag DimTag `protobuf:"varint,6,opt,name=dim_tag,json=dimTag,proto3,casttype=DimTag" json:"dim_tag,omitempty" yaml:",omitempty"`
 }
 
 func (m *MetricSpec) Reset()         { *m = MetricSpec{} }
 func (m *MetricSpec) String() string { return proto.CompactTextString(m) }
 func (*MetricSpec) ProtoMessage()    {}
 func (*MetricSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{2}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{2}
 }
 func (m *MetricSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -245,27 +247,31 @@ var xxx_messageInfo_MetricSpec proto.InternalMessageInfo
 // input events, with a mapping that transforms each event into one or more
 // RelationRows.
 type RelationSpec struct {
-	// Unique tag of the Relation. Immutable.
-	Tag RelTag `protobuf:"varint,1,opt,name=tag,proto3,casttype=RelTag" json:"tag,omitempty"`
-	// Mapping which transforms journal events into Relation rows. Immutable.
-	Mapping MapTag `protobuf:"varint,2,opt,name=mapping,proto3,casttype=MapTag" json:"mapping,omitempty"`
 	// Short, unique name of the Relation.
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// Longer, free-form description of the Relation.
-	Desc string `protobuf:"bytes,4,opt,name=desc,proto3" json:"desc,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// LabelSelector identifies journals which, taken together, compose the "rows" of the Relation.
-	Selector protocol.LabelSelector `protobuf:"bytes,5,opt,name=selector" json:"selector"`
+	Selector protocol.LabelSelector `protobuf:"bytes,2,opt,name=selector" json:"selector"`
+	// Mapping which transforms journal events into Relation rows.
+	Mapping string `protobuf:"bytes,3,opt,name=mapping,proto3" json:"mapping,omitempty"`
 	// Dimensions of the Relation. Dimensions may be added and removed over time,
 	// but all Dimensions or derived Metrics of current MaterializedViewSpecs must
 	// refer to current Dimensions of the RelationSpec.
-	Dimensions []DimTag `protobuf:"varint,6,rep,packed,name=dimensions,casttype=DimTag" json:"dimensions,omitempty"`
+	Dimensions []string `protobuf:"bytes,4,rep,name=dimensions" json:"dimensions,omitempty"`
+	// Longer, free-form description of the Relation.
+	Desc string `protobuf:"bytes,5,opt,name=desc,proto3" json:"desc,omitempty"`
+	// Unique tag of the Relation.
+	Tag RelTag `protobuf:"varint,6,opt,name=tag,proto3,casttype=RelTag" json:"tag,omitempty"`
+	// Resolved MapTag of |mapping|. Immutable.
+	MapTag MapTag `protobuf:"varint,7,opt,name=map_tag,json=mapTag,proto3,casttype=MapTag" json:"map_tag,omitempty" yaml:",omitempty"`
+	// Resolved DimTags of |dimensions|. Immutable.
+	DimTags []DimTag `protobuf:"varint,8,rep,packed,name=dim_tags,json=dimTags,casttype=DimTag" json:"dim_tags,omitempty" yaml:",omitempty"`
 }
 
 func (m *RelationSpec) Reset()         { *m = RelationSpec{} }
 func (m *RelationSpec) String() string { return proto.CompactTextString(m) }
 func (*RelationSpec) ProtoMessage()    {}
 func (*RelationSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{3}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{3}
 }
 func (m *RelationSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -297,19 +303,17 @@ var xxx_messageInfo_RelationSpec proto.InternalMessageInfo
 // ViewSpec defines a summarized view over a Relation, composing a subset of
 // Relation dimensions with a set of derived Metrics.
 type ViewSpec struct {
-	// Tag of the Relation summarized by the View.
-	RelTag RelTag `protobuf:"varint,1,opt,name=rel_tag,json=relTag,proto3,casttype=RelTag" json:"rel_tag,omitempty"`
-	// Ordered Dimensions of each View row.
-	Dimensions []DimTag `protobuf:"varint,2,rep,packed,name=dimensions,casttype=DimTag" json:"dimensions,omitempty"`
-	// Ordered Metrics of each View row.
-	Metrics []MetTag `protobuf:"varint,3,rep,packed,name=metrics,casttype=MetTag" json:"metrics,omitempty"`
+	// Ordered Dimensions summarized by the ViewSpec.
+	Dimensions []string `protobuf:"bytes,1,rep,name=dimensions" json:"dimensions,omitempty"`
+	// Ordered Metrics aggregated by the ViewSpec.
+	Metrics []string `protobuf:"bytes,2,rep,name=metrics" json:"metrics,omitempty"`
 }
 
 func (m *ViewSpec) Reset()         { *m = ViewSpec{} }
 func (m *ViewSpec) String() string { return proto.CompactTextString(m) }
 func (*ViewSpec) ProtoMessage()    {}
 func (*ViewSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{4}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{4}
 }
 func (m *ViewSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -338,26 +342,72 @@ func (m *ViewSpec) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ViewSpec proto.InternalMessageInfo
 
+type ResolvedView struct {
+	// Resolved DimTags of ViewSpec Dimensions.
+	DimTags []DimTag `protobuf:"varint,1,rep,packed,name=dim_tags,json=dimTags,casttype=DimTag" json:"dim_tags,omitempty"`
+	// Resolved MetTags of ViewSpec Metrics.
+	MetTags []MetTag `protobuf:"varint,2,rep,packed,name=met_tags,json=metTags,casttype=MetTag" json:"met_tags,omitempty"`
+}
+
+func (m *ResolvedView) Reset()         { *m = ResolvedView{} }
+func (m *ResolvedView) String() string { return proto.CompactTextString(m) }
+func (*ResolvedView) ProtoMessage()    {}
+func (*ResolvedView) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{5}
+}
+func (m *ResolvedView) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResolvedView) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResolvedView.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (dst *ResolvedView) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResolvedView.Merge(dst, src)
+}
+func (m *ResolvedView) XXX_Size() int {
+	return m.ProtoSize()
+}
+func (m *ResolvedView) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResolvedView.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResolvedView proto.InternalMessageInfo
+
 // MaterializedViewSpec defines a materialization of a ViewSpec. Its Metrics
 // are continuously aggregated as RelationRows are processed, and the total
 // storage commitment is limited to the cardinality of the View Dimensions.
 type MaterializedViewSpec struct {
-	// Unique tag of the MaterializedView. Immutable.
-	Tag MVTag `protobuf:"varint,1,opt,name=tag,proto3,casttype=MVTag" json:"tag,omitempty"`
-	// View materialized by the MaterializedView. Immutable.
-	View ViewSpec `protobuf:"bytes,2,opt,name=view" json:"view"`
 	// Short, unique name of the MaterializedView.
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Relation which this view materializes.
+	Relation string `protobuf:"bytes,2,opt,name=relation,proto3" json:"relation,omitempty"`
+	// View materialized by the MaterializedView.
+	View ViewSpec `protobuf:"bytes,3,opt,name=view" json:"view"`
 	// Longer, free-form description of the MaterializedView.
 	Desc      string                          `protobuf:"bytes,4,opt,name=desc,proto3" json:"desc,omitempty"`
 	Retention *MaterializedViewSpec_Retention `protobuf:"bytes,5,opt,name=retention" json:"retention,omitempty"`
+	// Unique tag of the MaterializedView.
+	Tag MVTag `protobuf:"varint,6,opt,name=tag,proto3,casttype=MVTag" json:"tag,omitempty"`
+	// Resolved RelTag. Immutable.
+	RelTag RelTag `protobuf:"varint,7,opt,name=rel_tag,json=relTag,proto3,casttype=RelTag" json:"rel_tag,omitempty" yaml:",omitempty"`
+	// Resolution of the View. Immutable.
+	ResolvedView ResolvedView `protobuf:"bytes,8,opt,name=resolved_view,json=resolvedView" json:"resolved_view" yaml:",omitempty"`
 }
 
 func (m *MaterializedViewSpec) Reset()         { *m = MaterializedViewSpec{} }
 func (m *MaterializedViewSpec) String() string { return proto.CompactTextString(m) }
 func (*MaterializedViewSpec) ProtoMessage()    {}
 func (*MaterializedViewSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{5}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{6}
 }
 func (m *MaterializedViewSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -393,14 +443,16 @@ type MaterializedViewSpec_Retention struct {
 	// Dimension, which must be part of the MaterializedView and of type
 	// Timestamp, to which |remove_after| is added to determine the effective
 	// removal horizon.
-	RelativeTo DimTag `protobuf:"varint,2,opt,name=relative_to,json=relativeTo,proto3,casttype=DimTag" json:"relative_to,omitempty"`
+	RelativeTo string `protobuf:"bytes,2,opt,name=relative_to,json=relativeTo,proto3" json:"relative_to,omitempty"`
+	// Resolved DimTag of |relative_to|.
+	RelativeToTag DimTag `protobuf:"varint,3,opt,name=relative_to_tag,json=relativeToTag,proto3,casttype=DimTag" json:"relative_to_tag,omitempty" yaml:",omitempty"`
 }
 
 func (m *MaterializedViewSpec_Retention) Reset()         { *m = MaterializedViewSpec_Retention{} }
 func (m *MaterializedViewSpec_Retention) String() string { return proto.CompactTextString(m) }
 func (*MaterializedViewSpec_Retention) ProtoMessage()    {}
 func (*MaterializedViewSpec_Retention) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{5, 0}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{6, 0}
 }
 func (m *MaterializedViewSpec_Retention) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -433,6 +485,8 @@ var xxx_messageInfo_MaterializedViewSpec_Retention proto.InternalMessageInfo
 // In particular it defines the "shape" (in Dimensions and Metrics) of the
 // desired result, and any filters which should be applied.
 type QuerySpec struct {
+	// MaterializedView to query.
+	MaterializedView string `protobuf:"bytes,2,opt,name=materialized_view,json=materializedView,proto3" json:"materialized_view,omitempty"`
 	// View of the Query result.
 	//
 	// Dimensions of the Relation which should be grouped over and returned with
@@ -451,15 +505,15 @@ type QuerySpec struct {
 	// all underlying view rows have been read. Implementations may also limit
 	// the size of the result sets they will buffer, returning an error for
 	// Queries which exceed it.
-	View    ViewSpec           `protobuf:"bytes,1,opt,name=view" json:"view"`
-	Filters []QuerySpec_Filter `protobuf:"bytes,2,rep,name=filters" json:"filters"`
+	View    ViewSpec           `protobuf:"bytes,3,opt,name=view" json:"view"`
+	Filters []QuerySpec_Filter `protobuf:"bytes,4,rep,name=filters" json:"filters"`
 }
 
 func (m *QuerySpec) Reset()         { *m = QuerySpec{} }
 func (m *QuerySpec) String() string { return proto.CompactTextString(m) }
 func (*QuerySpec) ProtoMessage()    {}
 func (*QuerySpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{6}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{7}
 }
 func (m *QuerySpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -493,17 +547,18 @@ var xxx_messageInfo_QuerySpec proto.InternalMessageInfo
 // including those not present in the Query View.
 type QuerySpec_Filter struct {
 	// Dimension to which the Filter is applied.
-	Dimension DimTag `protobuf:"varint,1,opt,name=dimension,proto3,casttype=DimTag" json:"dimension,omitempty"`
-	// Admissible Dimension ranges. The subtype of each Range must match that
-	// of the Relation Dimension itself.
-	Ranges []Range `protobuf:"bytes,2,rep,name=ranges" json:"ranges"`
+	Dimension string                    `protobuf:"bytes,1,opt,name=dimension,proto3" json:"dimension,omitempty"`
+	Ints      []QuerySpec_Filter_Int    `protobuf:"bytes,2,rep,name=ints" json:"ints"`
+	Floats    []QuerySpec_Filter_Float  `protobuf:"bytes,3,rep,name=floats" json:"floats"`
+	Strings   []QuerySpec_Filter_String `protobuf:"bytes,4,rep,name=strings" json:"strings"`
+	Times     []QuerySpec_Filter_Time   `protobuf:"bytes,5,rep,name=times" json:"times"`
 }
 
 func (m *QuerySpec_Filter) Reset()         { *m = QuerySpec_Filter{} }
 func (m *QuerySpec_Filter) String() string { return proto.CompactTextString(m) }
 func (*QuerySpec_Filter) ProtoMessage()    {}
 func (*QuerySpec_Filter) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{6, 0}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{7, 0}
 }
 func (m *QuerySpec_Filter) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -532,66 +587,23 @@ func (m *QuerySpec_Filter) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QuerySpec_Filter proto.InternalMessageInfo
 
-// Range is Begin & End values (inclusive) as a union type. If Begin is omitted,
-// it is interpreted as matching any lesser value. Similarly if End is omitted,
-// it is interpreted as matching any greater value.
-type Range struct {
-	Int   *Range_Int    `protobuf:"bytes,1,opt,name=int" json:"int,omitempty"`
-	Float *Range_Float  `protobuf:"bytes,2,opt,name=float" json:"float,omitempty"`
-	Str   *Range_String `protobuf:"bytes,3,opt,name=str" json:"str,omitempty"`
-	Time  *Range_Time   `protobuf:"bytes,4,opt,name=time" json:"time,omitempty"`
-}
-
-func (m *Range) Reset()         { *m = Range{} }
-func (m *Range) String() string { return proto.CompactTextString(m) }
-func (*Range) ProtoMessage()    {}
-func (*Range) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{7}
-}
-func (m *Range) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Range) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Range.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (dst *Range) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Range.Merge(dst, src)
-}
-func (m *Range) XXX_Size() int {
-	return m.ProtoSize()
-}
-func (m *Range) XXX_DiscardUnknown() {
-	xxx_messageInfo_Range.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Range proto.InternalMessageInfo
-
-type Range_Int struct {
+type QuerySpec_Filter_Int struct {
 	Begin int64 `protobuf:"varint,1,opt,name=begin,proto3" json:"begin,omitempty"`
 	End   int64 `protobuf:"varint,2,opt,name=end,proto3" json:"end,omitempty"`
 }
 
-func (m *Range_Int) Reset()         { *m = Range_Int{} }
-func (m *Range_Int) String() string { return proto.CompactTextString(m) }
-func (*Range_Int) ProtoMessage()    {}
-func (*Range_Int) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{7, 0}
+func (m *QuerySpec_Filter_Int) Reset()         { *m = QuerySpec_Filter_Int{} }
+func (m *QuerySpec_Filter_Int) String() string { return proto.CompactTextString(m) }
+func (*QuerySpec_Filter_Int) ProtoMessage()    {}
+func (*QuerySpec_Filter_Int) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{7, 0, 0}
 }
-func (m *Range_Int) XXX_Unmarshal(b []byte) error {
+func (m *QuerySpec_Filter_Int) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Range_Int) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySpec_Filter_Int) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Range_Int.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QuerySpec_Filter_Int.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -601,35 +613,35 @@ func (m *Range_Int) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (dst *Range_Int) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Range_Int.Merge(dst, src)
+func (dst *QuerySpec_Filter_Int) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySpec_Filter_Int.Merge(dst, src)
 }
-func (m *Range_Int) XXX_Size() int {
+func (m *QuerySpec_Filter_Int) XXX_Size() int {
 	return m.ProtoSize()
 }
-func (m *Range_Int) XXX_DiscardUnknown() {
-	xxx_messageInfo_Range_Int.DiscardUnknown(m)
+func (m *QuerySpec_Filter_Int) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySpec_Filter_Int.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Range_Int proto.InternalMessageInfo
+var xxx_messageInfo_QuerySpec_Filter_Int proto.InternalMessageInfo
 
-type Range_Float struct {
+type QuerySpec_Filter_Float struct {
 	Begin float64 `protobuf:"fixed64,1,opt,name=begin,proto3" json:"begin,omitempty"`
 	End   float64 `protobuf:"fixed64,2,opt,name=end,proto3" json:"end,omitempty"`
 }
 
-func (m *Range_Float) Reset()         { *m = Range_Float{} }
-func (m *Range_Float) String() string { return proto.CompactTextString(m) }
-func (*Range_Float) ProtoMessage()    {}
-func (*Range_Float) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{7, 1}
+func (m *QuerySpec_Filter_Float) Reset()         { *m = QuerySpec_Filter_Float{} }
+func (m *QuerySpec_Filter_Float) String() string { return proto.CompactTextString(m) }
+func (*QuerySpec_Filter_Float) ProtoMessage()    {}
+func (*QuerySpec_Filter_Float) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{7, 0, 1}
 }
-func (m *Range_Float) XXX_Unmarshal(b []byte) error {
+func (m *QuerySpec_Filter_Float) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Range_Float) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySpec_Filter_Float) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Range_Float.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QuerySpec_Filter_Float.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -639,35 +651,35 @@ func (m *Range_Float) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return b[:n], nil
 	}
 }
-func (dst *Range_Float) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Range_Float.Merge(dst, src)
+func (dst *QuerySpec_Filter_Float) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySpec_Filter_Float.Merge(dst, src)
 }
-func (m *Range_Float) XXX_Size() int {
+func (m *QuerySpec_Filter_Float) XXX_Size() int {
 	return m.ProtoSize()
 }
-func (m *Range_Float) XXX_DiscardUnknown() {
-	xxx_messageInfo_Range_Float.DiscardUnknown(m)
+func (m *QuerySpec_Filter_Float) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySpec_Filter_Float.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Range_Float proto.InternalMessageInfo
+var xxx_messageInfo_QuerySpec_Filter_Float proto.InternalMessageInfo
 
-type Range_String struct {
+type QuerySpec_Filter_String struct {
 	Begin string `protobuf:"bytes,1,opt,name=begin,proto3" json:"begin,omitempty"`
 	End   string `protobuf:"bytes,2,opt,name=end,proto3" json:"end,omitempty"`
 }
 
-func (m *Range_String) Reset()         { *m = Range_String{} }
-func (m *Range_String) String() string { return proto.CompactTextString(m) }
-func (*Range_String) ProtoMessage()    {}
-func (*Range_String) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{7, 2}
+func (m *QuerySpec_Filter_String) Reset()         { *m = QuerySpec_Filter_String{} }
+func (m *QuerySpec_Filter_String) String() string { return proto.CompactTextString(m) }
+func (*QuerySpec_Filter_String) ProtoMessage()    {}
+func (*QuerySpec_Filter_String) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{7, 0, 2}
 }
-func (m *Range_String) XXX_Unmarshal(b []byte) error {
+func (m *QuerySpec_Filter_String) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Range_String) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySpec_Filter_String) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Range_String.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QuerySpec_Filter_String.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -677,35 +689,37 @@ func (m *Range_String) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-func (dst *Range_String) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Range_String.Merge(dst, src)
+func (dst *QuerySpec_Filter_String) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySpec_Filter_String.Merge(dst, src)
 }
-func (m *Range_String) XXX_Size() int {
+func (m *QuerySpec_Filter_String) XXX_Size() int {
 	return m.ProtoSize()
 }
-func (m *Range_String) XXX_DiscardUnknown() {
-	xxx_messageInfo_Range_String.DiscardUnknown(m)
+func (m *QuerySpec_Filter_String) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySpec_Filter_String.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Range_String proto.InternalMessageInfo
+var xxx_messageInfo_QuerySpec_Filter_String proto.InternalMessageInfo
 
-type Range_Time struct {
-	Begin time.Time `protobuf:"bytes,1,opt,name=begin,stdtime" json:"begin"`
-	End   time.Time `protobuf:"bytes,2,opt,name=end,stdtime" json:"end"`
+type QuerySpec_Filter_Time struct {
+	Begin         time.Time     `protobuf:"bytes,1,opt,name=begin,stdtime" json:"begin"`
+	End           time.Time     `protobuf:"bytes,2,opt,name=end,stdtime" json:"end"`
+	RelativeBegin time.Duration `protobuf:"bytes,3,opt,name=relative_begin,json=relativeBegin,stdduration" json:"relative_begin"`
+	RelativeEnd   time.Duration `protobuf:"bytes,4,opt,name=relative_end,json=relativeEnd,stdduration" json:"relative_end"`
 }
 
-func (m *Range_Time) Reset()         { *m = Range_Time{} }
-func (m *Range_Time) String() string { return proto.CompactTextString(m) }
-func (*Range_Time) ProtoMessage()    {}
-func (*Range_Time) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{7, 3}
+func (m *QuerySpec_Filter_Time) Reset()         { *m = QuerySpec_Filter_Time{} }
+func (m *QuerySpec_Filter_Time) String() string { return proto.CompactTextString(m) }
+func (*QuerySpec_Filter_Time) ProtoMessage()    {}
+func (*QuerySpec_Filter_Time) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{7, 0, 3}
 }
-func (m *Range_Time) XXX_Unmarshal(b []byte) error {
+func (m *QuerySpec_Filter_Time) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Range_Time) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySpec_Filter_Time) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Range_Time.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QuerySpec_Filter_Time.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -715,41 +729,159 @@ func (m *Range_Time) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (dst *Range_Time) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Range_Time.Merge(dst, src)
+func (dst *QuerySpec_Filter_Time) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySpec_Filter_Time.Merge(dst, src)
 }
-func (m *Range_Time) XXX_Size() int {
+func (m *QuerySpec_Filter_Time) XXX_Size() int {
 	return m.ProtoSize()
 }
-func (m *Range_Time) XXX_DiscardUnknown() {
-	xxx_messageInfo_Range_Time.DiscardUnknown(m)
+func (m *QuerySpec_Filter_Time) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySpec_Filter_Time.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Range_Time proto.InternalMessageInfo
+var xxx_messageInfo_QuerySpec_Filter_Time proto.InternalMessageInfo
 
-type QueryRequest struct {
+type ResolvedQuery struct {
+	// Tag of the MaterializedViewSpec to be queried.
+	MvTag MVTag `protobuf:"varint,1,opt,name=mv_tag,json=mvTag,proto3,casttype=MVTag" json:"mv_tag,omitempty"`
+	// Shape of the query result.
+	View    ResolvedView           `protobuf:"bytes,2,opt,name=view" json:"view"`
+	Filters []ResolvedQuery_Filter `protobuf:"bytes,3,rep,name=filters" json:"filters"`
+}
+
+func (m *ResolvedQuery) Reset()         { *m = ResolvedQuery{} }
+func (m *ResolvedQuery) String() string { return proto.CompactTextString(m) }
+func (*ResolvedQuery) ProtoMessage()    {}
+func (*ResolvedQuery) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{8}
+}
+func (m *ResolvedQuery) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResolvedQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResolvedQuery.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (dst *ResolvedQuery) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResolvedQuery.Merge(dst, src)
+}
+func (m *ResolvedQuery) XXX_Size() int {
+	return m.ProtoSize()
+}
+func (m *ResolvedQuery) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResolvedQuery.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResolvedQuery proto.InternalMessageInfo
+
+// Flattened filtered ranges over each view dimension.
+type ResolvedQuery_Filter struct {
+	// Dimension to which the Filter is applied.
+	DimTag DimTag                       `protobuf:"varint,1,opt,name=dim_tag,json=dimTag,proto3,casttype=DimTag" json:"dim_tag,omitempty"`
+	Ranges []ResolvedQuery_Filter_Range `protobuf:"bytes,2,rep,name=ranges" json:"ranges"`
+}
+
+func (m *ResolvedQuery_Filter) Reset()         { *m = ResolvedQuery_Filter{} }
+func (m *ResolvedQuery_Filter) String() string { return proto.CompactTextString(m) }
+func (*ResolvedQuery_Filter) ProtoMessage()    {}
+func (*ResolvedQuery_Filter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{8, 0}
+}
+func (m *ResolvedQuery_Filter) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResolvedQuery_Filter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResolvedQuery_Filter.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (dst *ResolvedQuery_Filter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResolvedQuery_Filter.Merge(dst, src)
+}
+func (m *ResolvedQuery_Filter) XXX_Size() int {
+	return m.ProtoSize()
+}
+func (m *ResolvedQuery_Filter) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResolvedQuery_Filter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResolvedQuery_Filter proto.InternalMessageInfo
+
+// Flattened allowed byte ranges of the Dimension.
+type ResolvedQuery_Filter_Range struct {
+	Begin []byte `protobuf:"bytes,1,opt,name=begin,proto3" json:"begin,omitempty"`
+	End   []byte `protobuf:"bytes,2,opt,name=end,proto3" json:"end,omitempty"`
+}
+
+func (m *ResolvedQuery_Filter_Range) Reset()         { *m = ResolvedQuery_Filter_Range{} }
+func (m *ResolvedQuery_Filter_Range) String() string { return proto.CompactTextString(m) }
+func (*ResolvedQuery_Filter_Range) ProtoMessage()    {}
+func (*ResolvedQuery_Filter_Range) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{8, 0, 0}
+}
+func (m *ResolvedQuery_Filter_Range) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResolvedQuery_Filter_Range) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResolvedQuery_Filter_Range.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (dst *ResolvedQuery_Filter_Range) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResolvedQuery_Filter_Range.Merge(dst, src)
+}
+func (m *ResolvedQuery_Filter_Range) XXX_Size() int {
+	return m.ProtoSize()
+}
+func (m *ResolvedQuery_Filter_Range) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResolvedQuery_Filter_Range.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResolvedQuery_Filter_Range proto.InternalMessageInfo
+
+type ExecuteQueryRequest struct {
 	// Header attached by a proxy-ing peer. Not directly set by clients.
 	Header *protocol.Header `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
-	// MaterializedView to query.
-	View MVTag `protobuf:"varint,2,opt,name=view,proto3,casttype=MVTag" json:"view,omitempty"`
 	// Shard to query. Set iff |header| is also set.
-	Shard github_com_LiveRamp_gazette_v2_pkg_consumer.ShardID `protobuf:"bytes,3,opt,name=shard,proto3,casttype=github.com/LiveRamp/gazette/v2/pkg/consumer.ShardID" json:"shard,omitempty"`
+	Shard github_com_LiveRamp_gazette_v2_pkg_consumer.ShardID `protobuf:"bytes,2,opt,name=shard,proto3,casttype=github.com/LiveRamp/gazette/v2/pkg/consumer.ShardID" json:"shard,omitempty"`
 	// Query specification.
-	Query QuerySpec `protobuf:"bytes,4,opt,name=query" json:"query"`
+	Query ResolvedQuery `protobuf:"bytes,3,opt,name=query" json:"query"`
 }
 
-func (m *QueryRequest) Reset()         { *m = QueryRequest{} }
-func (m *QueryRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryRequest) ProtoMessage()    {}
-func (*QueryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{8}
+func (m *ExecuteQueryRequest) Reset()         { *m = ExecuteQueryRequest{} }
+func (m *ExecuteQueryRequest) String() string { return proto.CompactTextString(m) }
+func (*ExecuteQueryRequest) ProtoMessage()    {}
+func (*ExecuteQueryRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{9}
 }
-func (m *QueryRequest) XXX_Unmarshal(b []byte) error {
+func (m *ExecuteQueryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExecuteQueryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ExecuteQueryRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -759,17 +891,17 @@ func (m *QueryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-func (dst *QueryRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryRequest.Merge(dst, src)
+func (dst *ExecuteQueryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExecuteQueryRequest.Merge(dst, src)
 }
-func (m *QueryRequest) XXX_Size() int {
+func (m *ExecuteQueryRequest) XXX_Size() int {
 	return m.ProtoSize()
 }
-func (m *QueryRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryRequest.DiscardUnknown(m)
+func (m *ExecuteQueryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExecuteQueryRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryRequest proto.InternalMessageInfo
+var xxx_messageInfo_ExecuteQueryRequest proto.InternalMessageInfo
 
 type QueryResponse struct {
 	// Response header. Set on the first QueryResponse only.
@@ -782,7 +914,7 @@ func (m *QueryResponse) Reset()         { *m = QueryResponse{} }
 func (m *QueryResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryResponse) ProtoMessage()    {}
 func (*QueryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{9}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{10}
 }
 func (m *QueryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -828,7 +960,7 @@ func (m *SchemaSpec) Reset()         { *m = SchemaSpec{} }
 func (m *SchemaSpec) String() string { return proto.CompactTextString(m) }
 func (*SchemaSpec) ProtoMessage()    {}
 func (*SchemaSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{10}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{11}
 }
 func (m *SchemaSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -873,7 +1005,7 @@ func (m *GetSchemaResponse) Reset()         { *m = GetSchemaResponse{} }
 func (m *GetSchemaResponse) String() string { return proto.CompactTextString(m) }
 func (*GetSchemaResponse) ProtoMessage()    {}
 func (*GetSchemaResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{11}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{12}
 }
 func (m *GetSchemaResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -917,7 +1049,7 @@ func (m *UpdateSchemaRequest) Reset()         { *m = UpdateSchemaRequest{} }
 func (m *UpdateSchemaRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateSchemaRequest) ProtoMessage()    {}
 func (*UpdateSchemaRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_factable_69e4e239ea5e269c, []int{12}
+	return fileDescriptor_factable_a00f6cc45b62b742, []int{13}
 }
 func (m *UpdateSchemaRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -952,16 +1084,19 @@ func init() {
 	proto.RegisterType((*MetricSpec)(nil), "factable.MetricSpec")
 	proto.RegisterType((*RelationSpec)(nil), "factable.RelationSpec")
 	proto.RegisterType((*ViewSpec)(nil), "factable.ViewSpec")
+	proto.RegisterType((*ResolvedView)(nil), "factable.ResolvedView")
 	proto.RegisterType((*MaterializedViewSpec)(nil), "factable.MaterializedViewSpec")
 	proto.RegisterType((*MaterializedViewSpec_Retention)(nil), "factable.MaterializedViewSpec.Retention")
 	proto.RegisterType((*QuerySpec)(nil), "factable.QuerySpec")
 	proto.RegisterType((*QuerySpec_Filter)(nil), "factable.QuerySpec.Filter")
-	proto.RegisterType((*Range)(nil), "factable.Range")
-	proto.RegisterType((*Range_Int)(nil), "factable.Range.Int")
-	proto.RegisterType((*Range_Float)(nil), "factable.Range.Float")
-	proto.RegisterType((*Range_String)(nil), "factable.Range.String")
-	proto.RegisterType((*Range_Time)(nil), "factable.Range.Time")
-	proto.RegisterType((*QueryRequest)(nil), "factable.QueryRequest")
+	proto.RegisterType((*QuerySpec_Filter_Int)(nil), "factable.QuerySpec.Filter.Int")
+	proto.RegisterType((*QuerySpec_Filter_Float)(nil), "factable.QuerySpec.Filter.Float")
+	proto.RegisterType((*QuerySpec_Filter_String)(nil), "factable.QuerySpec.Filter.String")
+	proto.RegisterType((*QuerySpec_Filter_Time)(nil), "factable.QuerySpec.Filter.Time")
+	proto.RegisterType((*ResolvedQuery)(nil), "factable.ResolvedQuery")
+	proto.RegisterType((*ResolvedQuery_Filter)(nil), "factable.ResolvedQuery.Filter")
+	proto.RegisterType((*ResolvedQuery_Filter_Range)(nil), "factable.ResolvedQuery.Filter.Range")
+	proto.RegisterType((*ExecuteQueryRequest)(nil), "factable.ExecuteQueryRequest")
 	proto.RegisterType((*QueryResponse)(nil), "factable.QueryResponse")
 	proto.RegisterType((*SchemaSpec)(nil), "factable.SchemaSpec")
 	proto.RegisterType((*GetSchemaResponse)(nil), "factable.GetSchemaResponse")
@@ -969,7 +1104,7 @@ func init() {
 	proto.RegisterEnum("factable.DimensionType", DimensionType_name, DimensionType_value)
 	proto.RegisterEnum("factable.MetricType", MetricType_name, MetricType_value)
 }
-func (this *ViewSpec) VerboseEqual(that interface{}) error {
+func (this *ResolvedView) VerboseEqual(that interface{}) error {
 	if that == nil {
 		if this == nil {
 			return nil
@@ -977,40 +1112,37 @@ func (this *ViewSpec) VerboseEqual(that interface{}) error {
 		return fmt.Errorf("that == nil && this != nil")
 	}
 
-	that1, ok := that.(*ViewSpec)
+	that1, ok := that.(*ResolvedView)
 	if !ok {
-		that2, ok := that.(ViewSpec)
+		that2, ok := that.(ResolvedView)
 		if ok {
 			that1 = &that2
 		} else {
-			return fmt.Errorf("that is not of type *ViewSpec")
+			return fmt.Errorf("that is not of type *ResolvedView")
 		}
 	}
 	if that1 == nil {
 		if this == nil {
 			return nil
 		}
-		return fmt.Errorf("that is type *ViewSpec but is nil && this != nil")
+		return fmt.Errorf("that is type *ResolvedView but is nil && this != nil")
 	} else if this == nil {
-		return fmt.Errorf("that is type *ViewSpec but is not nil && this == nil")
+		return fmt.Errorf("that is type *ResolvedView but is not nil && this == nil")
 	}
-	if this.RelTag != that1.RelTag {
-		return fmt.Errorf("RelTag this(%v) Not Equal that(%v)", this.RelTag, that1.RelTag)
+	if len(this.DimTags) != len(that1.DimTags) {
+		return fmt.Errorf("DimTags this(%v) Not Equal that(%v)", len(this.DimTags), len(that1.DimTags))
 	}
-	if len(this.Dimensions) != len(that1.Dimensions) {
-		return fmt.Errorf("Dimensions this(%v) Not Equal that(%v)", len(this.Dimensions), len(that1.Dimensions))
-	}
-	for i := range this.Dimensions {
-		if this.Dimensions[i] != that1.Dimensions[i] {
-			return fmt.Errorf("Dimensions this[%v](%v) Not Equal that[%v](%v)", i, this.Dimensions[i], i, that1.Dimensions[i])
+	for i := range this.DimTags {
+		if this.DimTags[i] != that1.DimTags[i] {
+			return fmt.Errorf("DimTags this[%v](%v) Not Equal that[%v](%v)", i, this.DimTags[i], i, that1.DimTags[i])
 		}
 	}
-	if len(this.Metrics) != len(that1.Metrics) {
-		return fmt.Errorf("Metrics this(%v) Not Equal that(%v)", len(this.Metrics), len(that1.Metrics))
+	if len(this.MetTags) != len(that1.MetTags) {
+		return fmt.Errorf("MetTags this(%v) Not Equal that(%v)", len(this.MetTags), len(that1.MetTags))
 	}
-	for i := range this.Metrics {
-		if this.Metrics[i] != that1.Metrics[i] {
-			return fmt.Errorf("Metrics this[%v](%v) Not Equal that[%v](%v)", i, this.Metrics[i], i, that1.Metrics[i])
+	for i := range this.MetTags {
+		if this.MetTags[i] != that1.MetTags[i] {
+			return fmt.Errorf("MetTags this[%v](%v) Not Equal that[%v](%v)", i, this.MetTags[i], i, that1.MetTags[i])
 		}
 	}
 	return nil
@@ -1129,7 +1261,11 @@ var _Schema_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type QueryClient interface {
-	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (Query_QueryClient, error)
+	// ResolveQuery maps a QuerySpec into a validated ResolvedQuery,
+	// under the current server schema.
+	ResolveQuery(ctx context.Context, in *QuerySpec, opts ...grpc.CallOption) (*ResolvedQuery, error)
+	// ExecuteResolvedQuery against one or all Shards.
+	ExecuteQuery(ctx context.Context, in *ExecuteQueryRequest, opts ...grpc.CallOption) (Query_ExecuteQueryClient, error)
 }
 
 type queryClient struct {
@@ -1140,12 +1276,21 @@ func NewQueryClient(cc *grpc.ClientConn) QueryClient {
 	return &queryClient{cc}
 }
 
-func (c *queryClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (Query_QueryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Query_serviceDesc.Streams[0], "/factable.Query/Query", opts...)
+func (c *queryClient) ResolveQuery(ctx context.Context, in *QuerySpec, opts ...grpc.CallOption) (*ResolvedQuery, error) {
+	out := new(ResolvedQuery)
+	err := c.cc.Invoke(ctx, "/factable.Query/ResolveQuery", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &queryQueryClient{stream}
+	return out, nil
+}
+
+func (c *queryClient) ExecuteQuery(ctx context.Context, in *ExecuteQueryRequest, opts ...grpc.CallOption) (Query_ExecuteQueryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Query_serviceDesc.Streams[0], "/factable.Query/ExecuteQuery", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &queryExecuteQueryClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1155,16 +1300,16 @@ func (c *queryClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.
 	return x, nil
 }
 
-type Query_QueryClient interface {
+type Query_ExecuteQueryClient interface {
 	Recv() (*QueryResponse, error)
 	grpc.ClientStream
 }
 
-type queryQueryClient struct {
+type queryExecuteQueryClient struct {
 	grpc.ClientStream
 }
 
-func (x *queryQueryClient) Recv() (*QueryResponse, error) {
+func (x *queryExecuteQueryClient) Recv() (*QueryResponse, error) {
 	m := new(QueryResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -1174,42 +1319,69 @@ func (x *queryQueryClient) Recv() (*QueryResponse, error) {
 
 // QueryServer is the server API for Query service.
 type QueryServer interface {
-	Query(*QueryRequest, Query_QueryServer) error
+	// ResolveQuery maps a QuerySpec into a validated ResolvedQuery,
+	// under the current server schema.
+	ResolveQuery(context.Context, *QuerySpec) (*ResolvedQuery, error)
+	// ExecuteResolvedQuery against one or all Shards.
+	ExecuteQuery(*ExecuteQueryRequest, Query_ExecuteQueryServer) error
 }
 
 func RegisterQueryServer(s *grpc.Server, srv QueryServer) {
 	s.RegisterService(&_Query_serviceDesc, srv)
 }
 
-func _Query_Query_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(QueryRequest)
+func _Query_ResolveQuery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySpec)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ResolveQuery(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/factable.Query/ResolveQuery",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ResolveQuery(ctx, req.(*QuerySpec))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ExecuteQuery_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExecuteQueryRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(QueryServer).Query(m, &queryQueryServer{stream})
+	return srv.(QueryServer).ExecuteQuery(m, &queryExecuteQueryServer{stream})
 }
 
-type Query_QueryServer interface {
+type Query_ExecuteQueryServer interface {
 	Send(*QueryResponse) error
 	grpc.ServerStream
 }
 
-type queryQueryServer struct {
+type queryExecuteQueryServer struct {
 	grpc.ServerStream
 }
 
-func (x *queryQueryServer) Send(m *QueryResponse) error {
+func (x *queryExecuteQueryServer) Send(m *QueryResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "factable.Query",
 	HandlerType: (*QueryServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ResolveQuery",
+			Handler:    _Query_ResolveQuery_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Query",
-			Handler:       _Query_Query_Handler,
+			StreamName:    "ExecuteQuery",
+			Handler:       _Query_ExecuteQuery_Handler,
 			ServerStreams: true,
 		},
 	},
@@ -1231,22 +1403,22 @@ func (m *MappingSpec) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		dAtA[i] = 0x8
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
-	}
 	if len(m.Name) > 0 {
-		dAtA[i] = 0x12
+		dAtA[i] = 0xa
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(len(m.Name)))
 		i += copy(dAtA[i:], m.Name)
 	}
 	if len(m.Desc) > 0 {
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(len(m.Desc)))
 		i += copy(dAtA[i:], m.Desc)
+	}
+	if m.Tag != 0 {
+		dAtA[i] = 0x18
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
 	}
 	return i, nil
 }
@@ -1266,27 +1438,27 @@ func (m *DimensionSpec) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		dAtA[i] = 0x8
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
 	}
 	if m.Type != 0 {
 		dAtA[i] = 0x10
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(m.Type))
 	}
-	if len(m.Name) > 0 {
-		dAtA[i] = 0x1a
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(len(m.Name)))
-		i += copy(dAtA[i:], m.Name)
-	}
 	if len(m.Desc) > 0 {
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(len(m.Desc)))
 		i += copy(dAtA[i:], m.Desc)
+	}
+	if m.Tag != 0 {
+		dAtA[i] = 0x20
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
 	}
 	return i, nil
 }
@@ -1306,32 +1478,38 @@ func (m *MetricSpec) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		dAtA[i] = 0x8
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
-	}
-	if m.Type != 0 {
-		dAtA[i] = 0x10
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Type))
-	}
-	if m.DimTag != 0 {
-		dAtA[i] = 0x18
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.DimTag))
-	}
 	if len(m.Name) > 0 {
-		dAtA[i] = 0x22
+		dAtA[i] = 0xa
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(len(m.Name)))
 		i += copy(dAtA[i:], m.Name)
 	}
+	if len(m.Dimension) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Dimension)))
+		i += copy(dAtA[i:], m.Dimension)
+	}
+	if m.Type != 0 {
+		dAtA[i] = 0x18
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.Type))
+	}
 	if len(m.Desc) > 0 {
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x22
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(len(m.Desc)))
 		i += copy(dAtA[i:], m.Desc)
+	}
+	if m.Tag != 0 {
+		dAtA[i] = 0x28
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
+	}
+	if m.DimTag != 0 {
+		dAtA[i] = 0x30
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.DimTag))
 	}
 	return i, nil
 }
@@ -1351,29 +1529,13 @@ func (m *RelationSpec) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		dAtA[i] = 0x8
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
-	}
-	if m.Mapping != 0 {
-		dAtA[i] = 0x10
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Mapping))
-	}
 	if len(m.Name) > 0 {
-		dAtA[i] = 0x1a
+		dAtA[i] = 0xa
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(len(m.Name)))
 		i += copy(dAtA[i:], m.Name)
 	}
-	if len(m.Desc) > 0 {
-		dAtA[i] = 0x22
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(len(m.Desc)))
-		i += copy(dAtA[i:], m.Desc)
-	}
-	dAtA[i] = 0x2a
+	dAtA[i] = 0x12
 	i++
 	i = encodeVarintFactable(dAtA, i, uint64(m.Selector.ProtoSize()))
 	n1, err := m.Selector.MarshalTo(dAtA[i:])
@@ -1381,11 +1543,47 @@ func (m *RelationSpec) MarshalTo(dAtA []byte) (int, error) {
 		return 0, err
 	}
 	i += n1
+	if len(m.Mapping) > 0 {
+		dAtA[i] = 0x1a
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Mapping)))
+		i += copy(dAtA[i:], m.Mapping)
+	}
 	if len(m.Dimensions) > 0 {
-		dAtA3 := make([]byte, len(m.Dimensions)*10)
+		for _, s := range m.Dimensions {
+			dAtA[i] = 0x22
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	if len(m.Desc) > 0 {
+		dAtA[i] = 0x2a
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Desc)))
+		i += copy(dAtA[i:], m.Desc)
+	}
+	if m.Tag != 0 {
+		dAtA[i] = 0x30
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
+	}
+	if m.MapTag != 0 {
+		dAtA[i] = 0x38
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.MapTag))
+	}
+	if len(m.DimTags) > 0 {
+		dAtA3 := make([]byte, len(m.DimTags)*10)
 		var j2 int
-		for _, num1 := range m.Dimensions {
-			num := uint64(num1)
+		for _, num := range m.DimTags {
 			for num >= 1<<7 {
 				dAtA3[j2] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
@@ -1394,7 +1592,7 @@ func (m *RelationSpec) MarshalTo(dAtA []byte) (int, error) {
 			dAtA3[j2] = uint8(num)
 			j2++
 		}
-		dAtA[i] = 0x32
+		dAtA[i] = 0x42
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(j2))
 		i += copy(dAtA[i:], dAtA3[:j2])
@@ -1417,16 +1615,58 @@ func (m *ViewSpec) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.RelTag != 0 {
-		dAtA[i] = 0x8
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.RelTag))
-	}
 	if len(m.Dimensions) > 0 {
-		dAtA5 := make([]byte, len(m.Dimensions)*10)
+		for _, s := range m.Dimensions {
+			dAtA[i] = 0xa
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	if len(m.Metrics) > 0 {
+		for _, s := range m.Metrics {
+			dAtA[i] = 0x12
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	return i, nil
+}
+
+func (m *ResolvedView) Marshal() (dAtA []byte, err error) {
+	size := m.ProtoSize()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResolvedView) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.DimTags) > 0 {
+		dAtA5 := make([]byte, len(m.DimTags)*10)
 		var j4 int
-		for _, num1 := range m.Dimensions {
-			num := uint64(num1)
+		for _, num := range m.DimTags {
 			for num >= 1<<7 {
 				dAtA5[j4] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
@@ -1435,16 +1675,15 @@ func (m *ViewSpec) MarshalTo(dAtA []byte) (int, error) {
 			dAtA5[j4] = uint8(num)
 			j4++
 		}
-		dAtA[i] = 0x12
+		dAtA[i] = 0xa
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(j4))
 		i += copy(dAtA[i:], dAtA5[:j4])
 	}
-	if len(m.Metrics) > 0 {
-		dAtA7 := make([]byte, len(m.Metrics)*10)
+	if len(m.MetTags) > 0 {
+		dAtA7 := make([]byte, len(m.MetTags)*10)
 		var j6 int
-		for _, num1 := range m.Metrics {
-			num := uint64(num1)
+		for _, num := range m.MetTags {
 			for num >= 1<<7 {
 				dAtA7[j6] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
@@ -1453,7 +1692,7 @@ func (m *ViewSpec) MarshalTo(dAtA []byte) (int, error) {
 			dAtA7[j6] = uint8(num)
 			j6++
 		}
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(j6))
 		i += copy(dAtA[i:], dAtA7[:j6])
@@ -1476,12 +1715,19 @@ func (m *MaterializedViewSpec) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		dAtA[i] = 0x8
+	if len(m.Name) > 0 {
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
 	}
-	dAtA[i] = 0x12
+	if len(m.Relation) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Relation)))
+		i += copy(dAtA[i:], m.Relation)
+	}
+	dAtA[i] = 0x1a
 	i++
 	i = encodeVarintFactable(dAtA, i, uint64(m.View.ProtoSize()))
 	n8, err := m.View.MarshalTo(dAtA[i:])
@@ -1489,12 +1735,6 @@ func (m *MaterializedViewSpec) MarshalTo(dAtA []byte) (int, error) {
 		return 0, err
 	}
 	i += n8
-	if len(m.Name) > 0 {
-		dAtA[i] = 0x1a
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(len(m.Name)))
-		i += copy(dAtA[i:], m.Name)
-	}
 	if len(m.Desc) > 0 {
 		dAtA[i] = 0x22
 		i++
@@ -1511,6 +1751,24 @@ func (m *MaterializedViewSpec) MarshalTo(dAtA []byte) (int, error) {
 		}
 		i += n9
 	}
+	if m.Tag != 0 {
+		dAtA[i] = 0x30
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.Tag))
+	}
+	if m.RelTag != 0 {
+		dAtA[i] = 0x38
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.RelTag))
+	}
+	dAtA[i] = 0x42
+	i++
+	i = encodeVarintFactable(dAtA, i, uint64(m.ResolvedView.ProtoSize()))
+	n10, err := m.ResolvedView.MarshalTo(dAtA[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n10
 	return i, nil
 }
 
@@ -1532,15 +1790,21 @@ func (m *MaterializedViewSpec_Retention) MarshalTo(dAtA []byte) (int, error) {
 	dAtA[i] = 0xa
 	i++
 	i = encodeVarintFactable(dAtA, i, uint64(github_com_gogo_protobuf_types.SizeOfStdDuration(m.RemoveAfter)))
-	n10, err := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.RemoveAfter, dAtA[i:])
+	n11, err := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.RemoveAfter, dAtA[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n10
-	if m.RelativeTo != 0 {
-		dAtA[i] = 0x10
+	i += n11
+	if len(m.RelativeTo) > 0 {
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.RelativeTo))
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.RelativeTo)))
+		i += copy(dAtA[i:], m.RelativeTo)
+	}
+	if m.RelativeToTag != 0 {
+		dAtA[i] = 0x18
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.RelativeToTag))
 	}
 	return i, nil
 }
@@ -1560,17 +1824,23 @@ func (m *QuerySpec) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	dAtA[i] = 0xa
+	if len(m.MaterializedView) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.MaterializedView)))
+		i += copy(dAtA[i:], m.MaterializedView)
+	}
+	dAtA[i] = 0x1a
 	i++
 	i = encodeVarintFactable(dAtA, i, uint64(m.View.ProtoSize()))
-	n11, err := m.View.MarshalTo(dAtA[i:])
+	n12, err := m.View.MarshalTo(dAtA[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n11
+	i += n12
 	if len(m.Filters) > 0 {
 		for _, msg := range m.Filters {
-			dAtA[i] = 0x12
+			dAtA[i] = 0x22
 			i++
 			i = encodeVarintFactable(dAtA, i, uint64(msg.ProtoSize()))
 			n, err := msg.MarshalTo(dAtA[i:])
@@ -1598,14 +1868,51 @@ func (m *QuerySpec_Filter) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Dimension != 0 {
-		dAtA[i] = 0x8
+	if len(m.Dimension) > 0 {
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Dimension))
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Dimension)))
+		i += copy(dAtA[i:], m.Dimension)
 	}
-	if len(m.Ranges) > 0 {
-		for _, msg := range m.Ranges {
+	if len(m.Ints) > 0 {
+		for _, msg := range m.Ints {
 			dAtA[i] = 0x12
+			i++
+			i = encodeVarintFactable(dAtA, i, uint64(msg.ProtoSize()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.Floats) > 0 {
+		for _, msg := range m.Floats {
+			dAtA[i] = 0x1a
+			i++
+			i = encodeVarintFactable(dAtA, i, uint64(msg.ProtoSize()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.Strings) > 0 {
+		for _, msg := range m.Strings {
+			dAtA[i] = 0x22
+			i++
+			i = encodeVarintFactable(dAtA, i, uint64(msg.ProtoSize()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.Times) > 0 {
+		for _, msg := range m.Times {
+			dAtA[i] = 0x2a
 			i++
 			i = encodeVarintFactable(dAtA, i, uint64(msg.ProtoSize()))
 			n, err := msg.MarshalTo(dAtA[i:])
@@ -1618,7 +1925,7 @@ func (m *QuerySpec_Filter) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
-func (m *Range) Marshal() (dAtA []byte, err error) {
+func (m *QuerySpec_Filter_Int) Marshal() (dAtA []byte, err error) {
 	size := m.ProtoSize()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -1628,65 +1935,7 @@ func (m *Range) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Range) MarshalTo(dAtA []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Int != nil {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Int.ProtoSize()))
-		n12, err := m.Int.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n12
-	}
-	if m.Float != nil {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Float.ProtoSize()))
-		n13, err := m.Float.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n13
-	}
-	if m.Str != nil {
-		dAtA[i] = 0x1a
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Str.ProtoSize()))
-		n14, err := m.Str.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n14
-	}
-	if m.Time != nil {
-		dAtA[i] = 0x22
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.Time.ProtoSize()))
-		n15, err := m.Time.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n15
-	}
-	return i, nil
-}
-
-func (m *Range_Int) Marshal() (dAtA []byte, err error) {
-	size := m.ProtoSize()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Range_Int) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySpec_Filter_Int) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1704,7 +1953,7 @@ func (m *Range_Int) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
-func (m *Range_Float) Marshal() (dAtA []byte, err error) {
+func (m *QuerySpec_Filter_Float) Marshal() (dAtA []byte, err error) {
 	size := m.ProtoSize()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -1714,7 +1963,7 @@ func (m *Range_Float) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Range_Float) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySpec_Filter_Float) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1734,7 +1983,7 @@ func (m *Range_Float) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
-func (m *Range_String) Marshal() (dAtA []byte, err error) {
+func (m *QuerySpec_Filter_String) Marshal() (dAtA []byte, err error) {
 	size := m.ProtoSize()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -1744,7 +1993,7 @@ func (m *Range_String) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Range_String) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySpec_Filter_String) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1764,7 +2013,7 @@ func (m *Range_String) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
-func (m *Range_Time) Marshal() (dAtA []byte, err error) {
+func (m *QuerySpec_Filter_Time) Marshal() (dAtA []byte, err error) {
 	size := m.ProtoSize()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -1774,7 +2023,7 @@ func (m *Range_Time) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Range_Time) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySpec_Filter_Time) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1782,23 +2031,39 @@ func (m *Range_Time) MarshalTo(dAtA []byte) (int, error) {
 	dAtA[i] = 0xa
 	i++
 	i = encodeVarintFactable(dAtA, i, uint64(github_com_gogo_protobuf_types.SizeOfStdTime(m.Begin)))
-	n16, err := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.Begin, dAtA[i:])
+	n13, err := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.Begin, dAtA[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n13
+	dAtA[i] = 0x12
+	i++
+	i = encodeVarintFactable(dAtA, i, uint64(github_com_gogo_protobuf_types.SizeOfStdTime(m.End)))
+	n14, err := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.End, dAtA[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n14
+	dAtA[i] = 0x1a
+	i++
+	i = encodeVarintFactable(dAtA, i, uint64(github_com_gogo_protobuf_types.SizeOfStdDuration(m.RelativeBegin)))
+	n15, err := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.RelativeBegin, dAtA[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n15
+	dAtA[i] = 0x22
+	i++
+	i = encodeVarintFactable(dAtA, i, uint64(github_com_gogo_protobuf_types.SizeOfStdDuration(m.RelativeEnd)))
+	n16, err := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.RelativeEnd, dAtA[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n16
-	dAtA[i] = 0x12
-	i++
-	i = encodeVarintFactable(dAtA, i, uint64(github_com_gogo_protobuf_types.SizeOfStdTime(m.End)))
-	n17, err := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.End, dAtA[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n17
 	return i, nil
 }
 
-func (m *QueryRequest) Marshal() (dAtA []byte, err error) {
+func (m *ResolvedQuery) Marshal() (dAtA []byte, err error) {
 	size := m.ProtoSize()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -1808,7 +2073,115 @@ func (m *QueryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ResolvedQuery) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.MvTag != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.MvTag))
+	}
+	dAtA[i] = 0x12
+	i++
+	i = encodeVarintFactable(dAtA, i, uint64(m.View.ProtoSize()))
+	n17, err := m.View.MarshalTo(dAtA[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n17
+	if len(m.Filters) > 0 {
+		for _, msg := range m.Filters {
+			dAtA[i] = 0x1a
+			i++
+			i = encodeVarintFactable(dAtA, i, uint64(msg.ProtoSize()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *ResolvedQuery_Filter) Marshal() (dAtA []byte, err error) {
+	size := m.ProtoSize()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResolvedQuery_Filter) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.DimTag != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(m.DimTag))
+	}
+	if len(m.Ranges) > 0 {
+		for _, msg := range m.Ranges {
+			dAtA[i] = 0x12
+			i++
+			i = encodeVarintFactable(dAtA, i, uint64(msg.ProtoSize()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *ResolvedQuery_Filter_Range) Marshal() (dAtA []byte, err error) {
+	size := m.ProtoSize()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResolvedQuery_Filter_Range) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Begin) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.Begin)))
+		i += copy(dAtA[i:], m.Begin)
+	}
+	if len(m.End) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintFactable(dAtA, i, uint64(len(m.End)))
+		i += copy(dAtA[i:], m.End)
+	}
+	return i, nil
+}
+
+func (m *ExecuteQueryRequest) Marshal() (dAtA []byte, err error) {
+	size := m.ProtoSize()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExecuteQueryRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1823,18 +2196,13 @@ func (m *QueryRequest) MarshalTo(dAtA []byte) (int, error) {
 		}
 		i += n18
 	}
-	if m.View != 0 {
-		dAtA[i] = 0x10
-		i++
-		i = encodeVarintFactable(dAtA, i, uint64(m.View))
-	}
 	if len(m.Shard) > 0 {
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 		i++
 		i = encodeVarintFactable(dAtA, i, uint64(len(m.Shard)))
 		i += copy(dAtA[i:], m.Shard)
 	}
-	dAtA[i] = 0x22
+	dAtA[i] = 0x1a
 	i++
 	i = encodeVarintFactable(dAtA, i, uint64(m.Query.ProtoSize()))
 	n19, err := m.Query.MarshalTo(dAtA[i:])
@@ -2054,9 +2422,6 @@ func (m *MappingSpec) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		n += 1 + sovFactable(uint64(m.Tag))
-	}
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
@@ -2064,6 +2429,9 @@ func (m *MappingSpec) ProtoSize() (n int) {
 	l = len(m.Desc)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
+	}
+	if m.Tag != 0 {
+		n += 1 + sovFactable(uint64(m.Tag))
 	}
 	return n
 }
@@ -2074,19 +2442,19 @@ func (m *DimensionSpec) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		n += 1 + sovFactable(uint64(m.Tag))
-	}
-	if m.Type != 0 {
-		n += 1 + sovFactable(uint64(m.Type))
-	}
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
 	}
+	if m.Type != 0 {
+		n += 1 + sovFactable(uint64(m.Type))
+	}
 	l = len(m.Desc)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
+	}
+	if m.Tag != 0 {
+		n += 1 + sovFactable(uint64(m.Tag))
 	}
 	return n
 }
@@ -2097,22 +2465,26 @@ func (m *MetricSpec) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		n += 1 + sovFactable(uint64(m.Tag))
-	}
-	if m.Type != 0 {
-		n += 1 + sovFactable(uint64(m.Type))
-	}
-	if m.DimTag != 0 {
-		n += 1 + sovFactable(uint64(m.DimTag))
-	}
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
 	}
+	l = len(m.Dimension)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
+	if m.Type != 0 {
+		n += 1 + sovFactable(uint64(m.Type))
+	}
 	l = len(m.Desc)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
+	}
+	if m.Tag != 0 {
+		n += 1 + sovFactable(uint64(m.Tag))
+	}
+	if m.DimTag != 0 {
+		n += 1 + sovFactable(uint64(m.DimTag))
 	}
 	return n
 }
@@ -2123,25 +2495,35 @@ func (m *RelationSpec) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		n += 1 + sovFactable(uint64(m.Tag))
-	}
-	if m.Mapping != 0 {
-		n += 1 + sovFactable(uint64(m.Mapping))
-	}
 	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovFactable(uint64(l))
-	}
-	l = len(m.Desc)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
 	}
 	l = m.Selector.ProtoSize()
 	n += 1 + l + sovFactable(uint64(l))
+	l = len(m.Mapping)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
 	if len(m.Dimensions) > 0 {
+		for _, s := range m.Dimensions {
+			l = len(s)
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	l = len(m.Desc)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
+	if m.Tag != 0 {
+		n += 1 + sovFactable(uint64(m.Tag))
+	}
+	if m.MapTag != 0 {
+		n += 1 + sovFactable(uint64(m.MapTag))
+	}
+	if len(m.DimTags) > 0 {
 		l = 0
-		for _, e := range m.Dimensions {
+		for _, e := range m.DimTags {
 			l += sovFactable(uint64(e))
 		}
 		n += 1 + sovFactable(uint64(l)) + l
@@ -2155,19 +2537,37 @@ func (m *ViewSpec) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RelTag != 0 {
-		n += 1 + sovFactable(uint64(m.RelTag))
-	}
 	if len(m.Dimensions) > 0 {
+		for _, s := range m.Dimensions {
+			l = len(s)
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	if len(m.Metrics) > 0 {
+		for _, s := range m.Metrics {
+			l = len(s)
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ResolvedView) ProtoSize() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.DimTags) > 0 {
 		l = 0
-		for _, e := range m.Dimensions {
+		for _, e := range m.DimTags {
 			l += sovFactable(uint64(e))
 		}
 		n += 1 + sovFactable(uint64(l)) + l
 	}
-	if len(m.Metrics) > 0 {
+	if len(m.MetTags) > 0 {
 		l = 0
-		for _, e := range m.Metrics {
+		for _, e := range m.MetTags {
 			l += sovFactable(uint64(e))
 		}
 		n += 1 + sovFactable(uint64(l)) + l
@@ -2181,15 +2581,16 @@ func (m *MaterializedViewSpec) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Tag != 0 {
-		n += 1 + sovFactable(uint64(m.Tag))
-	}
-	l = m.View.ProtoSize()
-	n += 1 + l + sovFactable(uint64(l))
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
 	}
+	l = len(m.Relation)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
+	l = m.View.ProtoSize()
+	n += 1 + l + sovFactable(uint64(l))
 	l = len(m.Desc)
 	if l > 0 {
 		n += 1 + l + sovFactable(uint64(l))
@@ -2198,6 +2599,14 @@ func (m *MaterializedViewSpec) ProtoSize() (n int) {
 		l = m.Retention.ProtoSize()
 		n += 1 + l + sovFactable(uint64(l))
 	}
+	if m.Tag != 0 {
+		n += 1 + sovFactable(uint64(m.Tag))
+	}
+	if m.RelTag != 0 {
+		n += 1 + sovFactable(uint64(m.RelTag))
+	}
+	l = m.ResolvedView.ProtoSize()
+	n += 1 + l + sovFactable(uint64(l))
 	return n
 }
 
@@ -2209,8 +2618,12 @@ func (m *MaterializedViewSpec_Retention) ProtoSize() (n int) {
 	_ = l
 	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.RemoveAfter)
 	n += 1 + l + sovFactable(uint64(l))
-	if m.RelativeTo != 0 {
-		n += 1 + sovFactable(uint64(m.RelativeTo))
+	l = len(m.RelativeTo)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
+	if m.RelativeToTag != 0 {
+		n += 1 + sovFactable(uint64(m.RelativeToTag))
 	}
 	return n
 }
@@ -2221,6 +2634,10 @@ func (m *QuerySpec) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.MaterializedView)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
 	l = m.View.ProtoSize()
 	n += 1 + l + sovFactable(uint64(l))
 	if len(m.Filters) > 0 {
@@ -2238,11 +2655,30 @@ func (m *QuerySpec_Filter) ProtoSize() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Dimension != 0 {
-		n += 1 + sovFactable(uint64(m.Dimension))
+	l = len(m.Dimension)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
 	}
-	if len(m.Ranges) > 0 {
-		for _, e := range m.Ranges {
+	if len(m.Ints) > 0 {
+		for _, e := range m.Ints {
+			l = e.ProtoSize()
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	if len(m.Floats) > 0 {
+		for _, e := range m.Floats {
+			l = e.ProtoSize()
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	if len(m.Strings) > 0 {
+		for _, e := range m.Strings {
+			l = e.ProtoSize()
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	if len(m.Times) > 0 {
+		for _, e := range m.Times {
 			l = e.ProtoSize()
 			n += 1 + l + sovFactable(uint64(l))
 		}
@@ -2250,32 +2686,7 @@ func (m *QuerySpec_Filter) ProtoSize() (n int) {
 	return n
 }
 
-func (m *Range) ProtoSize() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Int != nil {
-		l = m.Int.ProtoSize()
-		n += 1 + l + sovFactable(uint64(l))
-	}
-	if m.Float != nil {
-		l = m.Float.ProtoSize()
-		n += 1 + l + sovFactable(uint64(l))
-	}
-	if m.Str != nil {
-		l = m.Str.ProtoSize()
-		n += 1 + l + sovFactable(uint64(l))
-	}
-	if m.Time != nil {
-		l = m.Time.ProtoSize()
-		n += 1 + l + sovFactable(uint64(l))
-	}
-	return n
-}
-
-func (m *Range_Int) ProtoSize() (n int) {
+func (m *QuerySpec_Filter_Int) ProtoSize() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2290,7 +2701,7 @@ func (m *Range_Int) ProtoSize() (n int) {
 	return n
 }
 
-func (m *Range_Float) ProtoSize() (n int) {
+func (m *QuerySpec_Filter_Float) ProtoSize() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2305,7 +2716,7 @@ func (m *Range_Float) ProtoSize() (n int) {
 	return n
 }
 
-func (m *Range_String) ProtoSize() (n int) {
+func (m *QuerySpec_Filter_String) ProtoSize() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2322,7 +2733,7 @@ func (m *Range_String) ProtoSize() (n int) {
 	return n
 }
 
-func (m *Range_Time) ProtoSize() (n int) {
+func (m *QuerySpec_Filter_Time) ProtoSize() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2332,10 +2743,69 @@ func (m *Range_Time) ProtoSize() (n int) {
 	n += 1 + l + sovFactable(uint64(l))
 	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.End)
 	n += 1 + l + sovFactable(uint64(l))
+	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.RelativeBegin)
+	n += 1 + l + sovFactable(uint64(l))
+	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.RelativeEnd)
+	n += 1 + l + sovFactable(uint64(l))
 	return n
 }
 
-func (m *QueryRequest) ProtoSize() (n int) {
+func (m *ResolvedQuery) ProtoSize() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MvTag != 0 {
+		n += 1 + sovFactable(uint64(m.MvTag))
+	}
+	l = m.View.ProtoSize()
+	n += 1 + l + sovFactable(uint64(l))
+	if len(m.Filters) > 0 {
+		for _, e := range m.Filters {
+			l = e.ProtoSize()
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ResolvedQuery_Filter) ProtoSize() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DimTag != 0 {
+		n += 1 + sovFactable(uint64(m.DimTag))
+	}
+	if len(m.Ranges) > 0 {
+		for _, e := range m.Ranges {
+			l = e.ProtoSize()
+			n += 1 + l + sovFactable(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ResolvedQuery_Filter_Range) ProtoSize() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Begin)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
+	l = len(m.End)
+	if l > 0 {
+		n += 1 + l + sovFactable(uint64(l))
+	}
+	return n
+}
+
+func (m *ExecuteQueryRequest) ProtoSize() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2344,9 +2814,6 @@ func (m *QueryRequest) ProtoSize() (n int) {
 	if m.Header != nil {
 		l = m.Header.ProtoSize()
 		n += 1 + l + sovFactable(uint64(l))
-	}
-	if m.View != 0 {
-		n += 1 + sovFactable(uint64(m.View))
 	}
 	l = len(m.Shard)
 	if l > 0 {
@@ -2494,25 +2961,6 @@ func (m *MappingSpec) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
-			}
-			m.Tag = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Tag |= (MapTag(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
@@ -2541,7 +2989,7 @@ func (m *MappingSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Desc", wireType)
 			}
@@ -2570,6 +3018,25 @@ func (m *MappingSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Desc = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
+			}
+			m.Tag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Tag |= (MapTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipFactable(dAtA[iNdEx:])
@@ -2621,44 +3088,6 @@ func (m *DimensionSpec) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
-			}
-			m.Tag = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Tag |= (DimTag(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Type |= (DimensionType(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
@@ -2687,7 +3116,26 @@ func (m *DimensionSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= (DimensionType(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Desc", wireType)
 			}
@@ -2716,6 +3164,25 @@ func (m *DimensionSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Desc = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
+			}
+			m.Tag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Tag |= (DimTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipFactable(dAtA[iNdEx:])
@@ -2767,63 +3234,6 @@ func (m *MetricSpec) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
-			}
-			m.Tag = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Tag |= (MetTag(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Type |= (MetricType(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DimTag", wireType)
-			}
-			m.DimTag = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.DimTag |= (DimTag(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
@@ -2852,7 +3262,55 @@ func (m *MetricSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Dimension", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Dimension = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= (MetricType(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Desc", wireType)
 			}
@@ -2881,6 +3339,44 @@ func (m *MetricSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Desc = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
+			}
+			m.Tag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Tag |= (MetTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DimTag", wireType)
+			}
+			m.DimTag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DimTag |= (DimTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipFactable(dAtA[iNdEx:])
@@ -2932,44 +3428,6 @@ func (m *RelationSpec) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
-			}
-			m.Tag = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Tag |= (RelTag(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Mapping", wireType)
-			}
-			m.Mapping = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Mapping |= (MapTag(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
@@ -2998,36 +3456,7 @@ func (m *RelationSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Desc", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthFactable
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Desc = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Selector", wireType)
 			}
@@ -3057,7 +3486,132 @@ func (m *RelationSpec) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Mapping", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Mapping = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Dimensions", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Dimensions = append(m.Dimensions, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Desc", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Desc = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
+			}
+			m.Tag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Tag |= (RelTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MapTag", wireType)
+			}
+			m.MapTag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MapTag |= (MapTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
 			if wireType == 0 {
 				var v DimTag
 				for shift := uint(0); ; shift += 7 {
@@ -3074,7 +3628,7 @@ func (m *RelationSpec) Unmarshal(dAtA []byte) error {
 						break
 					}
 				}
-				m.Dimensions = append(m.Dimensions, v)
+				m.DimTags = append(m.DimTags, v)
 			} else if wireType == 2 {
 				var packedLen int
 				for shift := uint(0); ; shift += 7 {
@@ -3106,8 +3660,8 @@ func (m *RelationSpec) Unmarshal(dAtA []byte) error {
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.Dimensions) == 0 {
-					m.Dimensions = make([]DimTag, 0, elementCount)
+				if elementCount != 0 && len(m.DimTags) == 0 {
+					m.DimTags = make([]DimTag, 0, elementCount)
 				}
 				for iNdEx < postIndex {
 					var v DimTag
@@ -3125,10 +3679,10 @@ func (m *RelationSpec) Unmarshal(dAtA []byte) error {
 							break
 						}
 					}
-					m.Dimensions = append(m.Dimensions, v)
+					m.DimTags = append(m.DimTags, v)
 				}
 			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field Dimensions", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DimTags", wireType)
 			}
 		default:
 			iNdEx = preIndex
@@ -3181,10 +3735,10 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RelTag", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Dimensions", wireType)
 			}
-			m.RelTag = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowFactable
@@ -3194,12 +3748,101 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.RelTag |= (RelTag(b) & 0x7F) << shift
+				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Dimensions = append(m.Dimensions, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metrics", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Metrics = append(m.Metrics, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipFactable(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthFactable
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResolvedView) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowFactable
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ResolvedView: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ResolvedView: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType == 0 {
 				var v DimTag
 				for shift := uint(0); ; shift += 7 {
@@ -3216,7 +3859,7 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 						break
 					}
 				}
-				m.Dimensions = append(m.Dimensions, v)
+				m.DimTags = append(m.DimTags, v)
 			} else if wireType == 2 {
 				var packedLen int
 				for shift := uint(0); ; shift += 7 {
@@ -3248,8 +3891,8 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.Dimensions) == 0 {
-					m.Dimensions = make([]DimTag, 0, elementCount)
+				if elementCount != 0 && len(m.DimTags) == 0 {
+					m.DimTags = make([]DimTag, 0, elementCount)
 				}
 				for iNdEx < postIndex {
 					var v DimTag
@@ -3267,12 +3910,12 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 							break
 						}
 					}
-					m.Dimensions = append(m.Dimensions, v)
+					m.DimTags = append(m.DimTags, v)
 				}
 			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field Dimensions", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DimTags", wireType)
 			}
-		case 3:
+		case 2:
 			if wireType == 0 {
 				var v MetTag
 				for shift := uint(0); ; shift += 7 {
@@ -3289,7 +3932,7 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 						break
 					}
 				}
-				m.Metrics = append(m.Metrics, v)
+				m.MetTags = append(m.MetTags, v)
 			} else if wireType == 2 {
 				var packedLen int
 				for shift := uint(0); ; shift += 7 {
@@ -3321,8 +3964,8 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.Metrics) == 0 {
-					m.Metrics = make([]MetTag, 0, elementCount)
+				if elementCount != 0 && len(m.MetTags) == 0 {
+					m.MetTags = make([]MetTag, 0, elementCount)
 				}
 				for iNdEx < postIndex {
 					var v MetTag
@@ -3340,10 +3983,10 @@ func (m *ViewSpec) Unmarshal(dAtA []byte) error {
 							break
 						}
 					}
-					m.Metrics = append(m.Metrics, v)
+					m.MetTags = append(m.MetTags, v)
 				}
 			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field Metrics", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MetTags", wireType)
 			}
 		default:
 			iNdEx = preIndex
@@ -3396,10 +4039,10 @@ func (m *MaterializedViewSpec) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
-			m.Tag = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowFactable
@@ -3409,12 +4052,51 @@ func (m *MaterializedViewSpec) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Tag |= (MVTag(b) & 0x7F) << shift
+				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Relation", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Relation = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field View", wireType)
 			}
@@ -3443,35 +4125,6 @@ func (m *MaterializedViewSpec) Unmarshal(dAtA []byte) error {
 			if err := m.View.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthFactable
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
@@ -3532,6 +4185,74 @@ func (m *MaterializedViewSpec) Unmarshal(dAtA []byte) error {
 				m.Retention = &MaterializedViewSpec_Retention{}
 			}
 			if err := m.Retention.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tag", wireType)
+			}
+			m.Tag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Tag |= (MVTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RelTag", wireType)
+			}
+			m.RelTag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RelTag |= (RelTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResolvedView", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ResolvedView.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3616,10 +4337,10 @@ func (m *MaterializedViewSpec_Retention) Unmarshal(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 2:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RelativeTo", wireType)
 			}
-			m.RelativeTo = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowFactable
@@ -3629,7 +4350,36 @@ func (m *MaterializedViewSpec_Retention) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.RelativeTo |= (DimTag(b) & 0x7F) << shift
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RelativeTo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RelativeToTag", wireType)
+			}
+			m.RelativeToTag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RelativeToTag |= (DimTag(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -3684,7 +4434,36 @@ func (m *QuerySpec) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: QuerySpec: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaterializedView", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MaterializedView = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field View", wireType)
 			}
@@ -3714,7 +4493,7 @@ func (m *QuerySpec) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 2:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Filters", wireType)
 			}
@@ -3796,10 +4575,10 @@ func (m *QuerySpec_Filter) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Dimension", wireType)
 			}
-			m.Dimension = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowFactable
@@ -3809,128 +4588,24 @@ func (m *QuerySpec_Filter) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Dimension |= (DimTag(b) & 0x7F) << shift
+				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ranges", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthFactable
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Ranges = append(m.Ranges, Range{})
-			if err := m.Ranges[len(m.Ranges)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipFactable(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthFactable
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Range) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowFactable
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Range: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Range: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Int", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthFactable
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Int == nil {
-				m.Int = &Range_Int{}
-			}
-			if err := m.Int.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.Dimension = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Float", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Ints", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3954,16 +4629,14 @@ func (m *Range) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Float == nil {
-				m.Float = &Range_Float{}
-			}
-			if err := m.Float.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Ints = append(m.Ints, QuerySpec_Filter_Int{})
+			if err := m.Ints[len(m.Ints)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Str", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Floats", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3987,16 +4660,14 @@ func (m *Range) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Str == nil {
-				m.Str = &Range_String{}
-			}
-			if err := m.Str.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Floats = append(m.Floats, QuerySpec_Filter_Float{})
+			if err := m.Floats[len(m.Floats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Time", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Strings", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4020,10 +4691,39 @@ func (m *Range) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Time == nil {
-				m.Time = &Range_Time{}
+			m.Strings = append(m.Strings, QuerySpec_Filter_String{})
+			if err := m.Strings[len(m.Strings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
-			if err := m.Time.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Times", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Times = append(m.Times, QuerySpec_Filter_Time{})
+			if err := m.Times[len(m.Times)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4048,7 +4748,7 @@ func (m *Range) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Range_Int) Unmarshal(dAtA []byte) error {
+func (m *QuerySpec_Filter_Int) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4136,7 +4836,7 @@ func (m *Range_Int) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Range_Float) Unmarshal(dAtA []byte) error {
+func (m *QuerySpec_Filter_Float) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4208,7 +4908,7 @@ func (m *Range_Float) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Range_String) Unmarshal(dAtA []byte) error {
+func (m *QuerySpec_Filter_String) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4316,7 +5016,7 @@ func (m *Range_String) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Range_Time) Unmarshal(dAtA []byte) error {
+func (m *QuerySpec_Filter_Time) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4405,6 +5105,66 @@ func (m *Range_Time) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RelativeBegin", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(&m.RelativeBegin, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RelativeEnd", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(&m.RelativeEnd, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipFactable(dAtA[iNdEx:])
@@ -4426,7 +5186,7 @@ func (m *Range_Time) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryRequest) Unmarshal(dAtA []byte) error {
+func (m *ResolvedQuery) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4449,10 +5209,352 @@ func (m *QueryRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ResolvedQuery: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ResolvedQuery: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MvTag", wireType)
+			}
+			m.MvTag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MvTag |= (MVTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field View", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.View.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Filters = append(m.Filters, ResolvedQuery_Filter{})
+			if err := m.Filters[len(m.Filters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipFactable(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthFactable
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResolvedQuery_Filter) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowFactable
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Filter: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Filter: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DimTag", wireType)
+			}
+			m.DimTag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DimTag |= (DimTag(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ranges", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ranges = append(m.Ranges, ResolvedQuery_Filter_Range{})
+			if err := m.Ranges[len(m.Ranges)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipFactable(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthFactable
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResolvedQuery_Filter_Range) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowFactable
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Range: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Range: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Begin", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Begin = append(m.Begin[:0], dAtA[iNdEx:postIndex]...)
+			if m.Begin == nil {
+				m.Begin = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field End", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowFactable
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthFactable
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.End = append(m.End[:0], dAtA[iNdEx:postIndex]...)
+			if m.End == nil {
+				m.End = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipFactable(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthFactable
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExecuteQueryRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowFactable
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExecuteQueryRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExecuteQueryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4489,25 +5591,6 @@ func (m *QueryRequest) Unmarshal(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field View", wireType)
-			}
-			m.View = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFactable
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.View |= (MVTag(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Shard", wireType)
 			}
@@ -4536,7 +5619,7 @@ func (m *QueryRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Shard = github_com_LiveRamp_gazette_v2_pkg_consumer.ShardID(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
 			}
@@ -5297,95 +6380,113 @@ var (
 	ErrIntOverflowFactable   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("factable.proto", fileDescriptor_factable_69e4e239ea5e269c) }
+func init() { proto.RegisterFile("factable.proto", fileDescriptor_factable_a00f6cc45b62b742) }
 
-var fileDescriptor_factable_69e4e239ea5e269c = []byte{
-	// 1388 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x56, 0x4b, 0x6f, 0xdb, 0x46,
-	0x10, 0x36, 0x4d, 0x49, 0xb6, 0x46, 0x8a, 0xc3, 0xac, 0x9d, 0x58, 0x55, 0x12, 0x29, 0x55, 0x5a,
-	0xd4, 0x48, 0x1a, 0x2a, 0x50, 0x8a, 0x06, 0x35, 0x50, 0xa0, 0x76, 0xfc, 0x88, 0x00, 0x2b, 0x4d,
-	0x29, 0xc5, 0x45, 0x4f, 0x02, 0x4d, 0xae, 0x69, 0xa2, 0xe2, 0x23, 0xe4, 0xca, 0xa9, 0x73, 0x2a,
-	0x7a, 0xe9, 0x35, 0xbd, 0xf5, 0x98, 0xf6, 0x27, 0xf4, 0xde, 0x7b, 0x0e, 0x3d, 0xe4, 0x50, 0xa0,
-	0x39, 0xb9, 0x48, 0xfc, 0x2f, 0x72, 0x2a, 0xf6, 0x45, 0x52, 0xb2, 0x6c, 0xa8, 0x27, 0xee, 0xee,
-	0x7c, 0xdf, 0xec, 0xec, 0xcc, 0xec, 0xb7, 0x84, 0x85, 0x7d, 0xd3, 0x22, 0xe6, 0xde, 0x00, 0xeb,
-	0x61, 0x14, 0x90, 0x00, 0xcd, 0xcb, 0x79, 0xf5, 0x8e, 0xe3, 0x92, 0x83, 0xe1, 0x9e, 0x6e, 0x05,
-	0x5e, 0xd3, 0x09, 0x9c, 0xa0, 0xc9, 0x00, 0x7b, 0xc3, 0x7d, 0x36, 0x63, 0x13, 0x36, 0xe2, 0xc4,
-	0xea, 0x6a, 0x06, 0xbe, 0xe3, 0x1e, 0x62, 0xc3, 0xf4, 0xc2, 0xa6, 0x63, 0x3e, 0xc7, 0x84, 0xe0,
-	0xe6, 0x61, 0xab, 0x19, 0x7e, 0xef, 0x70, 0x0f, 0x56, 0x30, 0x48, 0x06, 0x82, 0x5b, 0x73, 0x82,
-	0xc0, 0x19, 0xe0, 0x74, 0x07, 0x7b, 0x18, 0x99, 0xc4, 0x0d, 0x7c, 0x61, 0xaf, 0x8f, 0xdb, 0x89,
-	0xeb, 0xe1, 0x98, 0x98, 0x5e, 0x28, 0x00, 0x57, 0xc7, 0x01, 0xd8, 0x0b, 0xc9, 0x11, 0x37, 0x36,
-	0xba, 0x50, 0xea, 0x98, 0x61, 0xe8, 0xfa, 0x4e, 0x37, 0xc4, 0x16, 0xba, 0x06, 0x2a, 0x31, 0x9d,
-	0x8a, 0x72, 0x43, 0x59, 0x51, 0xd7, 0xe1, 0xfd, 0x71, 0xbd, 0xd0, 0x31, 0xc3, 0x9e, 0xe9, 0x18,
-	0x74, 0x19, 0x21, 0xc8, 0xf9, 0xa6, 0x87, 0x2b, 0xb3, 0x37, 0x94, 0x95, 0xa2, 0xc1, 0xc6, 0x74,
-	0xcd, 0xc6, 0xb1, 0x55, 0x51, 0xf9, 0x1a, 0x1d, 0x37, 0x7e, 0x52, 0xe0, 0xc2, 0x86, 0xeb, 0x61,
-	0x3f, 0x76, 0x03, 0xff, 0x0c, 0xbf, 0x1b, 0xae, 0x97, 0xf8, 0xbd, 0x0d, 0x39, 0x72, 0x14, 0x72,
-	0xbf, 0x0b, 0xad, 0x65, 0x3d, 0x49, 0x7b, 0xe2, 0xa4, 0x77, 0x14, 0x62, 0x83, 0x81, 0x92, 0x20,
-	0xd4, 0x09, 0x41, 0xe4, 0x32, 0x41, 0xfc, 0xa6, 0x00, 0x74, 0x30, 0x89, 0x5c, 0xeb, 0xac, 0x93,
-	0x61, 0x92, 0x44, 0xb0, 0x32, 0x12, 0xc1, 0x52, 0x1a, 0x01, 0xf7, 0x90, 0xd9, 0xfe, 0x26, 0xcc,
-	0xd9, 0xae, 0xd7, 0xa7, 0xbe, 0xd4, 0x53, 0xa7, 0x29, 0xd8, 0xec, 0x9b, 0xc4, 0x98, 0x9b, 0x10,
-	0x63, 0x3e, 0x13, 0xe3, 0x5b, 0x05, 0xca, 0x06, 0x1e, 0xb0, 0x72, 0x9e, 0x11, 0xa5, 0x81, 0x07,
-	0x49, 0x94, 0x1f, 0xc1, 0x9c, 0xc7, 0x8b, 0xc5, 0x02, 0x1d, 0xad, 0x90, 0x34, 0x4d, 0x9b, 0x20,
-	0xf4, 0x05, 0xcc, 0xc7, 0x78, 0x80, 0x2d, 0x12, 0x44, 0x2c, 0xa8, 0x52, 0x6b, 0x59, 0x4f, 0x7a,
-	0x6f, 0xc7, 0xdc, 0xc3, 0x83, 0xae, 0x30, 0xaf, 0xe7, 0x5e, 0x1d, 0xd7, 0x67, 0x8c, 0x04, 0x8e,
-	0x6e, 0x01, 0xd8, 0xb2, 0x34, 0x71, 0xa5, 0x70, 0x43, 0x1d, 0xcb, 0x43, 0xc6, 0xda, 0xf8, 0x59,
-	0x81, 0xf9, 0x5d, 0x17, 0x3f, 0x63, 0xe7, 0xbb, 0x09, 0x73, 0x11, 0x1e, 0xf4, 0x27, 0x9f, 0xb1,
-	0x10, 0xb1, 0xef, 0x98, 0xf7, 0xd9, 0xf3, 0xbc, 0xb3, 0x94, 0xb0, 0x12, 0xc5, 0x15, 0x35, 0x05,
-	0x8a, 0xd2, 0x4a, 0xd3, 0x6a, 0xee, 0xe5, 0xcb, 0xba, 0xd2, 0xf8, 0x7b, 0x16, 0x96, 0x3a, 0x26,
-	0xc1, 0x91, 0x6b, 0x0e, 0xdc, 0xe7, 0xd8, 0x4e, 0xa2, 0xba, 0x9a, 0xcd, 0x7a, 0xf1, 0xfd, 0x71,
-	0x3d, 0xdf, 0xd9, 0x4d, 0x92, 0xfe, 0x29, 0xe4, 0x0e, 0x5d, 0xfc, 0x8c, 0x65, 0xbc, 0xd4, 0x42,
-	0x69, 0x6b, 0x48, 0xba, 0xc8, 0x0e, 0x43, 0x4d, 0x9d, 0xfc, 0x2d, 0x28, 0x46, 0x98, 0x60, 0x9f,
-	0x56, 0x5e, 0x64, 0x7f, 0x25, 0xd3, 0x75, 0x13, 0xa2, 0xd4, 0x0d, 0x89, 0x37, 0x52, 0x6a, 0xf5,
-	0x47, 0x05, 0x8a, 0x89, 0x01, 0x6d, 0x41, 0x39, 0xc2, 0x5e, 0x70, 0x88, 0xfb, 0xe6, 0x3e, 0xc1,
-	0x11, 0x3b, 0x51, 0xa9, 0xf5, 0x81, 0xce, 0x15, 0x40, 0x97, 0x0a, 0xa0, 0x6f, 0x08, 0x09, 0x59,
-	0x9f, 0xa7, 0xa1, 0xff, 0xfa, 0x6f, 0x5d, 0x31, 0x4a, 0x9c, 0xb8, 0x46, 0x79, 0xe8, 0x36, 0x94,
-	0x22, 0xd6, 0x96, 0x87, 0xb8, 0x4f, 0x82, 0x6c, 0xb3, 0xc9, 0x12, 0x48, 0x73, 0x2f, 0x68, 0xbc,
-	0x51, 0xa0, 0xf8, 0xcd, 0x10, 0x47, 0x47, 0x2c, 0x97, 0x32, 0x5d, 0xca, 0x54, 0xe9, 0x5a, 0x85,
-	0xb9, 0x7d, 0x77, 0x40, 0x70, 0xc4, 0xeb, 0x5c, 0x6a, 0x55, 0x53, 0x42, 0xe2, 0x53, 0xdf, 0x62,
-	0x10, 0x41, 0x94, 0x84, 0xaa, 0x09, 0x05, 0x6e, 0x40, 0x2b, 0x50, 0x4c, 0x5a, 0x62, 0x82, 0xc6,
-	0xa4, 0x46, 0x74, 0x07, 0x0a, 0x91, 0xe9, 0x3b, 0x58, 0x6e, 0x77, 0x31, 0xdd, 0xce, 0xa0, 0xeb,
-	0x62, 0x0f, 0x01, 0x6a, 0xfc, 0xa9, 0x42, 0x9e, 0xad, 0xa3, 0x8f, 0x41, 0x75, 0x7d, 0x22, 0x4e,
-	0xb5, 0x38, 0xc6, 0xd2, 0xdb, 0x3e, 0x31, 0xa8, 0x1d, 0xdd, 0x86, 0xfc, 0xfe, 0x20, 0x30, 0x89,
-	0xe8, 0x96, 0xcb, 0xe3, 0xc0, 0x2d, 0x6a, 0x34, 0x38, 0x06, 0xad, 0x80, 0x1a, 0x93, 0x88, 0xb5,
-	0x4a, 0xa9, 0x75, 0x65, 0x1c, 0xda, 0x25, 0x91, 0xeb, 0x3b, 0x06, 0x85, 0x30, 0x79, 0x72, 0x85,
-	0x9e, 0x94, 0xb2, 0xf2, 0xc4, 0xa1, 0x3d, 0xd7, 0xa3, 0xf2, 0xe4, 0x7a, 0xb8, 0x7a, 0x07, 0xd4,
-	0xb6, 0x4f, 0xd0, 0x12, 0xe4, 0xf7, 0xb0, 0xe3, 0x8a, 0x6c, 0x18, 0x7c, 0x82, 0x34, 0x50, 0xb1,
-	0x6f, 0xf3, 0x72, 0x1a, 0x74, 0x58, 0x6d, 0x42, 0x9e, 0x85, 0x34, 0x4a, 0x50, 0x26, 0x10, 0x14,
-	0x4e, 0xb8, 0x0b, 0x05, 0x1e, 0xd8, 0x28, 0xa3, 0x38, 0x81, 0x51, 0xe4, 0x8c, 0xe7, 0x90, 0xa3,
-	0xf1, 0xa1, 0xd5, 0x2c, 0x9e, 0x16, 0x7a, 0xbc, 0x29, 0x7b, 0xf2, 0xdd, 0xe2, 0x5d, 0xf9, 0x82,
-	0x76, 0xa5, 0xf0, 0xfa, 0x79, 0xea, 0x75, 0x5a, 0x26, 0x25, 0x34, 0xfe, 0x51, 0xa0, 0xcc, 0xda,
-	0xc8, 0xc0, 0x4f, 0x87, 0x38, 0xa6, 0x29, 0x2f, 0x1c, 0x60, 0xd3, 0x4e, 0xae, 0x86, 0x96, 0x2a,
-	0xde, 0x43, 0xb6, 0x6e, 0x08, 0x3b, 0xba, 0x9e, 0xb9, 0xf6, 0x23, 0xa2, 0xc0, 0x1b, 0xb7, 0x03,
-	0xf9, 0xf8, 0xc0, 0x8c, 0x6c, 0x7e, 0xd1, 0xd7, 0xef, 0xbf, 0x3f, 0xae, 0xdf, 0x9b, 0xe2, 0x91,
-	0xb7, 0x02, 0x3f, 0x1e, 0x7a, 0x38, 0xd2, 0xbb, 0x94, 0xdc, 0xde, 0x30, 0xb8, 0x17, 0xd4, 0x84,
-	0xfc, 0x53, 0x1a, 0xa7, 0xa8, 0xf0, 0xe2, 0x84, 0x5b, 0x20, 0x5a, 0x93, 0xe3, 0x1a, 0x5d, 0xb8,
-	0x20, 0x0e, 0x16, 0x87, 0x81, 0x1f, 0xe3, 0xff, 0x71, 0xb2, 0x0a, 0xcc, 0x59, 0x81, 0x4f, 0x25,
-	0x83, 0x1d, 0xae, 0x6c, 0xc8, 0x69, 0xe3, 0x8f, 0x59, 0x80, 0xae, 0x75, 0x80, 0x3d, 0x93, 0x5d,
-	0xe5, 0xfb, 0x30, 0x2f, 0xde, 0x94, 0xb8, 0xa2, 0xb0, 0xeb, 0x72, 0x39, 0x2b, 0x51, 0xc9, 0x5f,
-	0x83, 0x7c, 0x1e, 0x24, 0x18, 0x7d, 0x79, 0x4a, 0xc0, 0x4b, 0x13, 0x5f, 0xf5, 0x0c, 0x39, 0xab,
-	0xe9, 0x9f, 0x8d, 0x6a, 0x7a, 0xe9, 0xf4, 0x7b, 0x9c, 0x21, 0x4a, 0x28, 0x5a, 0xa5, 0x8a, 0xca,
-	0x9f, 0xd2, 0xb8, 0x92, 0x63, 0xbc, 0xec, 0x9d, 0xca, 0xbc, 0xb2, 0x82, 0x99, 0xc2, 0x69, 0x6f,
-	0xd2, 0xaa, 0xc6, 0x95, 0x3c, 0xe3, 0xd5, 0xce, 0x57, 0x62, 0x59, 0x09, 0x46, 0x69, 0xfc, 0xa5,
-	0xc0, 0xa5, 0x6d, 0x4c, 0x78, 0xde, 0x92, 0x72, 0x7c, 0x08, 0x65, 0x2f, 0xb0, 0xfb, 0x11, 0x3e,
-	0x74, 0x53, 0x55, 0x32, 0x4a, 0x5e, 0x60, 0x1b, 0x62, 0x09, 0xe9, 0x90, 0x8b, 0x43, 0x6c, 0x89,
-	0xae, 0xce, 0x9c, 0x31, 0x2d, 0x81, 0xd4, 0x4a, 0x8a, 0x43, 0x55, 0x98, 0x77, 0xfd, 0x98, 0x98,
-	0xbe, 0x25, 0x9f, 0x97, 0x64, 0x8e, 0x1e, 0x82, 0x66, 0xe3, 0x01, 0x31, 0xfb, 0xa1, 0x19, 0x11,
-	0x57, 0xe6, 0x60, 0x8a, 0x37, 0xfd, 0x22, 0xa3, 0x3d, 0x4e, 0x58, 0x8d, 0xdf, 0x15, 0x58, 0x7c,
-	0x12, 0xda, 0x26, 0xc1, 0xf2, 0x44, 0xfc, 0xe6, 0x7c, 0x02, 0x17, 0xf1, 0x0f, 0x21, 0xb6, 0x48,
-	0x3f, 0x09, 0x82, 0x5f, 0xfc, 0x05, 0xbe, 0xdc, 0x96, 0xa1, 0xe8, 0xb0, 0x28, 0x80, 0x23, 0x09,
-	0xe0, 0xa2, 0x73, 0x89, 0x9b, 0x3a, 0x99, 0x34, 0xb4, 0xa0, 0x30, 0x64, 0xfb, 0x09, 0x21, 0x3c,
-	0x2f, 0x11, 0x02, 0x79, 0xeb, 0xdb, 0xcc, 0xff, 0x25, 0xfd, 0x37, 0x43, 0x4b, 0xa0, 0xb5, 0x1f,
-	0xed, 0xae, 0xed, 0xb4, 0x37, 0xfa, 0x1b, 0xed, 0x4e, 0xbf, 0xf7, 0xdd, 0xe3, 0x4d, 0x6d, 0x06,
-	0x01, 0x14, 0x76, 0xd7, 0x8c, 0xf6, 0xa3, 0x9e, 0xa6, 0xa0, 0x22, 0xe4, 0xb7, 0x76, 0xbe, 0x5e,
-	0xeb, 0x69, 0x2a, 0x5d, 0xee, 0xf6, 0x8c, 0xf6, 0xa3, 0x6d, 0x2d, 0x87, 0x2e, 0x40, 0xb1, 0xd7,
-	0xee, 0x6c, 0x76, 0x7b, 0x6b, 0x9d, 0xc7, 0x5a, 0xfe, 0xd6, 0xbe, 0xfc, 0x67, 0x64, 0x5e, 0x97,
-	0x61, 0x51, 0x7a, 0xed, 0x6c, 0xf6, 0x8c, 0xf6, 0x03, 0xe9, 0x78, 0x01, 0x80, 0x3b, 0xee, 0x77,
-	0x9f, 0x74, 0x34, 0x05, 0x69, 0x50, 0x16, 0xf3, 0xed, 0x27, 0x6b, 0xdb, 0x9b, 0xda, 0x2c, 0xf5,
-	0xcb, 0xb6, 0x63, 0x00, 0x95, 0x12, 0xf8, 0x96, 0xfd, 0x87, 0x3b, 0x3b, 0x5a, 0xae, 0xf5, 0x8b,
-	0x02, 0x05, 0x7e, 0x3a, 0xf4, 0x15, 0x14, 0x93, 0xf6, 0x41, 0x57, 0x4e, 0x69, 0xdb, 0x26, 0xfd,
-	0x59, 0xaf, 0x5e, 0x4d, 0x93, 0x72, 0xba, 0xd7, 0x36, 0xa1, 0x9c, 0xad, 0x18, 0xba, 0x9e, 0x82,
-	0x27, 0x54, 0xb2, 0x7a, 0xc6, 0x1e, 0xad, 0x07, 0x90, 0x67, 0x92, 0x42, 0x6f, 0x03, 0x1f, 0x5c,
-	0x19, 0x93, 0x21, 0xe9, 0x61, 0xf9, 0xd4, 0x3a, 0x8f, 0xe4, 0xae, 0xb2, 0x7e, 0xed, 0xd5, 0xdb,
-	0xda, 0xcc, 0xab, 0x77, 0x35, 0xe5, 0xf5, 0xbb, 0x9a, 0xf2, 0xe2, 0xa4, 0x36, 0xf3, 0xf2, 0xa4,
-	0xa6, 0xbc, 0x3e, 0xa9, 0xcd, 0xbc, 0x39, 0xa9, 0xcd, 0xec, 0x15, 0xd8, 0x96, 0xf7, 0xfe, 0x0b,
-	0x00, 0x00, 0xff, 0xff, 0x94, 0x38, 0x2d, 0xb9, 0x59, 0x0d, 0x00, 0x00,
+var fileDescriptor_factable_a00f6cc45b62b742 = []byte{
+	// 1673 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x57, 0xcd, 0x73, 0x1a, 0xc9,
+	0x15, 0xd7, 0x30, 0xc3, 0x08, 0x1e, 0x48, 0x46, 0x2d, 0xc5, 0xc2, 0xd8, 0x01, 0x99, 0x24, 0x15,
+	0x95, 0x3f, 0x90, 0x0b, 0xa7, 0x62, 0x47, 0x49, 0x5c, 0x11, 0x11, 0x92, 0x70, 0x09, 0xc7, 0x19,
+	0xb0, 0x52, 0x39, 0x51, 0x23, 0x68, 0xa1, 0xa9, 0x30, 0x1f, 0x9e, 0x69, 0xb0, 0xe5, 0x63, 0xfe,
+	0x80, 0xc4, 0xb9, 0xe5, 0xe8, 0xf2, 0x9f, 0xb0, 0xf7, 0x2d, 0x1f, 0x7c, 0xd1, 0x61, 0x0f, 0x3e,
+	0xec, 0x61, 0x4f, 0xda, 0x5a, 0xeb, 0xbe, 0x87, 0x3d, 0xfa, 0xb4, 0xd5, 0x5f, 0x33, 0x83, 0x04,
+	0xb2, 0x7c, 0x62, 0xba, 0xfb, 0xfd, 0x5e, 0xff, 0xde, 0x67, 0x3f, 0x60, 0xfe, 0xc0, 0xec, 0x12,
+	0x73, 0x7f, 0x80, 0x2b, 0x9e, 0xef, 0x12, 0x17, 0xa5, 0xe4, 0xba, 0x70, 0xb7, 0x6f, 0x91, 0xc3,
+	0xe1, 0x7e, 0xa5, 0xeb, 0xda, 0x6b, 0x7d, 0xb7, 0xef, 0xae, 0x31, 0x81, 0xfd, 0xe1, 0x01, 0x5b,
+	0xb1, 0x05, 0xfb, 0xe2, 0xc0, 0xc2, 0x7a, 0x4c, 0x7c, 0xd7, 0x1a, 0x61, 0xc3, 0xb4, 0xbd, 0xb5,
+	0xbe, 0xf9, 0x0a, 0x13, 0x82, 0xd7, 0x46, 0xd5, 0x35, 0xef, 0x5f, 0x7d, 0xae, 0xa1, 0xeb, 0x0e,
+	0xc2, 0x0f, 0x81, 0x2d, 0xf6, 0x5d, 0xb7, 0x3f, 0xc0, 0xd1, 0x0d, 0xbd, 0xa1, 0x6f, 0x12, 0xcb,
+	0x75, 0xc4, 0x79, 0xe9, 0xec, 0x39, 0xb1, 0x6c, 0x1c, 0x10, 0xd3, 0xf6, 0x84, 0xc0, 0xf5, 0xb3,
+	0x02, 0xd8, 0xf6, 0xc8, 0x11, 0x3f, 0x2c, 0xb7, 0x20, 0xd3, 0x34, 0x3d, 0xcf, 0x72, 0xfa, 0x2d,
+	0x0f, 0x77, 0x11, 0x02, 0xcd, 0x31, 0x6d, 0x9c, 0x57, 0x56, 0x94, 0xd5, 0xb4, 0xc1, 0xbe, 0xe9,
+	0x5e, 0x0f, 0x07, 0xdd, 0x7c, 0x82, 0xef, 0xd1, 0x6f, 0x74, 0x03, 0x54, 0x62, 0xf6, 0xf3, 0xea,
+	0x8a, 0xb2, 0xaa, 0xd5, 0xe0, 0xd3, 0x49, 0x49, 0x6f, 0x9a, 0x5e, 0xdb, 0xec, 0x1b, 0x74, 0xbb,
+	0xfc, 0x6f, 0x05, 0xe6, 0x36, 0x2d, 0x1b, 0x3b, 0x81, 0xe5, 0x3a, 0x53, 0xf5, 0xde, 0x06, 0x8d,
+	0x1c, 0x79, 0x98, 0xe9, 0x9d, 0xaf, 0x2e, 0x57, 0x42, 0x67, 0x87, 0xd0, 0xf6, 0x91, 0x87, 0x0d,
+	0x26, 0x14, 0x92, 0x50, 0xcf, 0x93, 0xd0, 0x22, 0x12, 0x9b, 0x96, 0x1d, 0x92, 0xf8, 0x56, 0x01,
+	0x68, 0x62, 0xe2, 0x5b, 0xdd, 0xa9, 0x0c, 0x6e, 0x40, 0xba, 0x27, 0xef, 0x12, 0xe6, 0x45, 0x1b,
+	0x68, 0x55, 0xf0, 0x53, 0x19, 0xbf, 0xa5, 0x88, 0x1f, 0xd7, 0x3a, 0x81, 0x9c, 0x76, 0x9e, 0x5c,
+	0x32, 0xe6, 0x21, 0x4c, 0x24, 0x39, 0xf4, 0x10, 0x66, 0x7b, 0x96, 0xdd, 0xa1, 0x12, 0x3a, 0x93,
+	0x28, 0xfd, 0x74, 0x52, 0x5a, 0x38, 0x32, 0xed, 0xc1, 0x7a, 0xf9, 0x8e, 0x6b, 0x5b, 0x84, 0xc5,
+	0xa8, 0x1c, 0xb3, 0x49, 0xef, 0xb1, 0xdf, 0xf2, 0xbb, 0x04, 0x64, 0x0d, 0x3c, 0x60, 0x19, 0x30,
+	0xd5, 0xb0, 0x3f, 0x40, 0x2a, 0xc0, 0x03, 0xdc, 0x25, 0xae, 0xcf, 0xec, 0xca, 0x54, 0x97, 0x2b,
+	0x61, 0x5a, 0xed, 0x9a, 0xfb, 0x78, 0xd0, 0x12, 0xc7, 0x35, 0xed, 0xf8, 0xa4, 0x34, 0x63, 0x84,
+	0xe2, 0x28, 0x0f, 0xb3, 0x36, 0x4f, 0x08, 0xe1, 0x6b, 0xb9, 0x44, 0x45, 0x80, 0xd0, 0x39, 0x41,
+	0x5e, 0x5b, 0x51, 0x57, 0xd3, 0x46, 0x6c, 0x27, 0xf4, 0x42, 0xf2, 0xbc, 0x17, 0xf4, 0xc8, 0x0b,
+	0x06, 0x1e, 0xc4, 0xbd, 0x60, 0x9b, 0x1e, 0xf3, 0xc2, 0xec, 0x67, 0xbc, 0x20, 0xd2, 0x4b, 0xb7,
+	0xd9, 0x2f, 0x5a, 0x87, 0x94, 0xf0, 0x5f, 0x90, 0x4f, 0xad, 0xa8, 0x97, 0x71, 0xe0, 0x2c, 0x77,
+	0x60, 0x50, 0xde, 0x84, 0xd4, 0x9e, 0x85, 0x5f, 0x30, 0xe7, 0x8d, 0xdb, 0xa4, 0x9c, 0xb3, 0x89,
+	0x7a, 0x83, 0x45, 0x3b, 0xc8, 0x27, 0xd8, 0xa1, 0x5c, 0x96, 0xf7, 0x69, 0x18, 0x02, 0x77, 0x30,
+	0xc2, 0x3d, 0xaa, 0x0d, 0xfd, 0x26, 0xc6, 0x48, 0x61, 0x8c, 0x60, 0xc2, 0xe5, 0x54, 0xcc, 0xc6,
+	0x84, 0x8b, 0x25, 0x22, 0x31, 0x91, 0x1b, 0x54, 0x3b, 0x15, 0x5b, 0xd7, 0xde, 0xbc, 0x29, 0x29,
+	0xe5, 0x77, 0x1a, 0x2c, 0x35, 0x4d, 0x82, 0x7d, 0xcb, 0x1c, 0x58, 0xaf, 0xf8, 0x45, 0x53, 0x63,
+	0x5e, 0x80, 0x94, 0x2f, 0xf2, 0x42, 0xe4, 0x72, 0xb8, 0x46, 0x77, 0x40, 0x1b, 0x59, 0xf8, 0x05,
+	0x8b, 0x68, 0xa6, 0x8a, 0xa2, 0x54, 0x96, 0x1a, 0x45, 0x1a, 0x30, 0xa9, 0x89, 0xe9, 0xbc, 0x05,
+	0x69, 0x1f, 0x13, 0xec, 0x30, 0xf5, 0x49, 0xa6, 0x66, 0x35, 0x56, 0x11, 0x13, 0x48, 0x56, 0x0c,
+	0x29, 0x6f, 0x44, 0x50, 0x74, 0x3d, 0x9e, 0x10, 0xe9, 0x4f, 0x27, 0xa5, 0x64, 0x73, 0x2f, 0x9e,
+	0x0f, 0x3e, 0x1e, 0x5c, 0x2a, 0x1f, 0x44, 0x1a, 0xe9, 0x3e, 0xfb, 0x45, 0x7b, 0x30, 0xe7, 0x8b,
+	0x68, 0x74, 0x98, 0xa5, 0x29, 0x46, 0xf1, 0x6a, 0x44, 0x31, 0x1e, 0xac, 0xda, 0x35, 0x6a, 0xed,
+	0x44, 0xdd, 0x46, 0xd6, 0x8f, 0x09, 0x16, 0xbe, 0x56, 0x20, 0x1d, 0xda, 0x81, 0xb6, 0x20, 0xeb,
+	0x63, 0xdb, 0x1d, 0xe1, 0x8e, 0x79, 0x40, 0xb0, 0xcf, 0xdc, 0x9f, 0xa9, 0x5e, 0xab, 0xf0, 0x06,
+	0x5b, 0x91, 0x0d, 0xb6, 0xb2, 0x29, 0x3a, 0x74, 0x2d, 0x45, 0xef, 0xf9, 0xff, 0xf7, 0x25, 0xc5,
+	0xc8, 0x70, 0xe0, 0x06, 0xc5, 0xa1, 0x12, 0x64, 0x78, 0x68, 0x46, 0xb8, 0x43, 0x5c, 0x11, 0x2d,
+	0x90, 0x5b, 0x6d, 0x17, 0x6d, 0xc3, 0x95, 0x98, 0x40, 0x27, 0x6a, 0xb5, 0x9f, 0xcd, 0xf2, 0xb9,
+	0x48, 0x0b, 0xed, 0x16, 0x3f, 0xea, 0x90, 0xfe, 0xfb, 0x10, 0xfb, 0x47, 0x2c, 0x6d, 0x6e, 0xc3,
+	0x82, 0x1d, 0x8b, 0x14, 0xf7, 0x14, 0xbf, 0x3d, 0x67, 0x9f, 0x09, 0xe1, 0x17, 0xe6, 0xcc, 0x3a,
+	0xcc, 0x1e, 0x58, 0x03, 0x82, 0x7d, 0xde, 0x19, 0x32, 0xd5, 0x42, 0x04, 0x08, 0x09, 0x54, 0xb6,
+	0x98, 0x88, 0x00, 0x4a, 0x40, 0xe1, 0x7d, 0x12, 0x74, 0x7e, 0x32, 0xde, 0x91, 0x95, 0xb3, 0x1d,
+	0xf9, 0x21, 0x68, 0x96, 0x43, 0x78, 0xe1, 0x64, 0xaa, 0xc5, 0xe9, 0x37, 0x54, 0x1a, 0x0e, 0x91,
+	0xf4, 0x28, 0x02, 0x3d, 0x02, 0xfd, 0x60, 0xe0, 0x9a, 0x24, 0xc8, 0xab, 0x0c, 0xbb, 0x72, 0x01,
+	0x76, 0x8b, 0x0a, 0x0a, 0xb4, 0x40, 0xa1, 0x0d, 0x98, 0x0d, 0x88, 0x6f, 0x39, 0x7d, 0x69, 0xde,
+	0xcd, 0x0b, 0x14, 0xb4, 0x98, 0xa4, 0xb4, 0x52, 0xe0, 0xd0, 0x1f, 0x21, 0xc9, 0x5e, 0xe6, 0x7c,
+	0x92, 0x29, 0x28, 0x5d, 0xa0, 0xa0, 0x6d, 0xd9, 0x58, 0xc0, 0x39, 0xa6, 0x70, 0x17, 0xd4, 0x86,
+	0x43, 0xd0, 0x12, 0x24, 0xf7, 0x71, 0xdf, 0xe2, 0xae, 0x51, 0x0d, 0xbe, 0x40, 0x39, 0x50, 0xb1,
+	0xd3, 0x63, 0x81, 0x54, 0x0d, 0xfa, 0x59, 0x58, 0x83, 0x24, 0xb3, 0x62, 0x1c, 0xa0, 0x4c, 0x00,
+	0x28, 0x1c, 0x70, 0x0f, 0x74, 0xce, 0x7a, 0x1c, 0x91, 0x9e, 0x80, 0x48, 0x73, 0xc4, 0x7f, 0x12,
+	0xa0, 0x51, 0x9e, 0x68, 0x3d, 0x0e, 0xa0, 0x71, 0x3f, 0x5b, 0x0d, 0x6d, 0x39, 0x8f, 0xf0, 0x72,
+	0x78, 0x4d, 0xcb, 0x41, 0xa8, 0xfd, 0x7d, 0xa4, 0xf6, 0xb2, 0x48, 0x0a, 0x40, 0x8f, 0x61, 0x3e,
+	0xac, 0x0f, 0x7e, 0xb9, 0x7a, 0xf9, 0x52, 0x0c, 0x4b, 0xa4, 0xc6, 0x38, 0xb0, 0xa2, 0x16, 0xba,
+	0x28, 0x19, 0xed, 0x8b, 0x8a, 0x9a, 0x03, 0xeb, 0x4e, 0xef, 0xb1, 0x96, 0x52, 0x72, 0x89, 0xf2,
+	0x71, 0x02, 0xe6, 0x64, 0xab, 0x61, 0x71, 0x45, 0x2b, 0xa0, 0xdb, 0x23, 0x56, 0xc2, 0xca, 0xd9,
+	0xa6, 0x97, 0xb4, 0x47, 0xb4, 0x79, 0xdd, 0x13, 0x95, 0x96, 0xb8, 0xb0, 0x67, 0xc5, 0xab, 0xed,
+	0x51, 0x54, 0x6d, 0xea, 0xd9, 0x5a, 0x18, 0xbb, 0x7d, 0x4a, 0xc5, 0xbd, 0x55, 0xc2, 0x8a, 0xfb,
+	0x55, 0x34, 0x89, 0xb0, 0xa4, 0x1a, 0x7b, 0xb6, 0xc4, 0xd0, 0x81, 0x6a, 0xa0, 0xfb, 0xa6, 0xd3,
+	0xc7, 0xb2, 0xf4, 0x7e, 0x7d, 0xf1, 0x75, 0x15, 0x83, 0x0a, 0xcb, 0x12, 0xe2, 0x48, 0x9a, 0x93,
+	0x6c, 0x7b, 0x3c, 0xc3, 0xb2, 0x13, 0x32, 0x2c, 0xcb, 0x82, 0x5c, 0x7e, 0xaf, 0xc0, 0x62, 0xfd,
+	0x25, 0xee, 0x0e, 0x09, 0x66, 0xca, 0x0d, 0xfc, 0x7c, 0x88, 0x03, 0x82, 0x56, 0x41, 0x3f, 0xc4,
+	0x66, 0x2f, 0xec, 0xbf, 0xb9, 0x68, 0xb4, 0xd9, 0x61, 0xfb, 0x86, 0x38, 0x47, 0x4d, 0x48, 0x06,
+	0x87, 0xa6, 0x2f, 0xf2, 0xb6, 0xf6, 0xe0, 0xd3, 0x49, 0xe9, 0xfe, 0x25, 0x26, 0xf1, 0xae, 0xeb,
+	0x04, 0x43, 0x9b, 0x16, 0x32, 0x05, 0x37, 0x36, 0x0d, 0xae, 0x05, 0xdd, 0x87, 0xe4, 0x73, 0x4a,
+	0x44, 0x24, 0xdb, 0xf2, 0x14, 0x27, 0xc8, 0xca, 0x65, 0xb2, 0xe5, 0x16, 0xcc, 0x09, 0xf6, 0x81,
+	0xe7, 0x3a, 0x01, 0xfe, 0x02, 0xfa, 0x79, 0x98, 0xed, 0xba, 0x0e, 0x7d, 0x7c, 0x84, 0x5b, 0xe4,
+	0xb2, 0xfc, 0x55, 0x02, 0xa0, 0xd5, 0x3d, 0xc4, 0xb6, 0xc9, 0xfa, 0xfa, 0x03, 0x48, 0x89, 0x21,
+	0x8d, 0xcf, 0x1e, 0x99, 0xea, 0x2f, 0xe2, 0x6f, 0x73, 0x38, 0xde, 0xcb, 0x61, 0x4f, 0x0a, 0xa3,
+	0x3f, 0x8f, 0x8d, 0x3f, 0x3c, 0xb6, 0x93, 0x06, 0xf1, 0x18, 0x38, 0x3e, 0x1d, 0xfd, 0x2e, 0x9a,
+	0x8e, 0x78, 0x1a, 0x9e, 0x1b, 0x92, 0x63, 0x40, 0x29, 0x8a, 0xd6, 0xe9, 0x28, 0xc1, 0x07, 0x13,
+	0xd9, 0x4d, 0xc7, 0x72, 0x3e, 0x9a, 0x6d, 0x05, 0x32, 0x12, 0xa7, 0xcd, 0x86, 0x16, 0x80, 0x6c,
+	0xa2, 0xc5, 0x8b, 0x47, 0x10, 0x19, 0x09, 0x06, 0x29, 0x7f, 0xa3, 0xc0, 0xc2, 0x36, 0x26, 0xdc,
+	0x6f, 0x61, 0x38, 0x6e, 0x42, 0xd6, 0x76, 0x7b, 0x1d, 0x1f, 0x8f, 0xac, 0xf0, 0xd1, 0x51, 0x8d,
+	0x8c, 0xed, 0xf6, 0x0c, 0xb1, 0x85, 0x2a, 0xa0, 0x05, 0x1e, 0xee, 0x8a, 0xfa, 0x8c, 0xd9, 0x18,
+	0x85, 0x40, 0x56, 0x27, 0x95, 0xa3, 0x93, 0x98, 0xe5, 0x04, 0xc4, 0x74, 0xba, 0x58, 0xcc, 0xd0,
+	0xe1, 0x1a, 0xed, 0x40, 0xae, 0x87, 0x07, 0xc4, 0xec, 0x78, 0xa6, 0x4f, 0x2c, 0xe9, 0x83, 0x4b,
+	0x4c, 0xe8, 0x57, 0x18, 0xec, 0x69, 0x88, 0x2a, 0xbf, 0x55, 0x60, 0xf1, 0x99, 0xd7, 0x33, 0x09,
+	0x96, 0x16, 0xf1, 0xf2, 0xf8, 0x2d, 0x5c, 0xc1, 0x2f, 0x3d, 0xdc, 0x25, 0x9d, 0x90, 0x04, 0x6f,
+	0xe5, 0xf3, 0x7c, 0xbb, 0x21, 0xa9, 0x54, 0x60, 0x51, 0x08, 0x8e, 0x39, 0x80, 0x3f, 0x23, 0x0b,
+	0xfc, 0xa8, 0x19, 0x73, 0x43, 0x15, 0xf4, 0x21, 0xbb, 0x4f, 0xe4, 0xff, 0x45, 0x8e, 0x10, 0x92,
+	0xb7, 0xfe, 0x11, 0xfb, 0x23, 0x48, 0xff, 0x30, 0xa1, 0x25, 0xc8, 0x35, 0x9e, 0xec, 0x6d, 0xec,
+	0x36, 0x36, 0x3b, 0x9b, 0x8d, 0x66, 0xa7, 0xfd, 0xcf, 0xa7, 0xf5, 0xdc, 0x0c, 0x02, 0xd0, 0xf7,
+	0x36, 0x8c, 0xc6, 0x93, 0x76, 0x4e, 0x41, 0x69, 0x48, 0x6e, 0xed, 0xfe, 0x6d, 0xa3, 0x9d, 0x53,
+	0xe9, 0x76, 0xab, 0x6d, 0x34, 0x9e, 0x6c, 0xe7, 0x34, 0x34, 0x07, 0xe9, 0x76, 0xa3, 0x59, 0x6f,
+	0xb5, 0x37, 0x9a, 0x4f, 0x73, 0xc9, 0x5b, 0x07, 0xf2, 0xcf, 0x1d, 0xd3, 0xba, 0x0c, 0x8b, 0x52,
+	0x6b, 0xb3, 0xde, 0x36, 0x1a, 0x7f, 0x95, 0x8a, 0xe7, 0x01, 0xb8, 0xe2, 0x4e, 0xeb, 0x59, 0x33,
+	0xa7, 0xa0, 0x1c, 0x64, 0xc5, 0x7a, 0x7b, 0xe3, 0xd9, 0x76, 0x3d, 0x97, 0xa0, 0x7a, 0xd9, 0x75,
+	0x4c, 0x40, 0xa5, 0x00, 0x7e, 0x65, 0x67, 0x67, 0x77, 0x37, 0xa7, 0x55, 0xff, 0xa7, 0x80, 0xce,
+	0xad, 0x43, 0x7f, 0x81, 0x74, 0x98, 0x3e, 0xe8, 0xea, 0xb9, 0xf7, 0xa1, 0x4e, 0x47, 0xb1, 0xc2,
+	0xf5, 0xc8, 0x29, 0xe7, 0x73, 0xad, 0x0e, 0xd9, 0x78, 0xc4, 0xd0, 0x2f, 0x23, 0xe1, 0x09, 0x91,
+	0x2c, 0x4c, 0xb9, 0xa3, 0xfa, 0x5f, 0x05, 0x92, 0xfc, 0x6d, 0xf9, 0x53, 0xf8, 0x27, 0x84, 0xaf,
+	0x17, 0x27, 0x0c, 0x15, 0x85, 0x69, 0x7d, 0x0a, 0xed, 0x40, 0x36, 0xde, 0x5f, 0xe3, 0x74, 0x26,
+	0xf4, 0xdd, 0xb8, 0x9e, 0xb1, 0x8e, 0x76, 0x4f, 0xa9, 0xdd, 0x38, 0xfe, 0xa1, 0x38, 0x73, 0xfc,
+	0xb1, 0xa8, 0x7c, 0xf8, 0x58, 0x54, 0x5e, 0x9f, 0x16, 0x67, 0xde, 0x9c, 0x16, 0x95, 0x0f, 0xa7,
+	0xc5, 0x99, 0xef, 0x4e, 0x8b, 0x33, 0xfb, 0x3a, 0xe3, 0x7f, 0xff, 0xe7, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0xa3, 0x6f, 0x07, 0x7e, 0x4f, 0x11, 0x00, 0x00,
 }

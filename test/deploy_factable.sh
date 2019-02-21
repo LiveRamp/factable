@@ -33,7 +33,7 @@ readonly FACTCTL="${DOCKER} run \
 
 # Create all journal fixtures. Use `sed` to replace the MINIO_RELEASE token with the
 # correct Minio service address.
-sed -e "s/MINIO_RELEASE/$(helm_release ${BK_NAMESPACE} minio).${BK_NAMESPACE}/g" ${ROOT}/test/quotes.journalspace.yaml | \
+sed -e "s/MINIO_RELEASE/$(helm_release ${BK_NAMESPACE} minio)-minio.${BK_NAMESPACE}/g" ${ROOT}/test/quotes.journalspace.yaml | \
   BROKER_ADDRESS=$(release_address $(helm_release ${BK_NAMESPACE} gazette) gazette) ${GAZCTL} journals apply --specs /dev/stdin
 
 # Install a test "gazette-zonemap" ConfigMap in the namespace, if one doesn't already exist.

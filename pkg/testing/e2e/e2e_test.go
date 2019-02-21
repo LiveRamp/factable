@@ -23,7 +23,7 @@ import (
 type E2ESuite struct{}
 
 func (s *E2ESuite) TestE2EWithFixtures(c *gc.C) {
-	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(4, quotes.MVQuoteStats, quotes.MVWordStats))
+	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(4, quotes.MVQuoteStatsTag, quotes.MVWordStatsTag))
 	defer cleanup()
 
 	// Start extractor and vtable consumer modules.
@@ -46,12 +46,12 @@ func (s *E2ESuite) TestE2EWithFixtures(c *gc.C) {
 	c.Check(consumertest.WaitForShards(tc.Ctx, tc.Journals, extCmr.Service.Loopback, pb.LabelSelector{}), gc.IsNil)
 	c.Check(consumertest.WaitForShards(tc.Ctx, tc.Journals, vtCmr.Service.Loopback, pb.LabelSelector{}), gc.IsNil)
 
-	c.Check(queryRelationCSV(c, tc.Ctx, vtCmr.Service.Loopback, quotes.MVQuoteStats), gc.Equals, ""+
+	c.Check(queryRelationCSV(c, tc.Ctx, vtCmr.Service.Loopback, quotes.MVQuoteStatsTag), gc.Equals, ""+
 		"Doe Jane,456,1,2,3,2\n"+
 		"Doe Jane,789,1,1,2,1\n"+
 		"John Doe,123,1,3,4,3\n",
 	)
-	c.Check(queryRelationCSV(c, tc.Ctx, vtCmr.Service.Loopback, quotes.MVWordStats), gc.Equals, ""+
+	c.Check(queryRelationCSV(c, tc.Ctx, vtCmr.Service.Loopback, quotes.MVWordStatsTag), gc.Equals, ""+
 		"four,John Doe,1,123,1\n"+
 		"one,Doe Jane,2,789,3\n"+
 		"one,John Doe,1,123,2\n"+
@@ -67,7 +67,7 @@ func (s *E2ESuite) TestE2EWithFixtures(c *gc.C) {
 }
 
 func (s *E2ESuite) TestE2EWithSmallQuoteSet(c *gc.C) {
-	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(4, quotes.MVQuoteStats, quotes.MVWordStats))
+	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(4, quotes.MVQuoteStatsTag, quotes.MVWordStatsTag))
 	defer cleanup()
 
 	// Start extractor and vtable consumer modules.
@@ -86,7 +86,7 @@ func (s *E2ESuite) TestE2EWithSmallQuoteSet(c *gc.C) {
 	c.Check(consumertest.WaitForShards(tc.Ctx, tc.Journals, extCmr.Service.Loopback, pb.LabelSelector{}), gc.IsNil)
 	c.Check(consumertest.WaitForShards(tc.Ctx, tc.Journals, vtCmr.Service.Loopback, pb.LabelSelector{}), gc.IsNil)
 
-	c.Check(queryRelationCSV(c, tc.Ctx, vtCmr.Service.Loopback, quotes.MVQuoteStats), gc.Equals, ""+
+	c.Check(queryRelationCSV(c, tc.Ctx, vtCmr.Service.Loopback, quotes.MVQuoteStatsTag), gc.Equals, ""+
 		"A. A. Milne,0,1,16,26,16\n"+
 		"A. A. Milne,1,1,15,20,15\n"+
 		"A. A. Milne,2,1,10,11,10\n"+
@@ -117,13 +117,15 @@ func queryRelationCSV(c *gc.C, ctx context.Context, conn *grpc.ClientConn, tag f
 	schema, err := factable.NewSchema(nil, resp.Spec)
 	c.Check(err, gc.IsNil)
 
-	var view = schema.Views[tag].View
+	var view = schema.Views[tag].ResolvedView
 	var sb strings.Builder
 	var enc = csv.NewWriter(&sb)
 
-	stream, err := factable.NewQueryClient(conn).Query(ctx, &factable.QueryRequest{
-		View:  tag,
-		Query: factable.QuerySpec{View: view},
+	stream, err := factable.NewQueryClient(conn).ExecuteQuery(ctx, &factable.ExecuteQueryRequest{
+		Query: factable.ResolvedQuery{
+			MvTag: tag,
+			View:  view,
+		},
 	})
 	c.Check(err, gc.IsNil)
 
@@ -133,11 +135,11 @@ func queryRelationCSV(c *gc.C, ctx context.Context, conn *grpc.ClientConn, tag f
 	for ; err == nil; key, val, err = it.Next() {
 		var rec []string
 
-		c.Check(schema.UnmarshalDimensions(key, view.Dimensions, func(f factable.Field) error {
+		c.Check(schema.UnmarshalDimensions(key, view.DimTags, func(f factable.Field) error {
 			rec = append(rec, fmt.Sprintf("%v", f))
 			return nil
 		}), gc.IsNil)
-		c.Check(schema.UnmarshalMetrics(val, view.Metrics, func(a factable.Aggregate) error {
+		c.Check(schema.UnmarshalMetrics(val, view.MetTags, func(a factable.Aggregate) error {
 			rec = append(rec, fmt.Sprintf("%v", factable.Flatten(a)))
 			return nil
 		}), gc.IsNil)

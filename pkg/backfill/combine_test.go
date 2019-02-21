@@ -17,27 +17,27 @@ func (s *CombineSuite) TestCombineWithMultipleViews(c *gc.C) {
 
 	var input = buildInput(c, [][2][]byte{
 		{
-			factable.PackKey(quotes.MVWordStats, "sweet", "Zach Zeta"),
+			factable.PackKey(quotes.MVWordStatsTag, "sweet", "Zach Zeta"),
 			factable.PackValue(1, 5678, 1),
 		},
 		{
-			factable.PackKey(quotes.MVWordStats, "sweet", "Zach Zeta"),
+			factable.PackKey(quotes.MVWordStatsTag, "sweet", "Zach Zeta"),
 			factable.PackValue(2, 7890, 2),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(1, 1, 1, factable.BuildStrHLL("four")),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(0, 1, 2, factable.BuildStrHLL("one")),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(0, 1, 1, factable.BuildStrHLL("two")),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "Zach Zeta", 5678),
+			factable.PackKey(quotes.MVQuoteStatsTag, "Zach Zeta", 5678),
 			factable.PackValue(1, 1, 3, factable.BuildStrHLL("sweet")),
 		},
 	})
@@ -47,15 +47,15 @@ func (s *CombineSuite) TestCombineWithMultipleViews(c *gc.C) {
 
 	var expect = [][2][]byte{
 		{
-			factable.PackKey(quotes.MVWordStats, "sweet", "Zach Zeta"),
+			factable.PackKey(quotes.MVWordStatsTag, "sweet", "Zach Zeta"),
 			factable.PackValue(3, 7890, 3),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+			factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 			factable.PackValue(1, 3, 4, factable.BuildStrHLL("one", "two", "four")),
 		},
 		{
-			factable.PackKey(quotes.MVQuoteStats, "Zach Zeta", 5678),
+			factable.PackKey(quotes.MVQuoteStatsTag, "Zach Zeta", 5678),
 			factable.PackValue(1, 1, 3, factable.BuildStrHLL("sweet")),
 		},
 	}

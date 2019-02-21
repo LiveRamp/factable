@@ -27,7 +27,7 @@ enum DimensionType {
 enum MetricType {
   INVALID_METRIC_TYPE = 0;
   VARINT_SUM          = 1;
-  VARINT_GUAGE        = 2;
+  VARINT_GAUGE        = 2;
   FLOAT_SUM           = 3;
   STRING_HLL          = 4;
 }
@@ -39,105 +39,145 @@ enum MetricType {
 // event having several product SKUs might map to a RelationRow{purchase, SKU}
 // tuple for each purchased product.
 message MappingSpec {
-  // Unique tag of the Mapping. Immutable.
-  int64 tag = 1 [(gogoproto.casttype) = "MapTag" ];
   // Short, unique name of the Mapping.
-  string name = 2;
+  string name = 1;
   // Longer, free-form description of the Mapping.
-  string desc = 3;
+  string desc = 2;
+  // Unique tag of the Mapping.
+  uint64 tag = 3 [(gogoproto.casttype) = "MapTag" ];
 }
 
 // DimensionSpec defines a Dimension which may be extracted from a RelationRow.
 message DimensionSpec {
-  // Unique tag of the dimension. Immutable.
-  int64 tag = 1 [(gogoproto.casttype) = "DimTag" ];
+  // Short, unique name of the Dimension.
+  string name = 1;
   // Type of the Dimension. Immutable.
   DimensionType type = 2;
-  // Short, unique name of the Dimension.
-  string name = 3;
   // Longer, free-form description of the Dimension.
-  string desc = 4;
+  string desc = 3;
+  // Unique tag of the dimension.
+  uint64 tag = 4 [(gogoproto.casttype) = "DimTag" ];
 }
 
 // MetricSpec defines a Metric which may be derived from a specified Dimension.
 message MetricSpec {
-  // Unique tag of the Metric. Immutable.
-  int64 tag = 1 [(gogoproto.casttype) = "MetTag" ];
-  // Type of the Metric. Immutable.
-  MetricType type = 2;
-  // Dimension tag from which the Metric is extracted. Immutable.
-  int64 dim_tag = 3 [(gogoproto.casttype) = "DimTag" ];
   // Short, unique name of the Metric.
-  string name = 4;
+  string name = 1;
+  // Dimension from which the Metric is extracted.
+  string dimension = 2;
+  // Type of the Metric. Immutable.
+  MetricType type = 3;
   // Longer, free-form description of the Metric.
-  string desc = 5;
+  string desc = 4;
+  // Unique tag of the Metric.
+  uint64 tag = 5 [(gogoproto.casttype) = "MetTag" ];
+
+  // Resolved DimTag of |dimension|. Immutable.
+  uint64 dim_tag = 6 [
+    (gogoproto.casttype) = "DimTag",
+    (gogoproto.moretags) = "yaml:\",omitempty\""];
 }
 
 // RelationSpec composes a journal LabelSelector, which defines a collection of
 // input events, with a mapping that transforms each event into one or more
 // RelationRows.
 message RelationSpec {
-  // Unique tag of the Relation. Immutable.
-  int64 tag = 1 [(gogoproto.casttype) = "RelTag" ];
-  // Mapping which transforms journal events into Relation rows. Immutable.
-  int64 mapping = 2 [(gogoproto.casttype) = "MapTag" ];
   // Short, unique name of the Relation.
-  string name = 3;
-  // Longer, free-form description of the Relation.
-  string desc = 4;
+  string name = 1;
   // LabelSelector identifies journals which, taken together, compose the "rows" of the Relation.
-  protocol.LabelSelector selector = 5 [(gogoproto.nullable) = false];
+  protocol.LabelSelector selector = 2 [(gogoproto.nullable) = false];
+  // Mapping which transforms journal events into Relation rows.
+  string mapping = 3;
   // Dimensions of the Relation. Dimensions may be added and removed over time,
   // but all Dimensions or derived Metrics of current MaterializedViewSpecs must
   // refer to current Dimensions of the RelationSpec.
-  repeated int64 dimensions = 6 [(gogoproto.casttype) = "DimTag" ];
+  repeated string dimensions = 4;
+  // Longer, free-form description of the Relation.
+  string desc = 5;
+  // Unique tag of the Relation.
+  uint64 tag = 6 [(gogoproto.casttype) = "RelTag" ];
+
+  // Resolved MapTag of |mapping|. Immutable.
+  uint64 map_tag = 7 [
+    (gogoproto.casttype) = "MapTag",
+    (gogoproto.moretags) = "yaml:\",omitempty\""];
+  // Resolved DimTags of |dimensions|. Immutable.
+  repeated uint64 dim_tags = 8 [
+    (gogoproto.casttype) = "DimTag",
+    (gogoproto.moretags) = "yaml:\",omitempty\""];
 }
 
 // ViewSpec defines a summarized view over a Relation, composing a subset of
 // Relation dimensions with a set of derived Metrics.
 message ViewSpec {
+  // Ordered Dimensions summarized by the ViewSpec.
+  repeated string dimensions = 1;
+  // Ordered Metrics aggregated by the ViewSpec.
+  repeated string metrics = 2;
+}
+
+message ResolvedView {
   option (gogoproto.verbose_equal) = true;
 
-  // Tag of the Relation summarized by the View.
-  int64 rel_tag = 1 [(gogoproto.casttype) = "RelTag" ];
-  // Ordered Dimensions of each View row.
-  repeated int64 dimensions = 2 [(gogoproto.casttype) = "DimTag" ];
-  // Ordered Metrics of each View row.
-  repeated int64 metrics = 3 [(gogoproto.casttype) = "MetTag" ];
+  // Resolved DimTags of ViewSpec Dimensions.
+  repeated uint64 dim_tags = 1 [(gogoproto.casttype) = "DimTag"];
+  // Resolved MetTags of ViewSpec Metrics.
+  repeated uint64 met_tags = 2 [(gogoproto.casttype) = "MetTag"];
 }
 
 // MaterializedViewSpec defines a materialization of a ViewSpec. Its Metrics
 // are continuously aggregated as RelationRows are processed, and the total
 // storage commitment is limited to the cardinality of the View Dimensions.
 message MaterializedViewSpec {
-  // Unique tag of the MaterializedView. Immutable.
-  int64 tag = 1 [(gogoproto.casttype) = "MVTag" ];
-  // View materialized by the MaterializedView. Immutable.
-  ViewSpec view = 2 [(gogoproto.nullable) = false];
   // Short, unique name of the MaterializedView.
-  string name = 3;
+  string name = 1;
+  // Relation which this view materializes.
+  string relation = 2;
+  // View materialized by the MaterializedView.
+  ViewSpec view = 3 [(gogoproto.nullable) = false];
   // Longer, free-form description of the MaterializedView.
   string desc = 4;
-
   // Optional retention of MaterializedView rows.
   message Retention {
     // Duration after which a row is eligible for removal.
     google.protobuf.Duration remove_after = 1 [
       (gogoproto.stdduration) = true,
       (gogoproto.nullable) = false];
-
     // Dimension, which must be part of the MaterializedView and of type
     // Timestamp, to which |remove_after| is added to determine the effective
     // removal horizon.
-    int64 relative_to = 2 [(gogoproto.casttype) = "DimTag" ];
+    string relative_to = 2;
+
+    // Resolved DimTag of |relative_to|.
+    uint64 relative_to_tag = 3 [
+      (gogoproto.casttype) = "DimTag",
+      (gogoproto.moretags) = "yaml:\",omitempty\""];
   }
   Retention retention = 5;
+  // Unique tag of the MaterializedView.
+  uint64 tag = 6 [(gogoproto.casttype) = "MVTag" ];
+
+  // Resolved RelTag. Immutable.
+  uint64 rel_tag = 7 [
+    (gogoproto.casttype) = "RelTag",
+    (gogoproto.moretags) = "yaml:\",omitempty\""];
+  // Resolution of the View. Immutable.
+  ResolvedView resolved_view = 8 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\",omitempty\""];
 }
 
 // QuerySpec describes a result which should be computed from a Relation.
 // In particular it defines the "shape" (in Dimensions and Metrics) of the
 // desired result, and any filters which should be applied.
 message QuerySpec {
+  // Tag 1 is reserved for an eventual "relation" string field, which is used
+  // to indicate the relation to be queried but not the specific materialized_view.
+  // In this case Factable will consult the schema to determine an appropriate
+  // MaterializedViewSpec given the QuerySpec View and Filters.
+  reserved 1;
+  // MaterializedView to query.
+  string materialized_view = 2;
   // View of the Query result.
   //
   // Dimensions of the Relation which should be grouped over and returned with
@@ -156,64 +196,84 @@ message QuerySpec {
   // all underlying view rows have been read. Implementations may also limit
   // the size of the result sets they will buffer, returning an error for
   // Queries which exceed it.
-  ViewSpec view = 1 [(gogoproto.nullable) = false];
-
+  ViewSpec view = 3 [(gogoproto.nullable) = false];
   // A Filter is a sequence of ordered non-overlapping ranges for a Dimension.
   // Filters may be applied to any subset of MaterializedView Dimensions,
   // including those not present in the Query View.
   message Filter {
     // Dimension to which the Filter is applied.
-    int64 dimension = 1 [(gogoproto.casttype) = "DimTag" ];
+    string dimension = 1;
 
-    // Admissible Dimension ranges. The subtype of each Range must match that
-    // of the Relation Dimension itself.
+    // Remaining fields represent a union type of ordered, allowed Begin & End
+    // values (inclusive) of a Dimension. If Begin is omitted, it is interpreted
+    // as matching any lesser value. If End is omitted, it is interpreted as
+    // matching any greater value. Only one field may be set, and it must
+    // match the type of the Filtered Dimension.
+
+    message Int {
+      int64 begin = 1;
+      int64 end = 2;
+    }
+    repeated Int ints = 2 [(gogoproto.nullable) = false];
+
+    message Float {
+      double begin = 1;
+      double end = 2;
+    }
+    repeated Float floats = 3 [(gogoproto.nullable) = false];
+
+    message String {
+      string begin = 1;
+      string end = 2;
+    }
+    repeated String strings = 4 [(gogoproto.nullable) = false];
+
+    message Time {
+      google.protobuf.Timestamp begin = 1 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.nullable) = false];
+      google.protobuf.Timestamp end = 2 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.nullable) = false];
+
+      google.protobuf.Duration relative_begin = 3 [
+        (gogoproto.stdduration) = true,
+        (gogoproto.nullable) = false];
+      google.protobuf.Duration relative_end = 4 [
+        (gogoproto.stdduration) = true,
+        (gogoproto.nullable) = false];
+    }
+    repeated Time times = 5 [(gogoproto.nullable) = false];
+  }
+  repeated Filter filters = 4 [(gogoproto.nullable) = false];
+}
+
+message ResolvedQuery {
+  // Tag of the MaterializedViewSpec to be queried.
+  uint64 mv_tag = 1 [(gogoproto.casttype) = "MVTag"];
+  // Shape of the query result.
+  ResolvedView view = 2 [(gogoproto.nullable) = false];
+  // Flattened filtered ranges over each view dimension.
+  message Filter {
+    // Dimension to which the Filter is applied.
+    int64 dim_tag = 1 [(gogoproto.casttype) = "DimTag"];
+    // Flattened allowed byte ranges of the Dimension.
+    message Range {
+      bytes begin = 1;
+      bytes end = 2;
+    }
     repeated Range ranges = 2 [(gogoproto.nullable) = false];
   }
-  repeated Filter filters = 2 [(gogoproto.nullable) = false];
+  repeated Filter filters = 3 [(gogoproto.nullable) = false];
 }
 
-// Range is Begin & End values (inclusive) as a union type. If Begin is omitted,
-// it is interpreted as matching any lesser value. Similarly if End is omitted,
-// it is interpreted as matching any greater value.
-message Range {
-  message Int {
-    int64 begin = 1;
-    int64 end = 2;
-  }
-  Int int = 1;
-
-  message Float {
-    double begin = 1;
-    double end = 2;
-  }
-  Float float = 2;
-
-  message String {
-    string begin = 1;
-    string end = 2;
-  }
-  String str = 3;
-
-  message Time {
-    google.protobuf.Timestamp begin = 1 [
-      (gogoproto.stdtime) = true,
-      (gogoproto.nullable) = false];
-    google.protobuf.Timestamp end = 2 [
-      (gogoproto.stdtime) = true,
-      (gogoproto.nullable) = false];
-  }
-  Time time = 4;
-}
-
-message QueryRequest {
+message ExecuteQueryRequest {
   // Header attached by a proxy-ing peer. Not directly set by clients.
   protocol.Header header = 1;
-  // MaterializedView to query.
-  int64 view = 2 [(gogoproto.casttype) = "MVTag"];
   // Shard to query. Set iff |header| is also set.
-  string shard = 3 [(gogoproto.casttype) = "github.com/LiveRamp/gazette/v2/pkg/consumer.ShardID"];
+  string shard = 2 [(gogoproto.casttype) = "github.com/LiveRamp/gazette/v2/pkg/consumer.ShardID"];
   // Query specification.
-  QuerySpec query = 4 [(gogoproto.nullable) = false];
+  ResolvedQuery query = 3 [(gogoproto.nullable) = false];
 }
 
 message QueryResponse {
@@ -270,5 +330,9 @@ service Schema {
 
 // Query service provides a query capability over MaterializedViews.
 service Query {
-  rpc Query(QueryRequest) returns (stream QueryResponse);
+  // ResolveQuery maps a QuerySpec into a validated ResolvedQuery,
+  // under the current server schema.
+  rpc ResolveQuery(QuerySpec) returns (ResolvedQuery);
+  // ExecuteResolvedQuery against one or all Shards.
+  rpc ExecuteQuery(ExecuteQueryRequest) returns (stream QueryResponse);
 }

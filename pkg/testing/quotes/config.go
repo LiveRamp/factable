@@ -13,21 +13,31 @@ import (
 )
 
 const (
-	MapQuoteWords           factable.MapTag = 1
-	DimQuoteCount           factable.DimTag = iota
-	DimQuoteWordCount       factable.DimTag = iota
-	DimQuoteID              factable.DimTag = iota
-	DimQuoteAuthor          factable.DimTag = iota
-	DimQuoteWord            factable.DimTag = iota
-	DimQuoteWordTotalCount  factable.DimTag = iota
-	MetricSumQuoteCount     factable.MetTag = iota
-	MetricSumWordTotalCount factable.MetTag = iota
-	MetricSumWordQuoteCount factable.MetTag = iota
-	MetricUniqueWords       factable.MetTag = iota
-	MetricLastQuoteID       factable.MetTag = iota
-	RelQuoteWords           factable.RelTag = iota
-	MVWordStats             factable.MVTag  = iota
-	MVQuoteStats            factable.MVTag  = iota
+	MapQuoteWords           = "MapQuoteWords"
+	DimQuoteCount           = "DimQuoteCount"
+	DimQuoteWordCount       = "DimQuoteWordCount"
+	DimQuoteID              = "DimQuoteID"
+	DimQuoteAuthor          = "DimQuoteAuthor"
+	DimQuoteWord            = "DimQuoteWord"
+	DimQuoteWordTotalCount  = "DimQuoteWordTotalCount"
+	MetricSumQuoteCount     = "MetricSumQuoteCount"
+	MetricSumWordTotalCount = "MetricSumWordTotalCount"
+	MetricSumWordQuoteCount = "MetricSumWordQuoteCount"
+	MetricUniqueWords       = "MetricUniqueWords"
+	MetricLastQuoteID       = "MetricLastQuoteID"
+	RelQuoteWords           = "RelQuoteWords"
+	MVWordStats             = "MVWordStats"
+	MVQuoteStats            = "MVQuoteStats"
+
+	MapQuoteWordsTag          factable.MapTag = iota
+	DimQuoteCountTag          factable.DimTag = iota
+	DimQuoteWordCountTag      factable.DimTag = iota
+	DimQuoteIDTag             factable.DimTag = iota
+	DimQuoteAuthorTag         factable.DimTag = iota
+	DimQuoteWordTag           factable.DimTag = iota
+	DimQuoteWordTotalCountTag factable.DimTag = iota
+	MVWordStatsTag            factable.MVTag  = iota
+	MVQuoteStatsTag           factable.MVTag  = iota
 )
 
 type Quote struct {
@@ -42,17 +52,17 @@ func BuildExtractors() factable.ExtractFns {
 			return new(Quote), nil
 		},
 		Mapping: map[factable.MapTag]func(message.Envelope) []factable.RelationRow{
-			MapQuoteWords: mapQuoteWords, // Emits RelationRow{*Quote, Word, WordCount, QuoteCount}
+			MapQuoteWordsTag: mapQuoteWords, // Emits RelationRow{*Quote, Word, WordCount, QuoteCount}
 		},
 		Int: map[factable.DimTag]func(r factable.RelationRow) int64{
-			DimQuoteWordCount:      func(r factable.RelationRow) int64 { return 1 },
-			DimQuoteCount:          func(r factable.RelationRow) int64 { return r[3].(int64) },
-			DimQuoteID:             func(r factable.RelationRow) int64 { return int64(r[0].(*Quote).ID) },
-			DimQuoteWordTotalCount: func(r factable.RelationRow) int64 { return r[2].(int64) },
+			DimQuoteWordCountTag:      func(r factable.RelationRow) int64 { return 1 },
+			DimQuoteCountTag:          func(r factable.RelationRow) int64 { return r[3].(int64) },
+			DimQuoteIDTag:             func(r factable.RelationRow) int64 { return int64(r[0].(*Quote).ID) },
+			DimQuoteWordTotalCountTag: func(r factable.RelationRow) int64 { return r[2].(int64) },
 		},
 		String: map[factable.DimTag]func(r factable.RelationRow) string{
-			DimQuoteAuthor: func(r factable.RelationRow) string { return r[0].(*Quote).Author },
-			DimQuoteWord:   func(r factable.RelationRow) string { return r[1].(string) },
+			DimQuoteAuthorTag: func(r factable.RelationRow) string { return r[0].(*Quote).Author },
+			DimQuoteWordTag:   func(r factable.RelationRow) string { return r[1].(string) },
 		},
 	}
 }
@@ -61,96 +71,95 @@ func BuildSchemaSpec() factable.SchemaSpec {
 	return factable.SchemaSpec{
 		Mappings: []factable.MappingSpec{
 			{
-				Tag:  MapQuoteWords,
-				Name: "mapQuoteWords",
+				Name: MapQuoteWords,
 				Desc: "Maps quotes to constituent words, counts, and totals.",
+				Tag:  MapQuoteWordsTag,
 			},
 		},
 		Dimensions: []factable.DimensionSpec{
 			{
-				Tag:  DimQuoteWordCount,
-				Name: "quoteWordCount",
+				Name: DimQuoteWordCount,
+				Type: factable.DimensionType_VARINT,
 				Desc: "Returns 1 for each quote word.",
-				Type: factable.DimensionType_VARINT,
+				Tag:  DimQuoteWordCountTag,
 			},
 			{
-				Tag:  DimQuoteCount,
-				Name: "quoteCount",
+				Name: DimQuoteCount,
+				Type: factable.DimensionType_VARINT,
 				Desc: "Returns the count of 1 for each quote.",
-				Type: factable.DimensionType_VARINT,
+				Tag:  DimQuoteCountTag,
 			},
 			{
-				Tag:  DimQuoteID,
-				Name: "quoteID",
+				Name: DimQuoteID,
+				Type: factable.DimensionType_VARINT,
 				Desc: "Returns the quote ID.",
-				Type: factable.DimensionType_VARINT,
+				Tag:  DimQuoteIDTag,
 			},
 			{
-				Tag:  DimQuoteAuthor,
-				Name: "quoteAuthor",
+				Name: DimQuoteAuthor,
+				Type: factable.DimensionType_STRING,
 				Desc: "Returns the quote Author.",
-				Type: factable.DimensionType_STRING,
+				Tag:  DimQuoteAuthorTag,
 			},
 			{
-				Tag:  DimQuoteWord,
-				Name: "quoteWord",
+				Name: DimQuoteWord,
+				Type: factable.DimensionType_STRING,
 				Desc: "Returns the quote word.",
-				Type: factable.DimensionType_STRING,
+				Tag:  DimQuoteWordTag,
 			},
 			{
-				Tag:  DimQuoteWordTotalCount,
-				Name: "quoteWordTotalCount",
-				Desc: "Returns the count of the words within the quote.",
+				Name: DimQuoteWordTotalCount,
 				Type: factable.DimensionType_VARINT,
+				Desc: "Returns the count of the words within the quote.",
+				Tag:  DimQuoteWordTotalCountTag,
 			},
 		},
 		Metrics: []factable.MetricSpec{
 			{
-				Tag:    MetricSumQuoteCount,
-				Name:   "sumQuoteCounts",
-				Desc:   "Sums over number of quotes.",
-				Type:   factable.MetricType_VARINT_SUM,
-				DimTag: DimQuoteCount,
+				Name:      MetricSumQuoteCount,
+				Dimension: DimQuoteCount,
+				Type:      factable.MetricType_VARINT_SUM,
+				Desc:      "Sums over number of quotes.",
+				Tag:       1,
 			},
 			{
-				Tag:    MetricSumWordQuoteCount,
-				Name:   "sumWordQuotes",
-				Desc:   "Sums over number of quotes a word appears in.",
-				Type:   factable.MetricType_VARINT_SUM,
-				DimTag: DimQuoteWordCount,
+				Name:      MetricSumWordQuoteCount,
+				Dimension: DimQuoteWordCount,
+				Type:      factable.MetricType_VARINT_SUM,
+				Desc:      "Sums over number of quotes a word appears in.",
+				Tag:       2,
 			},
 			{
-				Tag:    MetricSumWordTotalCount,
-				Name:   "sumWordCount",
-				Desc:   "Sums over total word count.",
-				Type:   factable.MetricType_VARINT_SUM,
-				DimTag: DimQuoteWordTotalCount,
+				Name:      MetricSumWordTotalCount,
+				Dimension: DimQuoteWordTotalCount,
+				Type:      factable.MetricType_VARINT_SUM,
+				Desc:      "Sums over total word count.",
+				Tag:       3,
 			},
 			{
-				Tag:    MetricUniqueWords,
-				Name:   "uniqueWords",
-				Desc:   "Unique quote words.",
-				Type:   factable.MetricType_STRING_HLL,
-				DimTag: DimQuoteWord,
+				Name:      MetricUniqueWords,
+				Dimension: DimQuoteWord,
+				Type:      factable.MetricType_STRING_HLL,
+				Desc:      "Unique quote words.",
+				Tag:       4,
 			},
 			{
-				Tag:    MetricLastQuoteID,
-				Name:   "lastQuoteID",
-				Desc:   "Last quote ID observed for the record.",
-				Type:   factable.MetricType_VARINT_GUAGE,
-				DimTag: DimQuoteID,
+				Name:      MetricLastQuoteID,
+				Dimension: DimQuoteID,
+				Type:      factable.MetricType_VARINT_GAUGE,
+				Desc:      "Last quote ID observed for the record.",
+				Tag:       5,
 			},
 		},
 		Relations: []factable.RelationSpec{
 			{
-				Tag:     RelQuoteWords,
-				Name:    "quoteWords",
+				Name:    RelQuoteWords,
 				Desc:    "Quote events, mapped on unique words",
 				Mapping: MapQuoteWords,
 				Selector: pb.LabelSelector{
 					Include: pb.MustLabelSet("name", InputJournal.String()),
 				},
-				Dimensions: []factable.DimTag{
+				Dimensions: []string{
 					DimQuoteCount,
 					DimQuoteWordCount,
 					DimQuoteID,
@@ -158,28 +167,29 @@ func BuildSchemaSpec() factable.SchemaSpec {
 					DimQuoteWord,
 					DimQuoteWordTotalCount,
 				},
+				Tag: 1,
 			},
 		},
 		Views: []factable.MaterializedViewSpec{
 			{
-				Tag:  MVWordStats,
-				Name: "wordStats",
-				Desc: "Word and author word frequency and inverse document frequency.",
+				Name:     MVWordStats,
+				Relation: RelQuoteWords,
 				View: factable.ViewSpec{
-					RelTag:     RelQuoteWords,
-					Dimensions: []factable.DimTag{DimQuoteWord, DimQuoteAuthor},
-					Metrics:    []factable.MetTag{MetricSumWordQuoteCount, MetricLastQuoteID, MetricSumWordTotalCount},
+					Dimensions: []string{DimQuoteWord, DimQuoteAuthor},
+					Metrics:    []string{MetricSumWordQuoteCount, MetricLastQuoteID, MetricSumWordTotalCount},
 				},
+				Desc: "Word and author word frequency and inverse document frequency.",
+				Tag:  MVWordStatsTag,
 			},
 			{
-				Tag:  MVQuoteStats,
-				Name: "quoteStats",
-				Desc: "Author and quote statistics.",
+				Name:     MVQuoteStats,
+				Relation: RelQuoteWords,
 				View: factable.ViewSpec{
-					RelTag:     RelQuoteWords,
-					Dimensions: []factable.DimTag{DimQuoteAuthor, DimQuoteID},
-					Metrics:    []factable.MetTag{MetricSumQuoteCount, MetricSumWordQuoteCount, MetricSumWordTotalCount, MetricUniqueWords},
+					Dimensions: []string{DimQuoteAuthor, DimQuoteID},
+					Metrics:    []string{MetricSumQuoteCount, MetricSumWordQuoteCount, MetricSumWordTotalCount, MetricUniqueWords},
 				},
+				Desc: "Author and quote statistics.",
+				Tag:  MVQuoteStatsTag,
 			},
 		},
 	}

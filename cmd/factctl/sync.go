@@ -79,7 +79,7 @@ func (cmd *cmdSync) Execute([]string) error {
 
 	// Walk each input journal of each view, ensuring a shard exists for each.
 	for _, view := range schema.Views {
-		for _, journal := range relInputs[view.View.RelTag].Journals {
+		for _, journal := range relInputs[view.RelTag].Journals {
 			var (
 				mvStr = fmt.Sprintf("%d", view.Tag)
 				sum   = sha1.Sum([]byte(releaseInstance + ":" + mvStr + ":" + journal.Spec.Name.String()))

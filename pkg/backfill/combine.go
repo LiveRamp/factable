@@ -75,17 +75,13 @@ func combine(in *bufio.Reader, schema factable.Schema, out *bufio.Writer) error 
 				mv = nextMV
 				aggs = make([]factable.Aggregate, len(mv.View.Metrics))
 			}
-			for m, tag := range mv.View.Metrics {
-				aggs[m] = schema.InitMetric(tag, aggs[m])
-			}
+			schema.InitAggregates(mv.ResolvedView.MetTags, aggs)
 		} else if cmp == 1 {
 			return errors.Errorf("invalid key order (key %q vs nextKey %q)", key, nextKey)
 		}
 
-		for i, tag := range mv.View.Metrics {
-			if value, err = schema.ReduceMetric(value, tag, aggs[i]); err != nil {
-				return err
-			}
+		if _, err = schema.ReduceMetrics(value, mv.ResolvedView.MetTags, aggs); err != nil {
+			return err
 		}
 	}
 

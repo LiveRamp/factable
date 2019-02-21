@@ -2,14 +2,10 @@
 package factable
 
 import (
-	"fmt"
 	"time"
 
-	"git.liveramp.net/jgraet/factable/pkg/hll"
 	"github.com/LiveRamp/gazette/v2/pkg/message"
 	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
-	"github.com/cockroachdb/cockroach/util/encoding"
-	"github.com/pkg/errors"
 )
 
 // Field is a simple data type (eg, int64, float64, time.Time, string). A
@@ -24,15 +20,15 @@ type Aggregate interface{}
 
 type (
 	// MapTag uniquely identifies a MappingSpec.
-	MapTag int64
+	MapTag uint64
 	// DimTag uniquely identifies a DimensionSpec.
-	DimTag int64
+	DimTag uint64
 	// MetTag uniquely identifies a MetricSpec.
-	MetTag int64
+	MetTag uint64
 	// RelTag uniquely identifies a RelationSpec.
-	RelTag int64
+	RelTag uint64
 	// MVTag uniquely identifies a MaterializedViewSpec.
-	MVTag int64
+	MVTag uint64
 )
 
 // RelationRow is a user-defined record type which a Mapping extractor produces,
@@ -66,6 +62,12 @@ type Schema struct {
 	Metrics    map[MetTag]MetricSpec
 	Relations  map[RelTag]RelationSpec
 	Views      map[MVTag]MaterializedViewSpec
+
+	MapTags map[string]MapTag
+	DimTags map[string]DimTag
+	MetTags map[string]MetTag
+	RelTags map[string]RelTag
+	MVTags  map[string]MVTag
 }
 
 // NewSchema returns a Schema over the given Spec and optional ExtractFns.
@@ -76,464 +78,255 @@ func NewSchema(optionalExtractors *ExtractFns, spec SchemaSpec) (Schema, error) 
 	// Build up mappings of tags to associated specifications. As we process
 	// portions of the Spec, we'll use these indexes to validate referential
 	// integrity of the holistic, composed Spec & ExtractFns.
-	var (
-		ext        ExtractFns
-		mappings   = make(map[MapTag]MappingSpec)
-		dimensions = make(map[DimTag]DimensionSpec)
-		metrics    = make(map[MetTag]MetricSpec)
-		relations  = make(map[RelTag]RelationSpec)
-		views      = make(map[MVTag]MaterializedViewSpec)
-		names      = make(map[string]struct{})
-	)
+	var schema = Schema{
+		Spec: spec,
 
-	dimensions[DimMVTag] = DimensionSpec{
-		Tag:  0,
-		Type: DimensionType_VARINT,
-		Name: "MVTag",
-		Desc: "Placeholder DimensionSpec for MVTag",
-	}
+		Mappings:   make(map[MapTag]MappingSpec),
+		Dimensions: make(map[DimTag]DimensionSpec),
+		Metrics:    make(map[MetTag]MetricSpec),
+		Relations:  make(map[RelTag]RelationSpec),
+		Views:      make(map[MVTag]MaterializedViewSpec),
 
-	var onName = func(n string) error {
-		if _, ok := names[n]; ok {
-			return pb.NewValidationError("duplicated Name (%s)", n)
-		} else {
-			names[n] = struct{}{}
-			return nil
-		}
-	}
-	var onMapping = func(spec MappingSpec) error {
-		if err := spec.Validate(); err != nil {
-			return err
-		} else if _, ok := ext.Mapping[spec.Tag]; !ok && optionalExtractors != nil {
-			return pb.NewValidationError("Mapping extractor not registered (%d)", spec.Tag)
-		} else if _, ok = mappings[spec.Tag]; ok {
-			return pb.NewValidationError("Mapping already specified (%d)", spec.Tag)
-		} else if err = onName(spec.Name); err != nil {
-			return err
-		} else {
-			mappings[spec.Tag] = spec
-			return nil
-		}
-	}
-
-	var onDimension = func(spec DimensionSpec) error {
-		if err := spec.Validate(); err != nil {
-			return err
-		}
-
-		var ok bool
-		switch spec.Type {
-		case DimensionType_VARINT:
-			_, ok = ext.Int[spec.Tag]
-		case DimensionType_FLOAT:
-			_, ok = ext.Float[spec.Tag]
-		case DimensionType_STRING:
-			_, ok = ext.String[spec.Tag]
-		case DimensionType_TIMESTAMP:
-			_, ok = ext.Time[spec.Tag]
-		default:
-			panic("not reached")
-		}
-
-		if !ok && optionalExtractors != nil {
-			return pb.NewValidationError("Dimension extractor not registered (%d; type %s)",
-				spec.Tag, spec.Type)
-		} else if _, ok = dimensions[spec.Tag]; ok {
-			return pb.NewValidationError("Dimension already specified (%d)", spec.Tag)
-		} else if err := onName(spec.Name); err != nil {
-			return err
-		} else {
-			dimensions[spec.Tag] = spec
-			return nil
-		}
-	}
-
-	var onMetric = func(spec MetricSpec) error {
-		if err := spec.Validate(); err != nil {
-			return err
-		} else if dimSpec, ok := dimensions[spec.DimTag]; !ok {
-			return pb.NewValidationError("Metric DimTag is not specified (%d)", spec.DimTag)
-		} else if dimSpec.Type != spec.Type.DimensionType() {
-			return pb.NewValidationError("Metric Type mismatch (DimTag %d has type %v; expected %v)",
-				dimSpec.Tag, dimSpec.Type, spec.Type.DimensionType())
-		} else if _, ok = metrics[spec.Tag]; ok {
-			return pb.NewValidationError("Metric already specified (%d)", spec.Tag)
-		} else if err = onName(spec.Name); err != nil {
-			return err
-		} else {
-			metrics[spec.Tag] = spec
-			return nil
-		}
-	}
-
-	var onRelation = func(spec RelationSpec) error {
-		if err := spec.Validate(); err != nil {
-			return err
-		} else if _, ok := mappings[spec.Mapping]; !ok {
-			return pb.NewValidationError("Mapping is not specified (%d)", spec.Mapping)
-		}
-		for i, tag := range spec.Dimensions {
-			if _, ok := dimensions[tag]; !ok {
-				return pb.ExtendContext(pb.NewValidationError("Dimension not specified (%d)", tag),
-					"Dimensions[%d]", i)
-			}
-		}
-		if _, ok := relations[spec.Tag]; ok {
-			return pb.NewValidationError("Relation already specified (%d)", spec.Tag)
-		} else if err := onName(spec.Name); err != nil {
-			return err
-		} else {
-			relations[spec.Tag] = spec
-			return nil
-		}
-	}
-
-	var onMaterializedView = func(spec MaterializedViewSpec) error {
-		if err := spec.Validate(); err != nil {
-			return err
-		} else if _, ok := relations[spec.View.RelTag]; !ok {
-			return pb.NewValidationError("View.RelTag is not specified (%d)", spec.View.RelTag)
-		}
-		for i, tag := range spec.View.Dimensions {
-			if !findDim(tag, relations[spec.View.RelTag].Dimensions) {
-				return pb.ExtendContext(
-					pb.NewValidationError("Dimension not part of Relation (%d; RelTag %d)", tag, spec.View.RelTag),
-					"View.Dimensions[%d]", i)
-			}
-		}
-		for i, tag := range spec.View.Metrics {
-			if metSpec, ok := metrics[tag]; !ok {
-				return pb.ExtendContext(
-					pb.NewValidationError("Metric not specified (%d)", tag),
-					"View.Metrics[%d]", i)
-			} else if !findDim(metSpec.DimTag, relations[spec.View.RelTag].Dimensions) {
-				return pb.ExtendContext(
-					pb.NewValidationError("Metric Dimension not part of Relation (%d; DimTag %d; RelTag %d)",
-						tag, metSpec.DimTag, spec.View.RelTag),
-					"View.Metrics[%d]", i)
-			}
-		}
-		if spec.Retention != nil {
-			if dimSpec := dimensions[spec.Retention.RelativeTo]; dimSpec.Type != DimensionType_TIMESTAMP {
-				return pb.ExtendContext(pb.NewValidationError(
-					"Dimension Type mismatch (%v; expected TIMESTAMP)", dimSpec.Type),
-					"Retention.RelativeTo")
-			}
-			// Note that spec.Validate() already asserts RelativeTo is a member of Dimensions.
-		}
-		if _, ok := views[spec.Tag]; ok {
-			return pb.NewValidationError("MaterializedView already specified (%d)", spec.Tag)
-		} else if err := onName(spec.Name); err != nil {
-			return err
-		} else {
-			views[spec.Tag] = spec
-			return nil
-		}
+		MapTags: make(map[string]MapTag),
+		DimTags: make(map[string]DimTag),
+		MetTags: make(map[string]MetTag),
+		RelTags: make(map[string]RelTag),
+		MVTags:  make(map[string]MVTag),
 	}
 
 	if optionalExtractors != nil {
-		ext = *optionalExtractors
-		if ext.NewMessage == nil {
+		schema.Extract = *optionalExtractors
+	}
+
+	schema.Dimensions[DimMVTag] = DimensionSpec{
+		Tag:  0,
+		Type: DimensionType_VARINT,
+	}
+
+	if optionalExtractors != nil {
+		if schema.Extract = *optionalExtractors; schema.Extract.NewMessage == nil {
 			return Schema{}, pb.NewValidationError("ExtractFns: NewMessage not defined")
 		}
 	}
-	for i := range spec.Mappings {
-		if err := onMapping(spec.Mappings[i]); err != nil {
+	for i, spec := range spec.Mappings {
+		if err := schema.addMapping(spec); err != nil {
 			return Schema{}, pb.ExtendContext(err, "Mappings[%d]", i)
 		}
 	}
-	for i := range spec.Dimensions {
-		if err := onDimension(spec.Dimensions[i]); err != nil {
+	for i, spec := range spec.Dimensions {
+		if err := schema.addDimension(spec); err != nil {
 			return Schema{}, pb.ExtendContext(err, "Dimensions[%d]", i)
 		}
 	}
-	for i := range spec.Metrics {
-		if err := onMetric(spec.Metrics[i]); err != nil {
+	for i, spec := range spec.Metrics {
+		if err := schema.addMetric(spec); err != nil {
 			return Schema{}, pb.ExtendContext(err, "Metrics[%d]", i)
 		}
 	}
-	for i := range spec.Relations {
-		if err := onRelation(spec.Relations[i]); err != nil {
+	for i, spec := range spec.Relations {
+		if err := schema.addRelation(spec); err != nil {
 			return Schema{}, pb.ExtendContext(err, "Relations[%d]", i)
 		}
 	}
-	for i := range spec.Views {
-		if err := onMaterializedView(spec.Views[i]); err != nil {
+	for i, spec := range spec.Views {
+		if err := schema.addMaterializedView(spec); err != nil {
 			return Schema{}, pb.ExtendContext(err, "Views[%d]", i)
 		}
 	}
-	return Schema{
-		Extract:    ext,
-		Spec:       spec,
-		Mappings:   mappings,
-		Dimensions: dimensions,
-		Metrics:    metrics,
-		Relations:  relations,
-		Views:      views,
-	}, nil
+	return schema, nil
 }
 
-// ExtractAndMarshalDimension extracts dimension |dim| from the RelationRow and
-// appends its encoding to |b|, returning the result.
-func (schema *Schema) ExtractAndMarshalDimension(b []byte, dim DimTag, row RelationRow) []byte {
-	switch schema.Dimensions[dim].Type {
-	case DimensionType_VARINT:
-		b = encoding.EncodeVarintAscending(b, schema.Extract.Int[dim](row))
-	case DimensionType_FLOAT:
-		b = encoding.EncodeFloatAscending(b, schema.Extract.Float[dim](row))
-	case DimensionType_STRING:
-		b = encoding.EncodeStringAscending(b, schema.Extract.String[dim](row))
-	case DimensionType_TIMESTAMP:
-		b = encoding.EncodeTimeAscending(b, schema.Extract.Time[dim](row))
-	default:
-		panic("unexpected dimension type")
+func (schema *Schema) addMapping(spec MappingSpec) error {
+	if err := schema.validateName(spec.Name); err != nil {
+		return err
+	} else if _, ok := schema.Mappings[spec.Tag]; ok {
+		return pb.NewValidationError("MapTag already specified (%d)", spec.Tag)
+	} else if _, ok = schema.Extract.Mapping[spec.Tag]; !ok && schema.Extract.Mapping != nil {
+		return pb.NewValidationError("extractor not registered (%d)", spec.Tag)
 	}
-	return b
-}
 
-// UnmarshalDimension of DimTag |dim| from |b|, returning the un-marshaled Field and byte remainder.
-func (schema *Schema) UnmarshalDimension(b []byte, dim DimTag) (rem []byte, field Field, err error) {
-	if dim == DimMVTag {
-		// Special case: this is the RelTag which prefixes the row.
-		rem, field, err = encoding.DecodeVarintAscending(b)
-		return
-	}
-	switch schema.Dimensions[dim].Type {
-	case DimensionType_VARINT:
-		rem, field, err = encoding.DecodeVarintAscending(b)
-	case DimensionType_FLOAT:
-		rem, field, err = encoding.DecodeFloatAscending(b)
-	case DimensionType_STRING:
-		rem, field, err = encoding.DecodeStringAscending(b, nil)
-	case DimensionType_TIMESTAMP:
-		rem, field, err = encoding.DecodeTimeAscending(b)
-	default:
-		panic("unexpected dimension type")
-	}
-	return
-}
-
-// UnmarshalDimensions of DimTags |dims| from |b|, invoking |fn| for each
-// un-marshaled Field. It may return a decoding error, an error returned by
-// |fn|, or an error if the input |b| has any unconsumed remainder.
-func (schema *Schema) UnmarshalDimensions(b []byte, dims []DimTag, fn func(Field) error) error {
-	var (
-		field Field
-		err   error
-	)
-	for _, tag := range dims {
-		if b, field, err = schema.UnmarshalDimension(b, tag); err != nil {
-			return err
-		} else if err = fn(field); err != nil {
-			return err
-		}
-	}
-	if len(b) != 0 {
-		return errors.Errorf("unexpected []byte remainder (%x)", b)
-	}
+	schema.Mappings[spec.Tag] = spec
+	schema.MapTags[spec.Name] = spec.Tag
 	return nil
 }
 
-// dequeDimension of DimTag |dim| from |b|, returning the remainder.
-// dequeDimension is like UnmarshalDimension, but avoids unnecessary interface{}
-// allocations.
-func (schema *Schema) dequeDimension(b []byte, dim DimTag) (rem []byte, err error) {
-	if dim == DimMVTag {
-		// Special case: this is the MVTag which prefixes the row.
-		rem, _, err = encoding.DecodeVarintAscending(b)
-		return
+func (schema *Schema) addDimension(spec DimensionSpec) error {
+	if err := schema.validateName(spec.Name); err != nil {
+		return err
+	} else if _, ok := schema.Dimensions[spec.Tag]; ok {
+		return pb.NewValidationError("DimTag already specified (%d)", spec.Tag)
 	}
-	var tmp [64]byte // Does not escape.
-	switch schema.Dimensions[dim].Type {
+
+	var ok bool
+	switch spec.Type {
 	case DimensionType_VARINT:
-		rem, _, err = encoding.DecodeVarintAscending(b)
+		_, ok = schema.Extract.Int[spec.Tag]
 	case DimensionType_FLOAT:
-		rem, _, err = encoding.DecodeFloatAscending(b)
+		_, ok = schema.Extract.Float[spec.Tag]
 	case DimensionType_STRING:
-		rem, _, err = encoding.DecodeBytesAscending(b, tmp[:0])
+		_, ok = schema.Extract.String[spec.Tag]
 	case DimensionType_TIMESTAMP:
-		rem, _, err = encoding.DecodeTimeAscending(b)
+		_, ok = schema.Extract.Time[spec.Tag]
 	default:
-		panic("unexpected dimension type")
+		return pb.NewValidationError("invalid DimensionType (%s)", spec.Type)
 	}
-	return
-}
+	if !ok && schema.Extract.Mapping != nil {
+		return pb.NewValidationError("extractor not registered (%d; type %s)", spec.Tag, spec.Type)
+	}
 
-// MarshalMetric appends the encoding of |agg| (which must be of metric type |met|)
-// to |b|, returning the result.
-func (schema *Schema) MarshalMetric(b []byte, met MetTag, agg Aggregate) []byte {
-	switch schema.Metrics[met].Type {
-	case MetricType_VARINT_SUM, MetricType_VARINT_GUAGE:
-		b = encoding.EncodeVarintAscending(b, *agg.(*int64))
-	case MetricType_FLOAT_SUM:
-		b = encoding.EncodeFloatAscending(b, *agg.(*float64))
-	case MetricType_STRING_HLL:
-		var ua = agg.(*uniqueAggregate)
-		b = encoding.EncodeUvarintAscending(b, uint64(len(ua.p)))
-		b = append(b, ua.p...)
-	default:
-		panic("unexpected metric type")
-	}
-	return b
-}
-
-// UnmarshalMetric of MetTag |met| from |b|, returning the un-marshaled Aggregate and byte remainder.
-func (schema *Schema) UnmarshalMetric(b []byte, met MetTag) (rem []byte, agg Aggregate, err error) {
-	switch schema.Metrics[met].Type {
-	case MetricType_VARINT_SUM, MetricType_VARINT_GUAGE:
-		var v = new(int64)
-		rem, *v, err = encoding.DecodeVarintAscending(b)
-		agg = v
-	case MetricType_FLOAT_SUM:
-		var v = new(float64)
-		rem, *v, err = encoding.DecodeFloatAscending(b)
-		agg = v
-	case MetricType_STRING_HLL:
-		rem, agg, err = decodeMaybePrefixedBytes(b)
-		agg = &uniqueAggregate{p: agg.([]byte)}
-	default:
-		panic("unexpected metric type")
-	}
-	return
-}
-
-// UnmarshalMetrics of MetTags |mets| from |b|, invoking |fn| for each
-// un-marshaled Aggregate. It may return a decoding error, an error returned by
-// |fn|, or an error if the input |b| has any unconsumed remainder.
-func (schema *Schema) UnmarshalMetrics(b []byte, mets []MetTag, fn func(Aggregate) error) error {
-	var (
-		agg Aggregate
-		err error
-	)
-	for _, tag := range mets {
-		if b, agg, err = schema.UnmarshalMetric(b, tag); err != nil {
-			return err
-		} else if err = fn(agg); err != nil {
-			return err
-		}
-	}
-	if len(b) != 0 {
-		return errors.Errorf("unexpected []byte remainder (%x)", b)
-	}
+	schema.Dimensions[spec.Tag] = spec
+	schema.DimTags[spec.Name] = spec.Tag
 	return nil
 }
 
-// dequeMetric of MetTag |met| from |b|, returning the remainder. dequeMetric is
-// like UnmarshalMetric, but avoids unnecessary interface{} allocations and does
-// not fail if |b| is empty.
-func (schema *Schema) dequeMetric(b []byte, met MetTag) (rem []byte, err error) {
-	if len(b) == 0 {
-		// Ignore Aggregates not actually present in |b|. This allows
-		// new Metrics to be appended onto an existing Relation.
-		return
+func (schema *Schema) addMetric(spec MetricSpec) error {
+	if err := schema.validateName(spec.Name); err != nil {
+		return err
+	} else if _, ok := schema.Metrics[spec.Tag]; ok {
+		return pb.NewValidationError("MetTag already specified (%d)", spec.Tag)
+	} else if spec.DimTag, err = schema.resolveDimension(spec.Dimension); err != nil {
+		return err
 	}
-	switch schema.Metrics[met].Type {
-	case MetricType_VARINT_SUM, MetricType_VARINT_GUAGE:
-		rem, _, err = encoding.DecodeVarintAscending(b)
+
+	var dimType DimensionType
+	switch spec.Type {
+	case MetricType_VARINT_SUM, MetricType_VARINT_GAUGE:
+		dimType = DimensionType_VARINT
 	case MetricType_FLOAT_SUM:
-		rem, _, err = encoding.DecodeFloatAscending(b)
+		dimType = DimensionType_FLOAT
 	case MetricType_STRING_HLL:
-		rem, _, err = decodeMaybePrefixedBytes(b)
+		dimType = DimensionType_STRING
 	default:
-		panic("unexpected metric type")
+		return pb.NewValidationError("invalid MetricType (%s)", spec.Type)
 	}
-	return
+
+	if dimSpec := schema.Dimensions[spec.DimTag]; dimSpec.Type != dimType {
+		return pb.NewValidationError("Metric Type mismatch (%s has type %v; expected %v)",
+			dimSpec.Name, dimSpec.Type, dimType)
+	}
+
+	schema.Metrics[spec.Tag] = spec
+	schema.MetTags[spec.Name] = spec.Tag
+	return nil
 }
 
-// InitMetric returns a suitable Aggregate for metric |met|. If |agg| is non-nil
-// it must have been previously initialized for |met|, and will be zero'd for reuse.
-func (schema *Schema) InitMetric(met MetTag, agg Aggregate) Aggregate {
-	switch schema.Metrics[met].Type {
-	case MetricType_VARINT_SUM, MetricType_VARINT_GUAGE:
-		if ptr, ok := agg.(*int64); ok {
-			*ptr = 0
+func (schema *Schema) addRelation(spec RelationSpec) error {
+	if err := schema.validateName(spec.Name); err != nil {
+		return err
+	} else if _, ok := schema.Relations[spec.Tag]; ok {
+		return pb.NewValidationError("RelTag already specified (%d)", spec.Tag)
+	} else if err = spec.Selector.Validate(); err != nil {
+		return pb.ExtendContext(err, "Selector")
+	} else if spec.MapTag, ok = schema.MapTags[spec.Mapping]; !ok {
+		return pb.NewValidationError("no such Mapping (%s)", spec.Mapping)
+	} else if spec.DimTags, err = schema.resolveDimensions(spec.Dimensions); err != nil {
+		return err
+	} else if ind, _ := indexStrings(spec.Dimensions); ind != 0 {
+		return pb.ExtendContext(
+			pb.NewValidationError("duplicated Dimension (%s)", spec.Dimensions[ind]),
+			"Dimensions[%d]", ind)
+	}
+
+	schema.Relations[spec.Tag] = spec
+	schema.RelTags[spec.Name] = spec.Tag
+	return nil
+}
+
+func (schema *Schema) addMaterializedView(spec MaterializedViewSpec) error {
+	if err := schema.validateName(spec.Name); err != nil {
+		return err
+	} else if _, ok := schema.Views[spec.Tag]; ok {
+		return pb.NewValidationError("MVTag already specified (%d)", spec.Tag)
+	} else if spec.RelTag, ok = schema.RelTags[spec.Relation]; !ok {
+		return pb.NewValidationError("no such Relation (%s)", spec.Relation)
+	} else if spec.ResolvedView, err = schema.resolveView(spec.View); err != nil {
+		return err
+	}
+
+	// Verify all spec.Dimensions are constituents of the Relation.
+	var _, names = indexStrings(schema.Relations[spec.RelTag].Dimensions)
+
+	for i, s := range spec.View.Dimensions {
+		var err error
+		if marked, ok := names[s]; !ok {
+			err = pb.NewValidationError("not part of Relation (%s)", s)
+		} else if marked {
+			err = pb.NewValidationError("duplicated Dimension (%s)", s)
 		} else {
-			agg = new(int64)
+			names[s] = true // Mark to detect duplicates.
 		}
-	case MetricType_FLOAT_SUM:
-		if ptr, ok := agg.(*float64); ok {
-			*ptr = 0
+		if err != nil {
+			return pb.ExtendContext(err, "Dimensions[%d]", i)
+		}
+	}
+
+	// Verify Retention spec, and that the RelativeTo Dimension is a View constituent.
+	if spec.Retention != nil {
+		var err error
+
+		if spec.Retention.RelativeToTag, err = schema.resolveDimension(spec.Retention.RelativeTo); err != nil {
+			// Pass.
+		} else if marked := names[spec.Retention.RelativeTo]; !marked {
+			err = pb.NewValidationError("not a View Dimension (%s)", spec.Retention.RelativeTo)
+		} else if dimSpec := schema.Dimensions[spec.Retention.RelativeToTag]; dimSpec.Type != DimensionType_TIMESTAMP {
+			err = pb.NewValidationError("mismatched Type (%v; expected TIMESTAMP)", dimSpec.Type)
+		}
+		if err != nil {
+			err = pb.ExtendContext(err, "RelativeTo")
+		}
+		if spec.Retention.RemoveAfter < time.Minute {
+			err = pb.NewValidationError("invalid RemoveAfter (%v; expected >= 1m)", spec.Retention.RemoveAfter)
+		}
+		if err != nil {
+			return pb.ExtendContext(err, "Retention")
+		}
+	}
+
+	// Verify all Dimensions of spec.Metrics are constituents of the Relation.
+	for i, tag := range spec.ResolvedView.MetTags {
+		var metSpec = schema.Metrics[tag]
+		var err error
+
+		if _, ok := names[metSpec.Dimension]; !ok {
+			err = pb.NewValidationError("Dimension not part of Relation (%s; metric %s)", metSpec.Dimension, metSpec.Name)
+		} else if marked, _ := names[metSpec.Name]; marked {
+			err = pb.NewValidationError("duplicated Metric (%s)", metSpec.Name)
 		} else {
-			agg = new(float64)
+			names[metSpec.Name] = true // Mark for duplicates.
 		}
-	case MetricType_STRING_HLL:
-		if agg == nil {
-			agg = new(uniqueAggregate)
+		if err != nil {
+			return pb.ExtendContext(err, "Metrics[%d]", i)
 		}
-		agg.(*uniqueAggregate).p = hll.Init(agg.(*uniqueAggregate).p)
-	default:
-		panic("unexpected metric type")
 	}
-	return agg
+
+	schema.Views[spec.Tag] = spec
+	schema.MVTags[spec.Name] = spec.Tag
+	return nil
 }
 
-// FoldMetric extracts metric |met| from the RelationRow and folds it into
-// Aggregate |agg|, which must have already been initialized.
-func (schema *Schema) FoldMetric(met MetTag, agg Aggregate, row RelationRow) {
-	switch spec := schema.Metrics[met]; spec.Type {
-	case MetricType_VARINT_SUM:
-		*agg.(*int64) += schema.Extract.Int[spec.DimTag](row)
-	case MetricType_VARINT_GUAGE:
-		*agg.(*int64) = schema.Extract.Int[spec.DimTag](row)
-	case MetricType_FLOAT_SUM:
-		*agg.(*float64) += schema.Extract.Float[spec.DimTag](row)
-	case MetricType_STRING_HLL:
-		if s := schema.Extract.String[spec.DimTag](row); len(s) != 0 {
-			var hash = hll.MurmurSum64([]byte(s)) // Doesn't escape => no copy.
-			var reg, count = hll.RegisterRhoRetailNext(hash)
-			var ua = agg.(*uniqueAggregate)
-			var err error
-
-			if ua.p, ua.tmp, _, err = hll.Add(ua.p, ua.tmp, reg, count); err != nil {
-				panic(err)
-			}
-		}
-	default:
-		panic("unexpected metric type")
+// validateName returns an error if |name| is not a valid token or is duplicated
+// by another Schema entity.
+func (schema *Schema) validateName(name string) error {
+	if err := pb.ValidateToken(name, 2, 128); err != nil {
+		return pb.ExtendContext(err, "Name")
+	} else if _, ok := schema.MapTags[name]; ok {
+	} else if _, ok = schema.DimTags[name]; ok {
+	} else if _, ok = schema.MetTags[name]; ok {
+	} else if _, ok = schema.RelTags[name]; ok {
+	} else if _, ok = schema.MVTags[name]; ok {
+	} else {
+		return nil
 	}
-}
-
-// ReduceMetric decodes an Aggregate of metric |met| from |b|, and reduces
-// it into |agg| (which must have already been initialized). The remainder of
-// |b| is returned.
-func (schema *Schema) ReduceMetric(b []byte, met MetTag, agg Aggregate) (rem []byte, err error) {
-	if len(b) == 0 {
-		return
-	}
-	switch spec := schema.Metrics[met]; spec.Type {
-	case MetricType_VARINT_SUM:
-		var v int64
-		if rem, v, err = encoding.DecodeVarintAscending(b); err == nil {
-			*agg.(*int64) += v
-		}
-	case MetricType_VARINT_GUAGE:
-		var v int64
-		if rem, v, err = encoding.DecodeVarintAscending(b); err == nil {
-			*agg.(*int64) = v
-		}
-	case MetricType_FLOAT_SUM:
-		var v float64
-		if rem, v, err = encoding.DecodeFloatAscending(b); err == nil {
-			*agg.(*float64) += v
-		}
-	case MetricType_STRING_HLL:
-		var ua = agg.(*uniqueAggregate)
-		var dec []byte
-
-		if rem, dec, err = decodeMaybePrefixedBytes(b); err == nil {
-			ua.p, ua.tmp, err = hll.Reduce(ua.p, dec, ua.tmp)
-		}
-	default:
-		panic("unexpected metric type")
-	}
-	return
+	return pb.NewValidationError("duplicated Name (%s)", name)
 }
 
 // ValidateSchemaTransition returns an error if the transition from |from|
 // to |to| would alter an immutable property of the Schema.
 func ValidateSchemaTransition(from, to Schema) (err error) {
 	// Confirm no DimensionSpec.Types were changed.
-	for i, dimTo := range to.Spec.Dimensions {
+	for i := range to.Spec.Dimensions {
+		var dimTo = to.Dimensions[to.Spec.Dimensions[i].Tag]
+
 		if dimFrom, ok := from.Dimensions[dimTo.Tag]; !ok {
 			continue // Added.
 		} else if dimFrom.Type != dimTo.Type {
@@ -544,7 +337,9 @@ func ValidateSchemaTransition(from, to Schema) (err error) {
 		}
 	}
 	// Confirm no MetricSpec.Types or DimTags changed.
-	for i, metTo := range to.Spec.Metrics {
+	for i := range to.Spec.Metrics {
+		var metTo = to.Metrics[to.Spec.Metrics[i].Tag]
+
 		if metFrom, ok := from.Metrics[metTo.Tag]; !ok {
 			continue // Added.
 		} else if metFrom.Type != metTo.Type {
@@ -557,21 +352,25 @@ func ValidateSchemaTransition(from, to Schema) (err error) {
 		}
 	}
 	// Confirm no RelationSpec.Mappings have changed.
-	for i, relTo := range to.Spec.Relations {
+	for i := range to.Spec.Relations {
+		var relTo = to.Relations[to.Spec.Relations[i].Tag]
+
 		if relFrom, ok := from.Relations[relTo.Tag]; !ok {
 			continue // Added.
-		} else if relFrom.Mapping != relTo.Mapping {
-			err = pb.NewValidationError("cannot alter immutable Mapping (%d != %d)", relFrom.Mapping, relTo.Mapping)
+		} else if relFrom.MapTag != relTo.MapTag {
+			err = pb.NewValidationError("cannot alter immutable MapTag (%d != %d)", relFrom.MapTag, relTo.MapTag)
 		}
 		if err != nil {
 			return pb.ExtendContext(err, "Relations[%d]", i)
 		}
 	}
 	// Confirm no MaterializedViewSpec.Views have changed.
-	for i, mvTo := range to.Spec.Views {
+	for i := range to.Spec.Views {
+		var mvTo = to.Views[to.Spec.Views[i].Tag]
+
 		if mvFrom, ok := from.Views[mvTo.Tag]; !ok {
 			continue // Added.
-		} else if veErr := mvFrom.View.VerboseEqual(&mvTo.View); veErr != nil {
+		} else if veErr := mvFrom.ResolvedView.VerboseEqual(&mvTo.ResolvedView); veErr != nil {
 			err = pb.NewValidationError("cannot alter immutable View: %s", veErr.Error())
 		}
 		if err != nil {
@@ -581,129 +380,16 @@ func ValidateSchemaTransition(from, to Schema) (err error) {
 	return nil
 }
 
-// Flatten Aggregate into a corresponding simple Field type.
-func Flatten(agg Aggregate) Field {
-	switch a := agg.(type) {
-	case *int64:
-		return *a
-	case *float64:
-		return *a
-	case *uniqueAggregate:
-		if cnt, err := hll.Count(a.p); err != nil {
-			panic(err)
+// indexStrings adds all |strings| to |m|, or returns the index of the first duplicated string.
+func indexStrings(strings []string) (int, map[string]bool) {
+	var m = make(map[string]bool, len(strings))
+
+	for i, s := range strings {
+		if _, ok := m[s]; ok {
+			return i, nil
 		} else {
-			return int64(cnt)
-		}
-	default:
-		panic(a)
-	}
-}
-
-// BuildStrHLL constructs a HLL Aggregate initialized with the given strings.
-// It's primarily useful in the construction of test fixtures.
-func BuildStrHLL(strs ...string) Aggregate {
-	var agg = new(uniqueAggregate)
-	agg.p = hll.Init(agg.p)
-
-	for _, s := range strs {
-		var hash = hll.MurmurSum64([]byte(s))
-		var reg, count = hll.RegisterRhoRetailNext(hash)
-		var err error
-
-		if agg.p, agg.tmp, _, err = hll.Add(agg.p, agg.tmp, reg, count); err != nil {
-			panic(err)
+			m[s] = false
 		}
 	}
-	return agg
+	return 0, m
 }
-
-// PackKey encodes a Schema key having the given dimensions. It's primarily
-// useful in the construction of test fixtures.
-func PackKey(dims ...interface{}) []byte {
-	var b = []byte{}
-
-	for i := range dims {
-		switch d := dims[i].(type) {
-		case int:
-			b = encoding.EncodeVarintAscending(b, int64(d))
-		case MVTag:
-			b = encoding.EncodeVarintAscending(b, int64(d))
-		case int64:
-			b = encoding.EncodeVarintAscending(b, d)
-		case float64:
-			b = encoding.EncodeFloatAscending(b, d)
-		case string:
-			b = encoding.EncodeStringAscending(b, d)
-		case time.Time:
-			b = encoding.EncodeTimeAscending(b, d)
-		default:
-			panic(dims[i])
-		}
-	}
-	return b
-}
-
-// PackValue encodes a Schema value having the given aggregates. It's primarily
-// useful in the construction of test fixtures.
-func PackValue(aggs ...interface{}) []byte {
-	var b = []byte{}
-
-	for i := range aggs {
-		switch a := aggs[i].(type) {
-
-		case int:
-			b = encoding.EncodeVarintAscending(b, int64(a))
-		case int64:
-			b = encoding.EncodeVarintAscending(b, a)
-		case float64:
-			b = encoding.EncodeFloatAscending(b, a)
-		case *uniqueAggregate:
-			b = encoding.EncodeUvarintAscending(b, uint64(len(a.p)))
-			b = append(b, a.p...)
-		default:
-			panic(aggs[i])
-		}
-	}
-	return b
-}
-
-func decodeMaybePrefixedBytes(b []byte) (rem []byte, dec []byte, err error) {
-	// Magic byte from the `encoding` package for representing ascending bytes.
-	const bytesAscendingMarker byte = 0x12
-
-	// Is this a legacy ascending bytes encoding?
-	// TODO(johnny): Remove support, replacing with test & panic.
-	if b[0] == bytesAscendingMarker {
-		rem, dec, err = encoding.DecodeBytesAscending(b, nil)
-		return
-	}
-
-	// This is the newer, varint prefix encoding.
-	var l uint64
-	if rem, l, err = encoding.DecodeUvarintAscending(b); err != nil {
-		return
-	} else if int(l) > len(rem) {
-		err = errors.New("invalid byte length")
-	} else {
-		dec, rem = rem[:l], rem[l:]
-
-		if _, err = hll.Count(dec); err != nil {
-			panic(fmt.Sprintf("len %d : %s", len(dec), err))
-		}
-	}
-	return
-}
-
-type uniqueAggregate struct{ p, tmp []byte }
-
-func (ua *uniqueAggregate) String() string {
-	var cnt, err = hll.Count(ua.p)
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("hll(%d)", cnt)
-}
-
-// DimMVTag is a non-validating DimTag which stands-in for the MVTag
-// encoded as the first field of every row key serialized in a VTable.
-const DimMVTag DimTag = 0

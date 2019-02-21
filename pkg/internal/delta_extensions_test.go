@@ -61,7 +61,6 @@ func (s *DeltasSuite) TestTransactionTransitions(c *gc.C) {
 }
 
 func (s *DeltasSuite) TestRowToRelationSpec(c *gc.C) {
-	var cfg = quotes.BuildSchemaSpec()
 	var schema, _ = factable.NewSchema(nil, quotes.BuildSchemaSpec())
 
 	var cases = []struct {
@@ -70,12 +69,12 @@ func (s *DeltasSuite) TestRowToRelationSpec(c *gc.C) {
 		spec factable.MaterializedViewSpec
 	}{
 		{
-			row:  encoding.EncodeVarintAscending(nil, int64(quotes.MVWordStats)),
-			spec: cfg.Views[0],
+			row:  encoding.EncodeVarintAscending(nil, int64(quotes.MVWordStatsTag)),
+			spec: schema.Views[quotes.MVWordStatsTag],
 		},
 		{
-			row:  encoding.EncodeVarintAscending(nil, int64(quotes.MVQuoteStats)),
-			spec: cfg.Views[1],
+			row:  encoding.EncodeVarintAscending(nil, int64(quotes.MVQuoteStatsTag)),
+			spec: schema.Views[quotes.MVQuoteStatsTag],
 		},
 		{
 			row: []byte("garbage"),

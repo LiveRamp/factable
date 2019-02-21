@@ -21,7 +21,7 @@ type Combiner struct {
 			// A range is specified as [2][]byte, which are inclusive begin & end values
 			// for a range of acceptable dimension field encodings. |ranges| is an
 			// ordered, non-overlapping set of such ranges.
-			ranges [][][2][]byte
+			ranges [][]ResolvedQuery_Filter_Range
 		}
 		metric struct {
 			// Ordered metric tags of each input row.
@@ -53,10 +53,10 @@ type Combiner struct {
 // emits rows & aggregates according to the Query ViewSpec and applicable filters.
 // It returns an error if the |input| ViewSpec or |query| are not well-formed with
 // respect to each other, and to the Schema.
-func NewCombiner(schema Schema, input ViewSpec, query QuerySpec) (*Combiner, error) {
+func NewCombiner(schema Schema, input ResolvedView, query ResolvedQuery) (*Combiner, error) {
 	// Index dimension tags by their order within the input ViewSpec.
 	var dimIndex = make(map[DimTag]int)
-	for d, tag := range input.Dimensions {
+	for d, tag := range input.DimTags {
 		if _, ok := schema.Dimensions[tag]; !ok {
 			return nil, errors.Errorf("Input Dimension tag %d not in Schema", tag)
 		} else if _, ok = dimIndex[tag]; ok {
@@ -66,30 +66,28 @@ func NewCombiner(schema Schema, input ViewSpec, query QuerySpec) (*Combiner, err
 	}
 	// Mark dimensions included in the output shape, and their order w.r.t the input dimensions.
 	var groupedDims []int
-	var dimRanges = make([][][2][]byte, len(input.Dimensions))
+	var dimRanges = make([][]ResolvedQuery_Filter_Range, len(input.DimTags))
 
-	for _, tag := range query.View.Dimensions {
+	for _, tag := range query.View.DimTags {
 		if ind, ok := dimIndex[tag]; !ok {
-			return nil, errors.Errorf("Query Dimension tag %d not in input ViewSpec (%v)", tag, input.Dimensions)
+			return nil, errors.Errorf("Query Dimension tag %d not in input ViewSpec (%v)", tag, input.DimTags)
 		} else if dimRanges[ind] != nil {
 			return nil, errors.Errorf("Query Dimension tag %d appears more than once", tag)
 		} else {
 			groupedDims = append(groupedDims, ind)
 			// Use a zero-valued but non-nil slice placeholder to mark this
 			// as an output dimension which must be captured.
-			dimRanges[ind] = [][2][]byte{}
+			dimRanges[ind] = []ResolvedQuery_Filter_Range{}
 		}
 	}
-	// For each Query_Filter, verify its Dimension and collect its flattened byte ranges.
+	// For each ResolvedQuery_Filter, verify its Dimension and collect its ranges.
 	for _, f := range query.Filters {
-		if ind, ok := dimIndex[f.Dimension]; !ok {
-			return nil, errors.Errorf("Filter Dimension tag %d not in input ViewSpec (%v)", f.Dimension, input.Dimensions)
+		if ind, ok := dimIndex[f.DimTag]; !ok {
+			return nil, errors.Errorf("Filter Dimension tag %d not in input ViewSpec (%v)", f.DimTag, input.DimTags)
 		} else if len(dimRanges[ind]) != 0 {
-			return nil, errors.Errorf("Filter Dimension tag %d appears more than once", f.Dimension)
-		} else if rng, err := flattenRangeSpecs(schema.Dimensions[f.Dimension], f.Ranges); err != nil {
-			return nil, err
+			return nil, errors.Errorf("Filter Dimension tag %d appears more than once", f.DimTag)
 		} else {
-			dimRanges[ind] = rng
+			dimRanges[ind] = f.Ranges
 		}
 	}
 	// Drop extra trailing dimensions of the input which we don't need
@@ -100,13 +98,13 @@ func NewCombiner(schema Schema, input ViewSpec, query QuerySpec) (*Combiner, err
 	// Fill remaining, empty |dimRanges| with an unconstrained, open-ended range.
 	for d, rng := range dimRanges {
 		if len(rng) == 0 {
-			dimRanges[d] = [][2][]byte{{}}
+			dimRanges[d] = []ResolvedQuery_Filter_Range{{Begin: nil, End: nil}}
 		}
 	}
 
 	// Index metric tags by their order within the Query ViewSpec.
 	var metInvIndex = make(map[MetTag]int)
-	for m, tag := range query.View.Metrics {
+	for m, tag := range query.View.MetTags {
 		if _, ok := schema.Metrics[tag]; !ok {
 			return nil, errors.Errorf("Query Metric tag %d not in Schema", tag)
 		} else if _, ok = metInvIndex[tag]; ok {
@@ -116,7 +114,7 @@ func NewCombiner(schema Schema, input ViewSpec, query QuerySpec) (*Combiner, err
 	}
 	// Build the mapping of input metrics to their respective output order.
 	var reorderedMetrics []int
-	for _, tag := range input.Metrics {
+	for _, tag := range input.MetTags {
 		if _, ok := schema.Metrics[tag]; !ok {
 			return nil, errors.Errorf("Input Metric tag %d not in Schema", tag)
 		} else if ind, ok := metInvIndex[tag]; ok {
@@ -136,9 +134,9 @@ func NewCombiner(schema Schema, input ViewSpec, query QuerySpec) (*Combiner, err
 	}
 
 	var cb = &Combiner{Schema: schema}
-	cb.input.dimension.tags = input.Dimensions[:len(dimRanges)]
+	cb.input.dimension.tags = input.DimTags[:len(dimRanges)]
 	cb.input.dimension.ranges = dimRanges
-	cb.input.metric.tags = input.Metrics[:len(reorderedMetrics)]
+	cb.input.metric.tags = input.MetTags[:len(reorderedMetrics)]
 	cb.input.metric.reorder = reorderedMetrics
 	cb.input.cur = inputRowState{
 		offsets:  make([]int, len(dimRanges)+1),
@@ -148,7 +146,7 @@ func NewCombiner(schema Schema, input ViewSpec, query QuerySpec) (*Combiner, err
 		offsets: make([]int, len(dimRanges)+1),
 	}
 	cb.output.dimOrder = groupedDims
-	cb.output.metrics = query.View.Metrics
+	cb.output.metrics = query.View.MetTags
 
 	_ = cb.Flush()
 	return cb, nil
@@ -173,7 +171,7 @@ func (cb *Combiner) Combine(key, value []byte) (flushed, seek bool, err error) {
 	// Reduce value aggregates under our next grouped output key.
 	for m, tag := range cb.input.metric.tags {
 		if ind := cb.input.metric.reorder[m]; ind != -1 {
-			value, err = cb.Schema.ReduceMetric(value, tag, cb.output.next.aggs[ind])
+			value, err = cb.Schema.reduceMetric(value, tag, cb.output.next.aggs[ind])
 		} else {
 			value, err = cb.Schema.dequeMetric(value, tag)
 		}
@@ -213,9 +211,7 @@ func (cb *Combiner) Flush() bool {
 	if cb.output.next.aggs == nil {
 		cb.output.next.aggs = make([]Aggregate, len(cb.output.metrics))
 	}
-	for m, tag := range cb.output.metrics {
-		cb.output.next.aggs[m] = cb.Schema.InitMetric(tag, cb.output.next.aggs[m])
-	}
+	cb.Schema.InitAggregates(cb.output.metrics, cb.output.next.aggs)
 	cb.output.next.sawRow = false
 
 	return cb.output.flushed.sawRow
@@ -226,10 +222,7 @@ func (cb *Combiner) Key() []byte { return cb.output.flushed.key }
 
 // Value returns the last Flushed value, which is appended to |b|.
 func (cb *Combiner) Value(b []byte) []byte {
-	for m, tag := range cb.output.metrics {
-		b = cb.Schema.MarshalMetric(b, tag, cb.output.flushed.aggs[m])
-	}
-	return b
+	return cb.Schema.MarshalMetrics(b, cb.output.metrics, cb.output.flushed.aggs)
 }
 
 // Aggregates returns the last Flushed Aggregates.
@@ -309,17 +302,17 @@ func (cb *Combiner) transition(key []byte) (rejected bool, err error) {
 				rejected = true // We're beyond all accepted ranges.
 				break
 			}
-			var rng [2][]byte = cb.input.dimension.ranges[d][rangeInd]
+			var rng = cb.input.dimension.ranges[d][rangeInd]
 
 			// Is |nField| ordered *after* rng[1]? An empty filter is
 			// treated as greater than any field value.
-			if len(rng[1]) != 0 && bytes.Compare(nField, rng[1]) > 0 {
+			if len(rng.End) != 0 && bytes.Compare(nField, rng.End) > 0 {
 				rangeInd++ // This range is exhausted. Increment to the next.
 				continue
 			}
 			// Is |nField| ordered *before* rng[0]? An empty filter is
 			// treated as less than any field value.
-			if bytes.Compare(nField, rng[0]) < 0 {
+			if bytes.Compare(nField, rng.Begin) < 0 {
 				rejected = true
 			} else {
 				// |nField| is within |rng|.
@@ -337,7 +330,7 @@ func (cb *Combiner) transition(key []byte) (rejected bool, err error) {
 	return rejected, nil
 }
 
-func buildSeekKey(b []byte, r inputRowState, ranges [][][2][]byte) []byte {
+func buildSeekKey(b []byte, r inputRowState, ranges [][]ResolvedQuery_Filter_Range) []byte {
 	var (
 		d        = len(r.rangeInd) - 1
 		ind      = r.rangeInd[d]
@@ -355,10 +348,10 @@ func buildSeekKey(b []byte, r inputRowState, ranges [][][2][]byte) []byte {
 			field = r.key[r.offsets[d]:r.offsets[d+1]]
 			cmp   int
 		)
-		if ranges[d][ind][1] == nil {
+		if ranges[d][ind].End == nil {
 			cmp = -1
 		} else {
-			cmp = bytes.Compare(field, ranges[d][ind][1])
+			cmp = bytes.Compare(field, ranges[d][ind].End)
 		}
 
 		switch cmp {
@@ -385,8 +378,8 @@ func buildSeekKey(b []byte, r inputRowState, ranges [][][2][]byte) []byte {
 
 	// Append the next seek'd dimension range, as well as successive,
 	// contiguous dimensions also having non-open begin ranges.
-	for d != len(ranges) && ranges[d][ind][0] != nil {
-		b = append(b, ranges[d][ind][0]...)
+	for d != len(ranges) && ranges[d][ind].Begin != nil {
+		b = append(b, ranges[d][ind].Begin...)
 		d, ind = d+1, 0
 	}
 	return b

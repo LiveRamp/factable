@@ -82,16 +82,18 @@ func (s *APISuite) TestScanTableCases(c *gc.C) {
 
 func runQueryCases(c *gc.C, tc quotes.TestCase, conn *grpc.ClientConn, shard consumer.ShardID) {
 	// Case: Query requires aggregation but no sorting.
-	verifyQuery(c, tc.Ctx, conn, factable.QueryRequest{
-		View:  quotes.MVQuoteStats,
-		Shard: shard,
-		Query: factable.QuerySpec{
-			View: factable.ViewSpec{
-				RelTag:     quotes.RelQuoteWords,
-				Dimensions: []factable.DimTag{quotes.DimQuoteAuthor},
-				Metrics:    []factable.MetTag{quotes.MetricSumWordQuoteCount, quotes.MetricUniqueWords},
-			},
+	var query, err = factable.NewQueryClient(conn).ResolveQuery(tc.Ctx, &factable.QuerySpec{
+		MaterializedView: quotes.MVQuoteStats,
+		View: factable.ViewSpec{
+			Dimensions: []string{quotes.DimQuoteAuthor},
+			Metrics:    []string{quotes.MetricSumWordQuoteCount, quotes.MetricUniqueWords},
 		},
+	})
+	c.Assert(err, gc.IsNil)
+
+	verifyQuery(c, tc.Ctx, conn, factable.ExecuteQueryRequest{
+		Shard: shard,
+		Query: *query,
 	}, [][]interface{}{
 		// Expect we see aggregations of three rows per DimQuoteAuthor.
 		{"00", boxInt(30), factable.BuildStrHLL("0000", "0010", "0020")},
@@ -102,21 +104,24 @@ func runQueryCases(c *gc.C, tc quotes.TestCase, conn *grpc.ClientConn, shard con
 	})
 
 	// Case: Query requires filtering and sorting, but not post-sort merging.
-	verifyQuery(c, tc.Ctx, conn, factable.QueryRequest{
-		View:  quotes.MVQuoteStats,
-		Shard: shard,
-		Query: factable.QuerySpec{
-			View: factable.ViewSpec{
-				RelTag:     quotes.RelQuoteWords,
-				Dimensions: []factable.DimTag{quotes.DimQuoteID},
-				Metrics:    []factable.MetTag{quotes.MetricSumQuoteCount},
-			},
-			Filters: []factable.QuerySpec_Filter{
-				{Dimension: quotes.DimQuoteAuthor, Ranges: []factable.Range{
-					{Str: &factable.Range_String{Begin: "00", End: "01"}},
-				}},
+	query, err = factable.NewQueryClient(conn).ResolveQuery(tc.Ctx, &factable.QuerySpec{
+		MaterializedView: quotes.MVQuoteStats,
+		View: factable.ViewSpec{
+			Dimensions: []string{quotes.DimQuoteID},
+			Metrics:    []string{quotes.MetricSumQuoteCount},
+		},
+		Filters: []factable.QuerySpec_Filter{
+			{
+				Dimension: quotes.DimQuoteAuthor,
+				Strings:   []factable.QuerySpec_Filter_String{{Begin: "00", End: "01"}},
 			},
 		},
+	})
+	c.Assert(err, gc.IsNil)
+
+	verifyQuery(c, tc.Ctx, conn, factable.ExecuteQueryRequest{
+		Shard: shard,
+		Query: *query,
 	}, [][]interface{}{
 		// Expect we see rows re-ordered on QuoteID
 		{int64(0), boxInt(1)},  // Author "00"
@@ -128,16 +133,18 @@ func runQueryCases(c *gc.C, tc quotes.TestCase, conn *grpc.ClientConn, shard con
 	})
 
 	// Case: Query of a different relation. Requires sorting and a post-sort merge.
-	verifyQuery(c, tc.Ctx, conn, factable.QueryRequest{
-		View:  quotes.MVWordStats,
-		Shard: shard,
-		Query: factable.QuerySpec{
-			View: factable.ViewSpec{
-				RelTag:     quotes.RelQuoteWords,
-				Dimensions: []factable.DimTag{quotes.DimQuoteAuthor},
-				Metrics:    []factable.MetTag{quotes.MetricSumWordQuoteCount},
-			},
+	query, err = factable.NewQueryClient(conn).ResolveQuery(tc.Ctx, &factable.QuerySpec{
+		MaterializedView: quotes.MVWordStats,
+		View: factable.ViewSpec{
+			Dimensions: []string{quotes.DimQuoteAuthor},
+			Metrics:    []string{quotes.MetricSumWordQuoteCount},
 		},
+	})
+	c.Assert(err, gc.IsNil)
+
+	verifyQuery(c, tc.Ctx, conn, factable.ExecuteQueryRequest{
+		Shard: shard,
+		Query: *query,
 	}, [][]interface{}{
 		{"00", boxInt(3)}, // Word "0000", "0010", "0020".
 		{"01", boxInt(3)}, // "0006", "0016", "0026".
@@ -158,34 +165,31 @@ func (s *APISuite) TestScanErrorCases(c *gc.C) {
 	var vtable = factable.NewQueryClient(cmr.Service.Loopback)
 
 	// Case: Malformed QuerySpec.
-	var stream, _ = vtable.Query(tc.Ctx, &factable.QueryRequest{
-		View: quotes.MVWordStats,
-		Query: factable.QuerySpec{
-			View: factable.ViewSpec{
-				RelTag:     quotes.RelQuoteWords,
-				Dimensions: []factable.DimTag{quotes.DimQuoteAuthor, quotes.DimQuoteAuthor},
+	var stream, _ = vtable.ExecuteQuery(tc.Ctx, &factable.ExecuteQueryRequest{
+		Query: factable.ResolvedQuery{
+			MvTag: quotes.MVWordStatsTag,
+			View: factable.ResolvedView{
+				DimTags: []factable.DimTag{quotes.DimQuoteAuthorTag, quotes.DimQuoteAuthorTag},
 			},
 		},
 	})
 	var _, err = stream.Recv()
-	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = Query.View.Dimensions\[1\]: duplicated Dimension Tag .*`)
+	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = Input Dimension tag 19 appears more than once`)
 
 	// Case: Query of an unknown view.
-	stream, _ = vtable.Query(tc.Ctx, &factable.QueryRequest{
-		View: 9999,
-		Query: factable.QuerySpec{
-			View: factable.ViewSpec{RelTag: quotes.RelQuoteWords},
+	stream, _ = vtable.ExecuteQuery(tc.Ctx, &factable.ExecuteQueryRequest{
+		Query: factable.ResolvedQuery{
+			MvTag: 9999,
 		},
 	})
 	_, err = stream.Recv()
-	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = view not found: 9999`)
+	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = MvTag not found \(9999\)`)
 
 	// Case: Query of an shard which fails to resolve.
-	stream, _ = vtable.Query(tc.Ctx, &factable.QueryRequest{
-		View:  quotes.MVWordStats,
+	stream, _ = vtable.ExecuteQuery(tc.Ctx, &factable.ExecuteQueryRequest{
 		Shard: "some-other-shard",
-		Query: factable.QuerySpec{
-			View: factable.ViewSpec{RelTag: quotes.RelQuoteWords},
+		Query: factable.ResolvedQuery{
+			MvTag: quotes.MVWordStatsTag,
 		},
 	})
 	_, err = stream.Recv()
@@ -193,29 +197,25 @@ func (s *APISuite) TestScanErrorCases(c *gc.C) {
 
 	// Case: Query with an incorrect dimension.
 	for _, shard := range []consumer.ShardID{"", "vtable-part-000"} {
-		stream, _ = vtable.Query(tc.Ctx, &factable.QueryRequest{
-			View:  quotes.MVWordStats,
+		stream, _ = vtable.ExecuteQuery(tc.Ctx, &factable.ExecuteQueryRequest{
 			Shard: shard,
-			Query: factable.QuerySpec{
-				View: factable.ViewSpec{
-					RelTag:     quotes.RelQuoteWords,
-					Dimensions: []factable.DimTag{quotes.DimQuoteID},
+			Query: factable.ResolvedQuery{
+				MvTag: quotes.MVWordStatsTag,
+				View: factable.ResolvedView{
+					DimTags: []factable.DimTag{quotes.DimQuoteIDTag},
 				},
 			},
 		})
 		_, err = stream.Recv()
-		c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = Query Dimension tag \d not in input ViewSpec .*`)
+		c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = Query Dimension tag \d+ not in input ViewSpec .*`)
 	}
 
-	// Case: Query missing the RelTag.
-	stream, _ = vtable.Query(tc.Ctx, &factable.QueryRequest{
-		View: quotes.MVWordStats,
-		Query: factable.QuerySpec{
-			View: factable.ViewSpec{},
-		},
+	// Case: Query missing the MvTag.
+	stream, _ = vtable.ExecuteQuery(tc.Ctx, &factable.ExecuteQueryRequest{
+		Query: factable.ResolvedQuery{},
 	})
 	_, err = stream.Recv()
-	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = Query.View: invalid RelTag \(0; expected > 0\)`)
+	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = MvTag not found \(0\)`)
 
 	// Shutdown.
 	cmr.RevokeLease(c)
@@ -225,25 +225,25 @@ func (s *APISuite) TestScanErrorCases(c *gc.C) {
 func writeDataFixtures(c *gc.C, wc io.WriteCloser, begin, end, stride int64) {
 	var enc = json.NewEncoder(wc)
 
-	// Dimensions: []factable.DimTag{DimQuoteAuthor, DimQuoteID},
-	// Metrics:    []factable.MetTag{MetricSumQuoteCount, MetricSumWordQuoteCount, MetricSumWordTotalCount, MetricUniqueWords},
+	// Dimensions: {DimQuoteAuthor, DimQuoteID},
+	// Metrics:    {MetricSumQuoteCount, MetricSumWordQuoteCount, MetricSumWordTotalCount, MetricUniqueWords},
 	for i := begin; i < end; i += stride {
 		c.Check(enc.Encode(&DeltaEvent{
 			Extractor: "quote-extractor",
 			SeqNo:     i + 1,
-			RowKey:    factable.PackKey(quotes.MVQuoteStats, fmt.Sprintf("%02d", i%5), i),
+			RowKey:    factable.PackKey(quotes.MVQuoteStatsTag, fmt.Sprintf("%02d", i%5), i),
 			RowValue:  factable.PackValue(1, 10, 100, factable.BuildStrHLL(fmt.Sprintf("%04d", i))),
 		}), gc.IsNil)
 	}
 	c.Check(enc.Encode(&DeltaEvent{Extractor: "quote-extractor", SeqNo: end}), gc.IsNil) // Commit.
 
-	// Dimensions: []factable.DimTag{DimQuoteWord, DimQuoteAuthor},
-	// Metrics:    []factable.MetTag{MetricSumWordQuoteCount, MetricLastQuoteID, MetricSumWordTotalCount},
+	// Dimensions: {DimQuoteWord, DimQuoteAuthor},
+	// Metrics:    {MetricSumWordQuoteCount, MetricLastQuoteID, MetricSumWordTotalCount},
 	for i := begin; i < end; i += stride {
 		c.Check(enc.Encode(&DeltaEvent{
 			Extractor: "word-extractor",
 			SeqNo:     i + 1,
-			RowKey:    factable.PackKey(quotes.MVWordStats, fmt.Sprintf("%04d", i), fmt.Sprintf("%02d", i%5)),
+			RowKey:    factable.PackKey(quotes.MVWordStatsTag, fmt.Sprintf("%04d", i), fmt.Sprintf("%02d", i%5)),
 			RowValue:  factable.PackValue(1, 10, 100),
 		}), gc.IsNil)
 	}
@@ -252,9 +252,9 @@ func writeDataFixtures(c *gc.C, wc io.WriteCloser, begin, end, stride int64) {
 	c.Check(wc.Close(), gc.IsNil)
 }
 
-func verifyQuery(c *gc.C, ctx context.Context, conn *grpc.ClientConn, req factable.QueryRequest, expect [][]interface{}) {
+func verifyQuery(c *gc.C, ctx context.Context, conn *grpc.ClientConn, req factable.ExecuteQueryRequest, expect [][]interface{}) {
 	var vtable = factable.NewQueryClient(conn)
-	var stream, err = vtable.Query(ctx, &req)
+	var stream, err = vtable.ExecuteQuery(ctx, &req)
 	c.Assert(err, gc.IsNil)
 
 	var it = factable.NewStreamIterator(stream.RecvMsg)
@@ -265,11 +265,11 @@ func verifyQuery(c *gc.C, ctx context.Context, conn *grpc.ClientConn, req factab
 		var o []interface{}
 
 		// Unpack Fields and Aggregates sent by the server.
-		c.Check(schema.UnmarshalDimensions(key, req.Query.View.Dimensions, func(f factable.Field) error {
+		c.Check(schema.UnmarshalDimensions(key, req.Query.View.DimTags, func(f factable.Field) error {
 			o = append(o, f)
 			return nil
 		}), gc.IsNil)
-		c.Check(schema.UnmarshalMetrics(val, req.Query.View.Metrics, func(a factable.Aggregate) error {
+		c.Check(schema.UnmarshalMetrics(val, req.Query.View.MetTags, func(a factable.Aggregate) error {
 			o = append(o, a)
 			return nil
 		}), gc.IsNil)

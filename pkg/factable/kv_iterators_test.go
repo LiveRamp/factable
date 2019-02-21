@@ -77,15 +77,16 @@ func (s *IteratorsSuite) TestCombinerIteratorCases(c *gc.C) {
 	c.Assert(err, gc.IsNil)
 
 	var (
-		input = ViewSpec{
-			RelTag:     relTest,
-			Dimensions: []DimTag{dimAnInt, dimAnIntTwo, dimAnIntThree},
-			Metrics:    []MetTag{metAnIntSum, metAnIntGauge},
+		input = ResolvedView{
+			DimTags: []DimTag{dimAnIntTag, dimAnIntTwoTag, dimAnIntThreeTag},
+			MetTags: []MetTag{metAnIntSumTag, metAnIntGaugeTag},
 		}
-		query = QuerySpec{
+		query = ResolvedQuery{
 			View: input,
-			Filters: []QuerySpec_Filter{
-				{Dimension: dimAnInt, Ranges: []Range{{Int: &Range_Int{End: startAt + 4}}}},
+			Filters: []ResolvedQuery_Filter{
+				{DimTag: dimAnIntTag, Ranges: []ResolvedQuery_Filter_Range{
+					{End: encoding.EncodeVarintAscending(nil, startAt+4)},
+				}},
 			},
 		}
 	)
@@ -104,7 +105,7 @@ func (s *IteratorsSuite) TestCombinerIteratorCases(c *gc.C) {
 	verify(c, it, NewSliceIterator(seq...), false, false)
 
 	// Case: all input rows combined into a single output row.
-	query.View.Dimensions = nil
+	query.View.DimTags = nil
 
 	it, err = NewCombinerIterator(NewSliceIterator(seq...), schema, input, query)
 	c.Assert(err, gc.IsNil)
@@ -118,8 +119,10 @@ func (s *IteratorsSuite) TestCombinerIteratorCases(c *gc.C) {
 	c.Check(err, gc.Equals, KVIteratorDone)
 
 	// Case: all input is filtered.
-	query.Filters = []QuerySpec_Filter{
-		{Dimension: dimAnInt, Ranges: []Range{{Int: &Range_Int{End: startAt - 1}}}},
+	query.Filters = []ResolvedQuery_Filter{
+		{DimTag: dimAnIntTag, Ranges: []ResolvedQuery_Filter_Range{
+			{End: encoding.EncodeVarintAscending(nil, startAt-1)},
+		}},
 	}
 
 	var sliceIt = NewSliceIterator(seq...)
@@ -134,8 +137,8 @@ func (s *IteratorsSuite) TestCombinerIteratorCases(c *gc.C) {
 	c.Check(sliceIt.closed, gc.Equals, true)
 
 	// Case: invalid QuerySpec returns an error.
-	it, err = NewCombinerIterator(nil, schema, ViewSpec{}, query)
-	c.Check(err, gc.ErrorMatches, `Filter Dimension tag \d not in input ViewSpec .*`)
+	it, err = NewCombinerIterator(nil, schema, ResolvedView{}, query)
+	c.Check(err, gc.ErrorMatches, `Filter Dimension tag \d+ not in input ViewSpec .*`)
 
 	// Case: Wrapped iterator errors are passed through.
 	it, err = NewCombinerIterator(errIterator{}, schema, input, query)
@@ -151,16 +154,14 @@ func (s *IteratorsSuite) TestSortingIterator(c *gc.C) {
 	c.Assert(err, gc.IsNil)
 
 	var (
-		input = ViewSpec{
-			RelTag:     relTest,
-			Dimensions: []DimTag{dimAnInt, dimAnIntTwo, dimAnIntThree},
-			Metrics:    []MetTag{metAnIntSum, metAnIntGauge},
+		input = ResolvedView{
+			DimTags: []DimTag{dimAnIntTag, dimAnIntTwoTag, dimAnIntThreeTag},
+			MetTags: []MetTag{metAnIntSumTag, metAnIntGaugeTag},
 		}
-		query = QuerySpec{
-			View: ViewSpec{
-				RelTag:     relTest,
-				Dimensions: []DimTag{dimAnIntThree, dimAnIntTwo, dimAnInt}, // Invert order.
-				Metrics:    []MetTag{metAnIntSum},
+		query = ResolvedQuery{
+			View: ResolvedView{
+				DimTags: []DimTag{dimAnIntThreeTag, dimAnIntTwoTag, dimAnIntTag}, // Invert order.
+				MetTags: []MetTag{metAnIntSumTag},
 			},
 		}
 	)

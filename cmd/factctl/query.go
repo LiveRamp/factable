@@ -13,8 +13,8 @@ import (
 )
 
 type cmdQuery struct {
-	Path   string `long:"path" default:"/path/to/query.file" description:"Local path to query file to execute"`
-	Format string `long:"format" short:"o" choice:"yaml" choice:"json" choice:"proto" default:"proto" description:"Input format"`
+	Path   string `long:"path" required:"true" description:"Local path to query file to execute"`
+	Format string `long:"format" short:"o" choice:"yaml" choice:"json" choice:"proto" default:"yaml" description:"Input format"`
 
 	cfg *BaseCfg
 }
@@ -26,8 +26,8 @@ func (cmd *cmdQuery) Execute([]string) error {
 	var ctx = pb.WithDispatchDefault(context.Background())
 	var vtConn = cmd.cfg.VTable.Dial(ctx)
 
-	var req factable.QueryRequest
-	parseFile(cmd.Path, cmd.Format, &req)
+	var spec factable.QuerySpec
+	parseFile(cmd.Path, cmd.Format, &spec)
 
 	var out = csv.NewWriter(os.Stdout)
 	out.Comma = '\t'
@@ -38,8 +38,11 @@ func (cmd *cmdQuery) Execute([]string) error {
 	schema, err := factable.NewSchema(nil, schemaResp.Spec)
 	mbp.Must(err, "failed to build Schema from SchemaSpec")
 
+	query, err := schema.ResolveQuery(spec)
+	mbp.Must(err, "failed to resolve query")
+
 	// Execute the query.
-	stream, err := factable.NewQueryClient(vtConn).Query(ctx, &req)
+	stream, err := factable.NewQueryClient(vtConn).ExecuteQuery(ctx, &factable.ExecuteQueryRequest{Query: query})
 	mbp.Must(err, "failed to query table")
 
 	var it = factable.NewStreamIterator(stream.RecvMsg)
@@ -48,11 +51,11 @@ func (cmd *cmdQuery) Execute([]string) error {
 	for ; err == nil; key, val, err = it.Next() {
 		var rec []string
 
-		mbp.Must(schema.UnmarshalDimensions(key, req.Query.View.Dimensions, func(f factable.Field) error {
+		mbp.Must(schema.UnmarshalDimensions(key, query.View.DimTags, func(f factable.Field) error {
 			rec = append(rec, fmt.Sprintf("%v", f))
 			return nil
 		}), "failed to unmarshal dimensions")
-		mbp.Must(schema.UnmarshalMetrics(val, req.Query.View.Metrics, func(a factable.Aggregate) error {
+		mbp.Must(schema.UnmarshalMetrics(val, query.View.MetTags, func(a factable.Aggregate) error {
 			rec = append(rec, fmt.Sprintf("%v", factable.Flatten(a)))
 			return nil
 		}), "failed to unmarshal metrics")

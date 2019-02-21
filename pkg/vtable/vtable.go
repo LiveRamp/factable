@@ -167,12 +167,11 @@ func (*VTable) FinalizeTxn(shard consumer.Shard, store consumer.Store) error {
 	for keyStr, aggs := range cache.updates {
 		var (
 			key    = []byte(keyStr)
-			value  = value[:0]
 			mvSpec = MustViewSpecOfRow(key, cache.schema)
 		)
-		for m, tag := range mvSpec.View.Metrics {
-			value = cache.schema.MarshalMetric(value, tag, aggs[m])
-		}
+
+		value = cache.schema.MarshalMetrics(value[:0], mvSpec.ResolvedView.MetTags, aggs)
+
 		wb.Put(key, value)
 		delete(cache.updates, keyStr)
 	}
@@ -192,10 +191,9 @@ func accumulate(cache *shardState, rdb *consumer.RocksDBStore, delta DeltaEvent)
 	var aggs, ok = cache.updates[string(delta.RowKey)]
 	if !ok {
 		// Initialize Aggregates.
-		aggs = make([]factable.Aggregate, len(mvSpec.View.Metrics))
-		for m, tag := range mvSpec.View.Metrics {
-			aggs[m] = cache.schema.InitMetric(tag, aggs[m])
-		}
+		aggs = make([]factable.Aggregate, len(mvSpec.ResolvedView.MetTags))
+		cache.schema.InitAggregates(mvSpec.ResolvedView.MetTags, aggs)
+
 		cache.updates[string(delta.RowKey)] = aggs // Track for remainder of txn.
 
 		// Attempt to fill from database.
@@ -207,21 +205,15 @@ func accumulate(cache *shardState, rdb *consumer.RocksDBStore, delta DeltaEvent)
 		if dbVal.Size() == 0 {
 			// Database missed.
 		} else {
-			var rem []byte = dbVal.Data()
-			for m, tag := range mvSpec.View.Metrics {
-				if rem, err = cache.schema.ReduceMetric(rem, tag, aggs[m]); err != nil {
-					return err
-				}
+			if _, err = cache.schema.ReduceMetrics(dbVal.Data(), mvSpec.ResolvedView.MetTags, aggs); err != nil {
+				return err
 			}
 		}
 		dbVal.Free()
 	}
 
-	var rem []byte = delta.RowValue
-	for m, tag := range mvSpec.View.Metrics {
-		if rem, err = cache.schema.ReduceMetric(rem, tag, aggs[m]); err != nil {
-			return err
-		}
+	if _, err = cache.schema.ReduceMetrics(delta.RowValue, mvSpec.ResolvedView.MetTags, aggs); err != nil {
+		return err
 	}
 	return nil
 }

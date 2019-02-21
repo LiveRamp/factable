@@ -22,7 +22,7 @@ import (
 type ExtractorSuite struct{}
 
 func (s *ExtractorSuite) TestFoldsOverUniqueWords(c *gc.C) {
-	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(1, quotes.MVQuoteStats))
+	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(1, quotes.MVQuoteStatsTag))
 	defer cleanup()
 
 	var app = &Extractor{Extractors: quotes.BuildExtractors()}
@@ -40,9 +40,9 @@ func (s *ExtractorSuite) TestFoldsOverUniqueWords(c *gc.C) {
 	// The Mapping function emits an input record for each unique word, which a Extractor for
 	// "quoteStats" should have folded over, producing a total word count and unique word HLL.
 	c.Check(txn.next(c), gc.DeepEquals, DeltaEvent{
-		Extractor: fmt.Sprintf("extractor-%d", quotes.MVQuoteStats),
+		Extractor: fmt.Sprintf("extractor-%d", quotes.MVQuoteStatsTag),
 		SeqNo:     1,
-		RowKey:    factable.PackKey(quotes.MVQuoteStats, "John Doe", 1234),
+		RowKey:    factable.PackKey(quotes.MVQuoteStatsTag, "John Doe", 1234),
 		RowValue:  factable.PackValue(1, 3, 4, factable.BuildStrHLL("one", "two", "four")),
 	})
 
@@ -52,7 +52,7 @@ func (s *ExtractorSuite) TestFoldsOverUniqueWords(c *gc.C) {
 }
 
 func (s *ExtractorSuite) TestDistinctRowsForUniqueWords(c *gc.C) {
-	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(1, quotes.MVWordStats))
+	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(1, quotes.MVWordStatsTag))
 	defer cleanup()
 
 	var cmr = quotes.StartApplication(tc, &Extractor{Extractors: quotes.BuildExtractors()})
@@ -69,13 +69,13 @@ func (s *ExtractorSuite) TestDistinctRowsForUniqueWords(c *gc.C) {
 	// The Mapping function emits an input record for each unique word. A Extractor for
 	// "wordStats" should have emitted a separate DeltaEvent for each.
 	var expect = map[string][]byte{
-		string(factable.PackKey(quotes.MVWordStats, "one", "John Doe")):   factable.PackValue(1, 1234, 2),
-		string(factable.PackKey(quotes.MVWordStats, "two", "John Doe")):   factable.PackValue(1, 1234, 1),
-		string(factable.PackKey(quotes.MVWordStats, "three", "John Doe")): factable.PackValue(1, 1234, 1),
+		string(factable.PackKey(quotes.MVWordStatsTag, "one", "John Doe")):   factable.PackValue(1, 1234, 2),
+		string(factable.PackKey(quotes.MVWordStatsTag, "two", "John Doe")):   factable.PackValue(1, 1234, 1),
+		string(factable.PackKey(quotes.MVWordStatsTag, "three", "John Doe")): factable.PackValue(1, 1234, 1),
 	}
 	for len(expect) != 0 {
 		var delta = txn.next(c)
-		c.Check(delta.Extractor, gc.Equals, fmt.Sprintf("extractor-%d", quotes.MVWordStats))
+		c.Check(delta.Extractor, gc.Equals, fmt.Sprintf("extractor-%d", quotes.MVWordStatsTag))
 
 		c.Check(expect[string(delta.RowKey)], gc.DeepEquals, delta.RowValue)
 		delete(expect, string(delta.RowKey))
@@ -87,7 +87,7 @@ func (s *ExtractorSuite) TestDistinctRowsForUniqueWords(c *gc.C) {
 }
 
 func (s *ExtractorSuite) TestMultipleTransactionsAndRecovery(c *gc.C) {
-	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(1, quotes.MVQuoteStats))
+	var tc, cleanup = quotes.NewTestCase(c, quotes.BuildSpecs(1, quotes.MVQuoteStatsTag))
 	defer cleanup()
 
 	var cmr = quotes.StartApplication(tc, &Extractor{Extractors: quotes.BuildExtractors()})
@@ -125,7 +125,7 @@ func (s *ExtractorSuite) TestMultipleTransactionsAndRecovery(c *gc.C) {
 	// Expect the new consumer writes a replay of the previous acknowledgement.
 	var msg DeltaEvent
 	c.Assert(txn.Decode(&msg), gc.IsNil)
-	c.Check(msg, gc.DeepEquals, txn.Extractor[fmt.Sprintf("extractor-%d", quotes.MVQuoteStats)].Events[0])
+	c.Check(msg, gc.DeepEquals, txn.Extractor[fmt.Sprintf("extractor-%d", quotes.MVQuoteStatsTag)].Events[0])
 
 	// Shutdown.
 	cmr.RevokeLease(c)

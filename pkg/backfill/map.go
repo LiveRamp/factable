@@ -108,9 +108,9 @@ func extract(in <-chan message.Envelope, schema factable.Schema, mt MapTaskSpec,
 
 	for _, tag := range mt.MVTags {
 		var viewSpec = schema.Views[tag]
-		var relSpec = schema.Relations[viewSpec.View.RelTag]
+		var relSpec = schema.Relations[viewSpec.RelTag]
 		views = append(views, viewSpec)
-		mappings = append(mappings, schema.Extract.Mapping[relSpec.Mapping])
+		mappings = append(mappings, schema.Extract.Mapping[relSpec.MapTag])
 	}
 
 	// Row-keys and Aggregates which have been folded over and which remain to be flushed.
@@ -130,24 +130,19 @@ func extract(in <-chan message.Envelope, schema factable.Schema, mt MapTaskSpec,
 					tmp [256]byte // Does not escape.
 					key = encoding.EncodeVarintAscending(tmp[:0], int64(mvSpec.Tag))
 				)
-				for _, tag := range mvSpec.View.Dimensions {
-					key = schema.ExtractAndMarshalDimension(key, tag, record)
-				}
+				key = schema.ExtractAndMarshalDimensions(key, mvSpec.ResolvedView.DimTags, record)
 
 				// Does row-key already have an in-memory aggregate?
 				var aggs, ok = pending[string(key)]
 				if !ok {
 					// Miss. Initialize empty Aggregates tracked under the key.
 					aggs = make([]factable.Aggregate, len(mvSpec.View.Metrics))
-					for m, tag := range mvSpec.View.Metrics {
-						aggs[m] = schema.InitMetric(tag, aggs[m])
-					}
+					schema.InitAggregates(mvSpec.ResolvedView.MetTags, aggs)
+
 					pending[string(key)] = aggs
 				}
 				// Fold the |record| into |aggs|.
-				for m, tag := range mvSpec.View.Metrics {
-					schema.FoldMetric(tag, aggs[m], record)
-				}
+				schema.FoldMetrics(mvSpec.ResolvedView.MetTags, aggs, record)
 			}
 		}
 	}
@@ -178,13 +173,10 @@ func (hae *hexAggsEncoder) encode(key []byte, aggs []factable.Aggregate) error {
 	if err != nil {
 		return err
 	}
-	for i, tag := range mv.View.Metrics {
-		hae.tmp = hae.schema.MarshalMetric(hae.tmp, tag, aggs[i])
-	}
+	hae.tmp = hae.schema.MarshalMetrics(hae.tmp[:0], mv.ResolvedView.MetTags, aggs)
+
 	if err = hae.he.Encode(key, hae.tmp); err != nil {
 		return err
 	}
-	hae.tmp = hae.tmp[:0]
-
 	return nil
 }

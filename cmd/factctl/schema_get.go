@@ -16,7 +16,7 @@ import (
 )
 
 type cmdSchemaGet struct {
-	Format string `long:"format" short:"o" choice:"yaml" choice:"json" choice:"proto" default:"proto" description:"Output format"`
+	Format string `long:"format" short:"o" choice:"yaml" choice:"json" choice:"proto" default:"yaml" description:"Output format"`
 
 	cfg *BaseCfg
 }

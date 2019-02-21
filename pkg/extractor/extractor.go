@@ -149,30 +149,26 @@ func (*Extractor) ConsumeMessage(shard consumer.Shard, store consumer.Store, env
 	var (
 		state   = store.(*consumer.JSONFileStore).State.(*shardState)
 		mvSpec  = state.schema.Views[state.mvTag]
-		relSpec = state.schema.Relations[mvSpec.View.RelTag]
+		relSpec = state.schema.Relations[mvSpec.RelTag]
 	)
-	for _, record := range state.schema.Extract.Mapping[relSpec.Mapping](envelope) {
+	for _, row := range state.schema.Extract.Mapping[relSpec.MapTag](envelope) {
 		var (
 			tmp [256]byte // Does not escape.
 			key = encoding.EncodeVarintAscending(tmp[:0], int64(mvSpec.Tag))
 		)
-		for _, tag := range mvSpec.View.Dimensions {
-			key = state.schema.ExtractAndMarshalDimension(key, tag, record)
-		}
+
+		key = state.schema.ExtractAndMarshalDimensions(key, mvSpec.ResolvedView.DimTags, row)
 
 		var aggs, ok = state.pending[string(key)]
 		if !ok {
 			// Initialize Aggregates.
-			aggs = make([]factable.Aggregate, len(mvSpec.View.Metrics))
-			for m, tag := range mvSpec.View.Metrics {
-				aggs[m] = state.schema.InitMetric(tag, aggs[m])
-			}
+			aggs = make([]factable.Aggregate, len(mvSpec.ResolvedView.MetTags))
+			state.schema.InitAggregates(mvSpec.ResolvedView.MetTags, aggs)
+
 			state.pending[string(key)] = aggs // Track for remainder of txn.
 		}
-		// Fold the |record| into |aggs|.
-		for m, tag := range mvSpec.View.Metrics {
-			state.schema.FoldMetric(tag, aggs[m], record)
-		}
+
+		state.schema.FoldMetrics(mvSpec.ResolvedView.MetTags, aggs, row)
 	}
 	return nil
 }
@@ -187,11 +183,7 @@ func (c *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) erro
 		// Load |SeqNo|, |key| and |aggs| into |delta| in preparation for marshalling.
 		delta.SeqNo = state.SeqNo
 		delta.RowKey = append(delta.RowKey[:0], key...)
-		delta.RowValue = delta.RowValue[:0]
-
-		for m, tag := range mvSpec.View.Metrics {
-			delta.RowValue = state.schema.MarshalMetric(delta.RowValue, tag, aggs[m])
-		}
+		delta.RowValue = state.schema.MarshalMetrics(delta.RowValue[:0], mvSpec.ResolvedView.MetTags, aggs)
 		delete(state.pending, key)
 
 		// Map and publish the DeltaEvent. This parallels `message.Publish`,

@@ -1,10 +1,9 @@
 package factable
 
 import (
-	"bytes"
 	"time"
 
-	"github.com/LiveRamp/gazette/v2/pkg/message"
+	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
 	gc "github.com/go-check/check"
 )
 
@@ -14,204 +13,203 @@ func (s *SchemaSuite) TestSchemaValidationCases(c *gc.C) {
 	var ext = *makeExtractors()
 
 	// Begin with a stripped down, but valid Spec which we'll extend.
-	var cfg = SchemaSpec{
+	var spec = SchemaSpec{
 		Mappings: []MappingSpec{
-			{Tag: mapIdent, Name: "ident"},
+			{Name: mapIdent, Tag: mapIdentTag},
 		},
 		Dimensions: []DimensionSpec{
-			{Tag: dimOtherStr, Type: DimensionType_STRING, Name: "otherStr"},
+			{Name: dimOtherStr, Type: DimensionType_STRING, Tag: dimOtherStrTag},
 		},
 		Metrics: []MetricSpec{
-			{Tag: metOtherStrUniq, DimTag: dimOtherStr, Type: MetricType_STRING_HLL, Name: "otherStrUniq"},
+			{Name: metOtherStrUniq, Type: MetricType_STRING_HLL, Dimension: dimOtherStr, Tag: metOtherStrUniqTag},
 		},
 		Relations: []RelationSpec{
 			{
-				Tag:        relTest,
-				Name:       "relTest",
+				Name:       relTest,
 				Mapping:    mapIdent,
-				Dimensions: []DimTag{dimOtherStr},
+				Dimensions: []string{dimOtherStr},
+				Tag:        relTestTag,
 			},
 		},
 		Views: []MaterializedViewSpec{
 			{
-				Tag:  mvOne,
-				Name: "mvOne",
+				Name:     mvTest,
+				Relation: relTest,
 				View: ViewSpec{
-					RelTag:     relTest,
-					Dimensions: []DimTag{dimOtherStr},
-					Metrics:    []MetTag{metOtherStrUniq},
+					Dimensions: []string{dimOtherStr},
+					Metrics:    []string{metOtherStrUniq},
 				},
+				Tag: mvTestTag,
 			},
 		},
 	}
 
 	var verify = func(str string) {
-		var _, err = NewSchema(&ext, cfg)
+		var _, err = NewSchema(&ext, spec)
 		if str == "" {
 			c.Check(err, gc.IsNil)
 		} else {
 			c.Check(err, gc.ErrorMatches, str)
 		}
 	}
-	verify("")
+	verify("") // Initial fixture builds without error.
 
 	// Mapping verification cases.
-	cfg.Mappings = append(cfg.Mappings, MappingSpec{
+	spec.Mappings = append(spec.Mappings, MappingSpec{
 		Tag: 9999, Name: "in valid",
 	})
 	verify(`Mappings\[1\].Name: not a valid token \(in valid\)`)
-	cfg.Mappings[1].Name = "ident"
-	verify(`Mappings\[1\]: Mapping extractor not registered \(9999\)`)
-	cfg.Mappings[1].Tag = mapIdent
-	verify(`Mappings\[1\]: Mapping already specified \([\d]+\)`)
-	cfg.Mappings[1].Tag = mapFixed
-	verify(`Mappings\[1\]: duplicated Name \(ident\)`)
-	cfg.Mappings[1].Name = "fixed"
+	spec.Mappings[1].Name = mapIdent
+	verify(`Mappings\[1\]: duplicated Name \(mapIdent\)`)
+	spec.Mappings[1].Name = mapFixed
+	verify(`Mappings\[1\]: extractor not registered \(9999\)`)
+	spec.Mappings[1].Tag = mapIdentTag
+	verify(`Mappings\[1\]: MapTag already specified \(\d+\)`)
+	spec.Mappings[1].Tag = mapFixedTag
 	verify("")
 
 	// Dimension verification cases.
-	cfg.Dimensions = append(cfg.Dimensions, DimensionSpec{
-		Tag: 9999, Type: DimensionType_STRING, Name: "in valid",
+	spec.Dimensions = append(spec.Dimensions, DimensionSpec{
+		Tag: 9999, Type: DimensionType_INVALID_DIM_TYPE, Name: "in valid",
 	})
 	verify(`Dimensions\[1\].Name: not a valid token \(in valid\)`)
-	cfg.Dimensions[1].Name = "otherStr"
-	verify(`Dimensions\[1\]: Dimension extractor not registered \(9999; type STRING\)`)
-	cfg.Dimensions[1].Tag = dimOtherStr
-	verify(`Dimensions\[1\]: Dimension already specified \([\d]+\)`)
-	cfg.Dimensions[1].Tag = dimAStr
-	verify(`Dimensions\[1\]: duplicated Name \(otherStr\)`)
-	cfg.Dimensions[1].Name = "aStr"
+	spec.Dimensions[1].Name = dimOtherStr
+	verify(`Dimensions\[1\]: duplicated Name \(dimOtherStr\)`)
+	spec.Dimensions[1].Name = dimAStr
+	verify(`Dimensions\[1\]: invalid DimensionType \(INVALID_DIM_TYPE\)`)
+	spec.Dimensions[1].Type = DimensionType_STRING
+	verify(`Dimensions\[1\]: extractor not registered \(9999; type STRING\)`)
+	spec.Dimensions[1].Tag = dimOtherStrTag
+	verify(`Dimensions\[1\]: DimTag already specified \(\d+\)`)
+	spec.Dimensions[1].Tag = dimAStrTag
 	verify("")
 
 	// Metrics verification cases.
-	cfg.Metrics = append(cfg.Metrics, MetricSpec{
-		Tag: metOtherStrUniq, DimTag: 9999, Type: MetricType_VARINT_SUM, Name: "in valid",
+	spec.Metrics = append(spec.Metrics, MetricSpec{
+		Name: "in valid", Tag: metOtherStrUniqTag, Dimension: "unknown", Type: MetricType_INVALID_METRIC_TYPE,
 	})
 
 	verify(`Metrics\[1\].Name: not a valid token \(in valid\)`)
-	cfg.Metrics[1].Name = "otherStrUniq"
-	verify(`Metrics\[1\]: Metric DimTag is not specified \(9999\)`)
-	cfg.Metrics[1].DimTag = dimAStr
-	verify(`Metrics\[1\]: Metric Type mismatch \(DimTag [\d]+ has type STRING; expected VARINT\)`)
-	cfg.Metrics[1].Type = MetricType_STRING_HLL
-	verify(`Metrics\[1\]: Metric already specified \([\d]+\)`)
-	cfg.Metrics[1].Tag = 1234 // Invent new tag.
-	verify(`Metrics\[1\]: duplicated Name \(otherStrUniq\)`)
-	cfg.Metrics[1].Name = "aStrUniq"
+	spec.Metrics[1].Name = metOtherStrUniq
+	verify(`Metrics\[1\]: duplicated Name \(metOtherStrUniq\)`)
+	spec.Metrics[1].Name = metAStrUniq
+	verify(`Metrics\[1\]: MetTag already specified \(\d+\)`)
+	spec.Metrics[1].Tag = 1234 // Invent new tag.
+	verify(`Metrics\[1\]: no such Dimension \(unknown\)`)
+	spec.Metrics[1].Dimension = dimAStr
+	verify(`Metrics\[1\]: invalid MetricType \(INVALID_METRIC_TYPE\)`)
+	spec.Metrics[1].Type = MetricType_VARINT_GAUGE
+	verify(`Metrics\[1\]: Metric Type mismatch \(dimAStr has type STRING; expected VARINT\)`)
+	spec.Metrics[1].Type = MetricType_STRING_HLL
 	verify("")
 
 	// Interlude: add a valid time dimension.
-	cfg.Dimensions = append(cfg.Dimensions, DimensionSpec{
-		Tag: dimATimestamp, Type: DimensionType_TIMESTAMP, Name: "aTimestamp",
+	spec.Dimensions = append(spec.Dimensions, DimensionSpec{
+		Name: dimATime, Type: DimensionType_TIMESTAMP, Tag: dimATimeTag,
 	})
 	verify("")
 
 	// Relations verification cases.
-	cfg.Relations = append(cfg.Relations, RelationSpec{
-		Tag:        relTest,
-		Name:       "in valid",
-		Mapping:    9999,
-		Dimensions: []DimTag{9999, dimATimestamp},
+	spec.Relations = append(spec.Relations, RelationSpec{
+		Name: "in valid",
+		Selector: pb.LabelSelector{
+			Include: pb.LabelSet{Labels: []pb.Label{{Name: "in valid"}}}},
+		Tag:        relTestTag,
+		Mapping:    "unknown-mapping",
+		Dimensions: []string{"unknown-dim", dimATime},
 	})
 
 	verify(`Relations\[1\].Name: not a valid token \(in valid\)`)
-	cfg.Relations[1].Name = "relTest"
-	verify(`Relations\[1\]: Mapping is not specified \(9999\)`)
-	cfg.Relations[1].Mapping = mapIdent
-	verify(`Relations\[1\].Dimensions\[0\]: Dimension not specified \(9999\)`)
-	cfg.Relations[1].Dimensions[0] = dimAStr
-	verify(`Relations\[1\]: Relation already specified \([\d]+\)`)
-	cfg.Relations[1].Tag = 1234 // Invent.
+	spec.Relations[1].Name = relTest
 	verify(`Relations\[1\]: duplicated Name \(relTest\)`)
-	cfg.Relations[1].Name = "relOther"
+	spec.Relations[1].Name = "relOther"
+	verify(`Relations\[1\]: RelTag already specified \(\d+\)`)
+	spec.Relations[1].Tag = 1234 // Invent.
+	verify(`Relations\[1\].Selector.Include.Labels\[0\].Name: not a valid token \(in valid\)`)
+	spec.Relations[1].Selector.Include.Labels[0].Name = "valid"
+	verify(`Relations\[1\]: no such Mapping \(unknown-mapping\)`)
+	spec.Relations[1].Mapping = mapIdent
+	verify(`Relations\[1\].Dimensions\[0\]: no such Dimension \(unknown-dim\)`)
+	spec.Relations[1].Dimensions[0] = dimATime
+	verify(`Relations\[1\].Dimensions\[1\]: duplicated Dimension \(dimATime\)`)
+	spec.Relations[1].Dimensions[0] = dimAStr
 	verify("")
 
 	// MaterializedView verification cases.
-	cfg.Views = append(cfg.Views, MaterializedViewSpec{
-		Tag:  mvOne,
-		Name: "in valid",
+	spec.Views = append(spec.Views, MaterializedViewSpec{
+		Name:     "in valid",
+		Relation: "unknown-relation",
 		View: ViewSpec{
-			RelTag:     9999,
-			Dimensions: []DimTag{9999, dimATimestamp},
-			Metrics:    []MetTag{9999},
+			Dimensions: []string{"unknown-dim", dimOtherStr},
+			Metrics:    []string{"unknown-metric", metAStrUniq},
 		},
-		Retention: &MaterializedViewSpec_Retention{RemoveAfter: time.Hour, RelativeTo: 9999},
+		Retention: &MaterializedViewSpec_Retention{RemoveAfter: time.Second, RelativeTo: "unknown-relative-to"},
+		Tag:       mvTestTag,
 	})
 
 	verify(`Views\[1\].Name: not a valid token \(in valid\)`)
-	cfg.Views[1].Name = "mvOne"
-	verify(`Views\[1\]: View.RelTag is not specified \(9999\)`)
-	cfg.Views[1].View.RelTag = 1234
-	verify(`Views\[1\].View.Dimensions\[0\]: Dimension not part of Relation \(9999; RelTag 1234\)`)
-	cfg.Views[1].View.Dimensions[0] = dimAStr
-	cfg.Views[1].Retention.RelativeTo = dimAStr
-	verify(`Views\[1\].View.Metrics\[0\]: Metric not specified \(9999\)`)
-	cfg.Views[1].View.Metrics[0] = metOtherStrUniq
-	verify(`Views\[1\].View.Metrics\[0\]: Metric Dimension not part of Relation \([\d]+; DimTag [\d]+; RelTag 1234\)`)
-	cfg.Relations[1].Dimensions = append(cfg.Relations[1].Dimensions, dimOtherStr)
-	verify(`Views\[1\].Retention.RelativeTo: Dimension Type mismatch \(STRING; expected TIMESTAMP\)`)
-	cfg.Views[1].Retention.RelativeTo = dimATimestamp
-	verify(`Views\[1\]: MaterializedView already specified \([\d]+\)`)
-	cfg.Views[1].Tag = 1234 // Invent.
-	verify(`Views\[1\]: duplicated Name \(mvOne\)`)
-	cfg.Views[1].Name = "mvTwo"
-	verify("")
+	spec.Views[1].Name = mvTest
+	verify(`Views\[1\]: duplicated Name \(mvTest\)`)
+	spec.Views[1].Name = "mvOther"
+	verify(`Views\[1\]: MVTag already specified \(\d+\)`)
+	spec.Views[1].Tag = 1234 // Invent.
+	verify(`Views\[1\]: no such Relation \(unknown-relation\)`)
+	spec.Views[1].Relation = relTest
+	verify(`Views\[1\].Dimensions\[0\]: no such Dimension \(unknown-dim\)`)
+	spec.Views[1].View.Dimensions[0] = dimOtherStr
+	verify(`Views\[1\].Metrics\[0\]: no such Metric \(unknown-metric\)`)
+	spec.Views[1].View.Metrics[0] = metOtherStrUniq
+	verify(`Views\[1\].Dimensions\[1\]: duplicated Dimension \(dimOtherStr\)`)
+	spec.Views[1].View.Dimensions[0] = dimATime
+	verify(`Views\[1\].Dimensions\[0\]: not part of Relation \(dimATime\)`)
+	spec.Views[1].Relation = "relOther"
+	spec.Views[1].View.Dimensions[1] = dimAStr
+
+	verify(`Views\[1\].Retention: invalid RemoveAfter \(1s; expected >= 1m\)`)
+	spec.Views[1].Retention.RemoveAfter = time.Minute
+	verify(`Views\[1\].Retention.RelativeTo: no such Dimension \(unknown-relative-to\)`)
+	spec.Views[1].Retention.RelativeTo = dimOtherStr
+	verify(`Views\[1\].Retention.RelativeTo: not a View Dimension \(dimOtherStr\)`)
+	spec.Views[1].Retention.RelativeTo = dimAStr
+	verify(`Views\[1\].Retention.RelativeTo: mismatched Type \(STRING; expected TIMESTAMP\)`)
+	spec.Views[1].Retention.RelativeTo = dimATime
+
+	verify(`Views\[1\].Metrics\[0\]: Dimension not part of Relation \(dimOtherStr; metric metOtherStrUniq\)`)
+	spec.Views[1].View.Metrics[0] = metAStrUniq
+	verify(`Views\[1\].Metrics\[1\]: duplicated Metric \(metAStrUniq\)`)
+	spec.Views[1].View.Metrics = spec.Views[1].View.Metrics[:1]
+
+	verify(``)
 
 	// Expect it errors if NewMessage is not defined.
 	ext.NewMessage = nil
 	verify("ExtractFns: NewMessage not defined")
 
 	// However, ExtractFns may be omitted altogether.
-	var schema, err = NewSchema(nil, cfg)
+	var schema, err = NewSchema(nil, spec)
 	c.Check(err, gc.IsNil)
 
-	c.Check(schema.Spec, gc.DeepEquals, cfg)
-	c.Check(schema.Mappings, gc.HasLen, len(cfg.Mappings))
-	c.Check(schema.Dimensions, gc.HasLen, len(cfg.Dimensions)+1) // +1 for DimMVTag.
-	c.Check(schema.Metrics, gc.HasLen, len(cfg.Metrics))
-	c.Check(schema.Relations, gc.HasLen, len(cfg.Relations))
-	c.Check(schema.Views, gc.HasLen, len(cfg.Views))
+	c.Check(schema.Spec, gc.DeepEquals, spec)
+	c.Check(schema.Mappings, gc.HasLen, len(spec.Mappings))
+	c.Check(schema.Dimensions, gc.HasLen, len(spec.Dimensions)+1) // +1 for DimMVTag.
+	c.Check(schema.Metrics, gc.HasLen, len(spec.Metrics))
+	c.Check(schema.Relations, gc.HasLen, len(spec.Relations))
+	c.Check(schema.Views, gc.HasLen, len(spec.Views))
 }
 
-func (s *SchemaSuite) TestTransitionErrorCases(c *gc.C) {
+func (s *SchemaSuite) TestTransitionCases(c *gc.C) {
 	var ext = makeExtractors()
 
 	var buildCfg = func() SchemaSpec {
-		return SchemaSpec{
-			Mappings: []MappingSpec{
-				{Tag: mapIdent, Name: "ident"},
-				{Tag: mapFixed, Name: "fixed"},
+		return makeTestConfig(MaterializedViewSpec{
+			Name:     mvTest,
+			Relation: relTest,
+			View: ViewSpec{
+				Dimensions: []string{dimAnInt, dimAStr},
+				Metrics:    []string{metAStrUniq},
 			},
-			Dimensions: []DimensionSpec{
-				{Tag: dimAStr, Type: DimensionType_STRING, Name: "aStr"},
-				{Tag: dimOtherStr, Type: DimensionType_STRING, Name: "otherStr"},
-				{Tag: dimAnInt, Type: DimensionType_VARINT, Name: "anInt"},
-				{Tag: dimAnIntTwo, Type: DimensionType_VARINT, Name: "anIntTwo"},
-			},
-			Metrics: []MetricSpec{
-				{Tag: metAnIntSum, DimTag: dimAnInt, Type: MetricType_VARINT_SUM, Name: "anIntSum"},
-				{Tag: metAStrUniq, DimTag: dimAStr, Type: MetricType_STRING_HLL, Name: "aStrUniq"},
-			},
-			Relations: []RelationSpec{
-				{
-					Tag:        relTest,
-					Name:       "relTest",
-					Mapping:    mapIdent,
-					Dimensions: []DimTag{dimAStr, dimOtherStr, dimAnInt, dimAnIntTwo},
-				},
-			},
-			Views: []MaterializedViewSpec{
-				{
-					Tag:  mvOne,
-					Name: "mvOne",
-					View: ViewSpec{
-						RelTag:     relTest,
-						Dimensions: []DimTag{dimAnInt, dimAStr},
-						Metrics:    []MetTag{metAStrUniq},
-					},
-				},
-			},
-		}
+			Tag: mvTestTag,
+		})
 	}
 
 	var from, err = NewSchema(ext, buildCfg())
@@ -219,45 +217,97 @@ func (s *SchemaSuite) TestTransitionErrorCases(c *gc.C) {
 
 	var cases = []struct {
 		expect string
-		fn     func(SchemaSpec) SchemaSpec
+		fn     func() SchemaSpec
 	}{
 		// Case: Cannot alter Dimension.Type.
-		{`Dimensions\[1]: cannot alter immutable Type \(STRING != VARINT\)`, func(s SchemaSpec) SchemaSpec {
-			s.Dimensions[1].Type = DimensionType_VARINT
-			return s
+		{`Dimensions\[0]: cannot alter immutable Type \(TIMESTAMP != STRING\)`, func() SchemaSpec {
+			return SchemaSpec{
+				Dimensions: []DimensionSpec{
+					{Name: "test", Type: DimensionType_STRING, Tag: dimATimeTag},
+				},
+			}
 		}},
-		// Case: Cannot alter Dimension.Type.
-		{`Metrics\[0\]: cannot alter immutable Type \(VARINT_SUM != VARINT_GUAGE\)`, func(s SchemaSpec) SchemaSpec {
-			s.Metrics[0].Type = MetricType_VARINT_GUAGE
-			return s
+		// Case: Cannot alter Metric.Type.
+		{`Metrics\[0\]: cannot alter immutable Type \(VARINT_SUM != FLOAT_SUM\)`, func() SchemaSpec {
+			return SchemaSpec{
+				Dimensions: []DimensionSpec{
+					{Name: "testDim", Type: DimensionType_FLOAT, Tag: dimAFloatTag},
+				},
+				Metrics: []MetricSpec{
+					{Name: "testMet", Type: MetricType_FLOAT_SUM, Dimension: "testDim", Tag: metAnIntSumTag},
+				},
+			}
 		}},
-		{`Metrics\[1\]: cannot alter immutable DimTag \([\d]+ != [\d]+\)`, func(s SchemaSpec) SchemaSpec {
-			s.Metrics[1].DimTag = dimOtherStr
-			return s
+		// Case: Cannot alter Metric.DimTag.
+		{`Metrics\[0\]: cannot alter immutable DimTag \(\d+ != \d+\)`, func() SchemaSpec {
+			return SchemaSpec{
+				Dimensions: []DimensionSpec{
+					{Name: "testDim", Type: DimensionType_VARINT, Tag: dimAnIntTwoTag},
+				},
+				Metrics: []MetricSpec{
+					{Name: "testMet", Type: MetricType_VARINT_SUM, Dimension: "testDim", Tag: metAnIntSumTag},
+				},
+			}
 		}},
-		{`Relations\[0\]: cannot alter immutable Mapping \([\d]+ != [\d]+\)`, func(s SchemaSpec) SchemaSpec {
-			s.Relations[0].Mapping = mapFixed
-			return s
+		// Case: Cannot alter Relation.MapTag.
+		{`Relations\[0\]: cannot alter immutable MapTag \(\d+ != \d+\)`, func() SchemaSpec {
+			return SchemaSpec{
+				Mappings: []MappingSpec{
+					{Name: "testMapping", Tag: mapFixedTag},
+				},
+				Relations: []RelationSpec{{Name: "testRel", Mapping: "testMapping", Tag: relTestTag}},
+			}
 		}},
-		{`Views\[0\]: cannot alter immutable View: Dimensions this\[1\]\([\d]+\) Not Equal that\[1\]\([\d]+\)`, func(s SchemaSpec) SchemaSpec {
+		// Case: Cannot alter MaterializedView.ResolvedView.
+		{`Views\[0\]: cannot alter immutable View: DimTags this\[1\]\(\d+\) Not Equal that\[1\]\(\d+\)`, func() SchemaSpec {
+			var s = buildCfg()
 			s.Views[0].View.Dimensions[1] = dimAnIntTwo
 			return s
 		}},
-		// Case: transition to oneself.
-		{``, func(s SchemaSpec) SchemaSpec { return s }},
+		// Case: Identity transition to oneself.
+		{``, func() SchemaSpec { return buildCfg() }},
 		// Case: transition to an empty SchemaSpec (eg, remove all models).
-		{``, func(s SchemaSpec) SchemaSpec { return SchemaSpec{} }},
-		// Case: other allowed mutations.
-		{``, func(s SchemaSpec) SchemaSpec {
-			s.Relations[0].Name = "other"
-			s.Dimensions[2].Name = "assorted"
-			s.Metrics[1].Desc = "mutations"
-			s.Views[0].Name = "mutations"
+		{``, func() SchemaSpec { return SchemaSpec{} }},
+		// Case: Update all Names of the SchemaSpec, but preserve referential integrity.
+		{``, func() SchemaSpec {
+			var s = buildCfg()
+
+			const suffix = "-suffix"
+
+			for i := range s.Mappings {
+				s.Mappings[i].Name += suffix
+			}
+			for i := range s.Dimensions {
+				s.Dimensions[i].Name += suffix
+			}
+			for i := range s.Metrics {
+				s.Metrics[i].Name += suffix
+				s.Metrics[i].Dimension += suffix
+			}
+			for i := range s.Relations {
+				s.Relations[i].Name += suffix
+				s.Relations[i].Mapping += suffix
+
+				for j := range s.Relations[i].Dimensions {
+					s.Relations[i].Dimensions[j] += suffix
+				}
+			}
+			for i := range s.Views {
+				s.Views[i].Name += suffix
+				s.Views[i].Relation += suffix
+
+				for j := range s.Views[i].View.Dimensions {
+					s.Views[i].View.Dimensions[j] += suffix
+				}
+				for j := range s.Views[i].View.Metrics {
+					s.Views[i].View.Metrics[j] += suffix
+				}
+			}
 			return s
 		}},
 	}
 	for _, tc := range cases {
-		var to, err = NewSchema(nil, tc.fn(buildCfg()))
+		var to, err = NewSchema(nil, tc.fn())
 		c.Assert(err, gc.IsNil)
 
 		if tc.expect == "" {
@@ -266,143 +316,6 @@ func (s *SchemaSuite) TestTransitionErrorCases(c *gc.C) {
 			c.Check(ValidateSchemaTransition(from, to), gc.ErrorMatches, tc.expect)
 		}
 	}
-}
-
-func (s *SchemaSuite) TestDimensionRoundTripRegressionCases(c *gc.C) {
-	var schema, err = NewSchema(makeExtractors(), makeTestConfig())
-	c.Assert(err, gc.IsNil)
-
-	var input = schema.Extract.Mapping[mapIdent](message.Envelope{
-		Message: testRecord{
-			anInt:  3,
-			aTime:  time.Unix(12345, 0),
-			aStr:   "hello",
-			aFloat: 12345.0,
-		}})[0]
-
-	var cases = []struct {
-		dim            DimTag
-		expect         Field
-		expectEncoding []byte
-	}{
-		{dimAnInt, int64(3), []byte{0x8b}},                                             // DimensionType_VARINT.
-		{dimAFloat, 12345.0, []byte{0x05, 0x40, 0xc8, 0x1c, 0x80, 0x0, 0x0, 0x0, 0x0}}, // DimensionType_FLOAT.
-		{dimAStr, "hello", []byte{0x12, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x0, 0x1}},       // DimensionType_STRING.
-		{dimATimestamp, time.Unix(12345, 0), []byte{0x14, 0xf7, 0x30, 0x39, 0x88}},     // DimensionType_TIMESTAMP.
-	}
-	for _, tc := range cases {
-		// Expect ExtractAndMarshalDimension passes through the prefix, appending the encoding.
-		var b = schema.ExtractAndMarshalDimension([]byte{0xff}, tc.dim, input)
-		c.Check(b[1:], gc.DeepEquals, tc.expectEncoding)
-
-		var bb = append(b[:1:1], bytes.Repeat(b[1:], 2)...)
-
-		// Expect UnmarshalDimensions recovers the input field, and consumes the precise dimension encoding.
-		c.Check(schema.UnmarshalDimensions(bb[1:], []DimTag{tc.dim, tc.dim}, func(field Field) error {
-			c.Check(field, gc.Equals, tc.expect)
-			return nil
-		}), gc.IsNil)
-
-		// Expect dequeDimension also consumes the precise dimension encoding.
-		rem, err := schema.dequeDimension(bb[1:], tc.dim)
-		c.Check(err, gc.IsNil)
-		c.Check(rem, gc.DeepEquals, b[1:])
-	}
-}
-
-func (s *SchemaSuite) TestMetricRoundTripRegressionCases(c *gc.C) {
-	var schema, err = NewSchema(makeExtractors(), makeTestConfig())
-	c.Assert(err, gc.IsNil)
-
-	var input = schema.Extract.Mapping[mapIdent](message.Envelope{
-		Message: testRecord{
-			anInt:    1,
-			otherStr: "hello",
-			aFloat:   12345.0,
-		}})[0]
-
-	var otherInput = schema.Extract.Mapping[mapIdent](message.Envelope{
-		Message: testRecord{
-			anInt:    3,
-			otherStr: "world",
-			aFloat:   678910.0,
-		}})[0]
-
-	var cases = []struct {
-		met          MetTag
-		expect       []byte
-		expectReduce []byte
-	}{
-		{
-			met:          metAnIntSum,  // MetricType_VARINT_SUM.
-			expect:       []byte{0x89}, // 1.
-			expectReduce: []byte{0x8c}, // 4.
-		},
-		{
-			met:          metAnIntGauge, // MetricType_VARINT_GAUGE.
-			expect:       []byte{0x89},  // 1.
-			expectReduce: []byte{0x89},  // 1 (|input| is reduced into |otherInput|).
-		},
-		{
-			met:          metAFloatSum, // MetricType_FLOAT_SUM.
-			expect:       []byte{0x05, 0x40, 0xc8, 0x1c, 0x80, 0x0, 0x0, 0x0, 0x0},
-			expectReduce: []byte{0x05, 0x41, 0x25, 0x18, 0x6e, 0x0, 0x0, 0x0, 0x0},
-		},
-		{
-			met: metOtherStrUniq, // MetricType_STRING_HLL.
-			expect: []byte{
-				0x9d,                   // Varint length prefix.
-				0x48, 0x59, 0x4c, 0x4c, // "HYLL"
-				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x72, 0xf5, 0x88, 0x4d, 0x8},
-			expectReduce: []byte{
-				0xa0,
-				0x48, 0x59, 0x4c, 0x4c,
-				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5c, 0x70, 0x84, 0x56, 0x83, 0x88, 0x4d, 0x8},
-		},
-	}
-	for _, tc := range cases {
-		var agg = schema.InitMetric(tc.met, nil)
-		schema.FoldMetric(tc.met, agg, input)
-
-		// Expect MarshalMetric passes through the prefix, appending the encoding.
-		var b = schema.MarshalMetric([]byte{0xff}, tc.met, agg)
-		c.Check(b[1:], gc.DeepEquals, tc.expect)
-
-		var bb = append(b[:1:1], bytes.Repeat(b[1:], 2)...)
-
-		// Expect UnmarshalMetrics recovers the input Aggregate, and consumes the precise encoding.
-		c.Check(schema.UnmarshalMetrics(bb[1:], []MetTag{tc.met, tc.met}, func(agg2 Aggregate) error {
-			c.Check(agg2, gc.DeepEquals, agg)
-			return nil
-		}), gc.IsNil)
-
-		// Expect dequeMetric pops the precise metric encoding.
-		rem, err := schema.dequeMetric(bb[1:], tc.met)
-		c.Check(err, gc.IsNil)
-		c.Check(rem, gc.DeepEquals, b[1:])
-
-		// Reset Aggregate & fold second RelationRow.
-		schema.InitMetric(tc.met, agg)
-		schema.FoldMetric(tc.met, agg, otherInput)
-
-		// Expect ReduceMetric over |b| pops the precise metric encoding.
-		rem, err = schema.ReduceMetric(bb[1:], tc.met, agg)
-		c.Check(err, gc.IsNil)
-		c.Check(rem, gc.DeepEquals, b[1:])
-		// And that it reduces the expected aggregate.
-		c.Check(schema.MarshalMetric(nil, tc.met, agg), gc.DeepEquals, tc.expectReduce)
-	}
-}
-
-func (s *SchemaSuite) TestFlatten(c *gc.C) {
-	var (
-		anInt   int64   = 12345
-		aFloat  float64 = 5678
-		aStrHLL         = BuildStrHLL("foo", "bar", "baz")
-	)
-	c.Check(Flatten(&anInt), gc.Equals, anInt)
-	c.Check(Flatten(&aFloat), gc.Equals, aFloat)
-	c.Check(Flatten(aStrHLL), gc.Equals, int64(3))
 }
 
 var _ = gc.Suite(&SchemaSuite{})
