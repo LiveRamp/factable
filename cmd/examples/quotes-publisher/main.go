@@ -70,7 +70,5 @@ Write the json-encoded Schema used by the "quotes" example. This schema can be
 used to initialize the "factable-schema" ConfigMap expected by the service.
 `, &writeSchema{base: &baseCfg})
 
-	mbp.MustParseConfig(parser, iniFilename)
+	mbp.MustParseArgs(parser)
 }
-
-const iniFilename = "quotes-publisher.ini"

@@ -69,8 +69,8 @@ func (schema *Schema) UnmarshalDimensions(b []byte, dims []DimTag, fn func(Field
 	return nil
 }
 
-// dequeDimension of DimTag |dim| from |b|, returning the remainder.
-func (schema *Schema) dequeDimension(b []byte, dim DimTag) (rem []byte, err error) {
+// DequeDimension of DimTag |dim| from |b|, returning the byte remainder.
+func (schema *Schema) DequeDimension(b []byte, dim DimTag) (rem []byte, err error) {
 	if dim == DimMVTag {
 		// Special case: this is a MVTag which prefixes the row.
 		rem, _, err = encoding.DecodeVarintAscending(b)

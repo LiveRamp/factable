@@ -45,9 +45,9 @@ func (s *SchemaSuite) TestDimensionRoundTripRegressionCases(c *gc.C) {
 
 	var bb = b[1:]
 	for _, tc := range cases {
-		// Use dequeDimension to pop individual dimensions and confirm their expected encoding.
+		// Use DequeDimension to pop individual dimensions and confirm their expected encoding.
 		var next []byte
-		next, err = schema.dequeDimension(bb, tc.dim)
+		next, err = schema.DequeDimension(bb, tc.dim)
 		c.Check(err, gc.IsNil)
 		c.Check(bb[:len(bb)-len(next)], gc.DeepEquals, tc.expectEncoding)
 		bb = next

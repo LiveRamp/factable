@@ -14,36 +14,41 @@ import (
 
 const (
 	MapQuoteWords           = "MapQuoteWords"
-	DimQuoteCount           = "DimQuoteCount"
-	DimQuoteWordCount       = "DimQuoteWordCount"
-	DimQuoteID              = "DimQuoteID"
 	DimQuoteAuthor          = "DimQuoteAuthor"
+	DimQuoteCount           = "DimQuoteCount"
+	DimQuoteID              = "DimQuoteID"
+	DimQuoteTime            = "DimQuoteTime"
 	DimQuoteWord            = "DimQuoteWord"
+	DimQuoteWordCount       = "DimQuoteWordCount"
 	DimQuoteWordTotalCount  = "DimQuoteWordTotalCount"
-	MetricSumQuoteCount     = "MetricSumQuoteCount"
-	MetricSumWordTotalCount = "MetricSumWordTotalCount"
-	MetricSumWordQuoteCount = "MetricSumWordQuoteCount"
-	MetricUniqueWords       = "MetricUniqueWords"
 	MetricLastQuoteID       = "MetricLastQuoteID"
+	MetricSumQuoteCount     = "MetricSumQuoteCount"
+	MetricSumWordQuoteCount = "MetricSumWordQuoteCount"
+	MetricSumWordTotalCount = "MetricSumWordTotalCount"
+	MetricUniqueWords       = "MetricUniqueWords"
 	RelQuoteWords           = "RelQuoteWords"
 	MVWordStats             = "MVWordStats"
 	MVQuoteStats            = "MVQuoteStats"
+	MVRecentQuotes          = "MVRecentQuotes"
 
 	MapQuoteWordsTag          factable.MapTag = iota
-	DimQuoteCountTag          factable.DimTag = iota
-	DimQuoteWordCountTag      factable.DimTag = iota
-	DimQuoteIDTag             factable.DimTag = iota
 	DimQuoteAuthorTag         factable.DimTag = iota
+	DimQuoteCountTag          factable.DimTag = iota
+	DimQuoteIDTag             factable.DimTag = iota
+	DimQuoteTimeTag           factable.DimTag = iota
+	DimQuoteWordCountTag      factable.DimTag = iota
 	DimQuoteWordTag           factable.DimTag = iota
 	DimQuoteWordTotalCountTag factable.DimTag = iota
 	MVWordStatsTag            factable.MVTag  = iota
 	MVQuoteStatsTag           factable.MVTag  = iota
+	MVRecentQuotesTag         factable.MVTag  = iota
 )
 
 type Quote struct {
-	ID     int64  // Unique ID of the Quote.
-	Author string // Language of the Quote.
-	Text   string // Text of the Document.
+	ID     int64     // Unique ID of the Quote.
+	Author string    // Language of the Quote.
+	Text   string    // Text of the Document.
+	Time   time.Time // Timestamp of the Quote.
 }
 
 func BuildExtractors() factable.ExtractFns {
@@ -63,6 +68,9 @@ func BuildExtractors() factable.ExtractFns {
 		String: map[factable.DimTag]func(r factable.RelationRow) string{
 			DimQuoteAuthorTag: func(r factable.RelationRow) string { return r[0].(*Quote).Author },
 			DimQuoteWordTag:   func(r factable.RelationRow) string { return r[1].(string) },
+		},
+		Time: map[factable.DimTag]func(r factable.RelationRow) time.Time{
+			DimQuoteTimeTag: func(r factable.RelationRow) time.Time { return r[0].(*Quote).Time },
 		},
 	}
 }
@@ -113,6 +121,12 @@ func BuildSchemaSpec() factable.SchemaSpec {
 				Desc: "Returns the count of the words within the quote.",
 				Tag:  DimQuoteWordTotalCountTag,
 			},
+			{
+				Name: DimQuoteTime,
+				Type: factable.DimensionType_TIMESTAMP,
+				Desc: "Returns the timestamp of the quote.",
+				Tag:  DimQuoteTimeTag,
+			},
 		},
 		Metrics: []factable.MetricSpec{
 			{
@@ -160,11 +174,12 @@ func BuildSchemaSpec() factable.SchemaSpec {
 					Include: pb.MustLabelSet("name", InputJournal.String()),
 				},
 				Dimensions: []string{
-					DimQuoteCount,
-					DimQuoteWordCount,
-					DimQuoteID,
 					DimQuoteAuthor,
+					DimQuoteCount,
+					DimQuoteID,
+					DimQuoteTime,
 					DimQuoteWord,
+					DimQuoteWordCount,
 					DimQuoteWordTotalCount,
 				},
 				Tag: 1,
@@ -190,6 +205,19 @@ func BuildSchemaSpec() factable.SchemaSpec {
 				},
 				Desc: "Author and quote statistics.",
 				Tag:  MVQuoteStatsTag,
+			},
+			{
+				Name:     MVRecentQuotes,
+				Relation: RelQuoteWords,
+				View: factable.ViewSpec{
+					Dimensions: []string{DimQuoteID, DimQuoteAuthor, DimQuoteTime},
+				},
+				Desc: "Recent Quote IDs & Authors, with timestamps and a short retention.",
+				Retention: &factable.MaterializedViewSpec_Retention{
+					RemoveAfter: time.Minute,
+					RelativeTo:  DimQuoteTime,
+				},
+				Tag: MVRecentQuotesTag,
 			},
 		},
 	}

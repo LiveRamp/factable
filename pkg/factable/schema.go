@@ -264,6 +264,11 @@ func (schema *Schema) addMaterializedView(spec MaterializedViewSpec) error {
 	if spec.Retention != nil {
 		var err error
 
+		// Copy to resolve RelativeTo without modifying input Spec.
+		var cpy = new(MaterializedViewSpec_Retention)
+		*cpy = *spec.Retention
+		spec.Retention = cpy
+
 		if spec.Retention.RelativeToTag, err = schema.resolveDimension(spec.Retention.RelativeTo); err != nil {
 			// Pass.
 		} else if marked := names[spec.Retention.RelativeTo]; !marked {

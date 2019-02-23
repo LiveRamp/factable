@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	"git.liveramp.net/jgraet/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/brokertest"
@@ -166,6 +167,7 @@ func PublishQuotes(begin, end int, relPath string, ajc client.AsyncJournalClient
 		quote.Author = quote.Author[:len(quote.Author)-1] // Strip '\t'.
 		quote.Text = quote.Text[:len(quote.Text)-1]       // Strip '\n'.
 		quote.ID = int64(i)
+		quote.Time = time.Now()
 
 		if _, err = message.Publish(ajc, Mapping, &quote); err != nil {
 			return

@@ -37,22 +37,22 @@ func (cmd *cmdBackfillSpecify) Execute([]string) error {
 	)
 
 	// Fetch the current Schema.
-	schemaResp, err := factable.NewSchemaClient(extConn).GetSchema(ctx, new(empty.Empty))
+	schemaSpec, err := factable.NewSchemaClient(extConn).GetSchema(ctx, new(empty.Empty))
 	mbp.Must(err, "failed to fetch current schema")
 
 	// Fetch Extractor Shards in need of backfill.
-	shardsResp, err := consumer.ListShards(ctx, consumer.NewShardClient(extConn), &consumer.ListRequest{
+	shards, err := consumer.ListShards(ctx, consumer.NewShardClient(extConn), &consumer.ListRequest{
 		Selector: pb.LabelSelector{Include: pb.MustLabelSet(backfillLabel, cmd.Name)}})
 	mbp.Must(err, "failed to fetch shards requiring backfill")
 
-	if len(shardsResp.Shards) == 0 {
+	if len(shards.Shards) == 0 {
 		return errors.Errorf("found no shards matching backfill name %s", cmd.Name)
 	}
 
 	// Index Shards on the journals they're reading, and the offsets to read through of each journal.
 	var fillOffsets = make(map[pb.Journal]map[factable.MVTag]int64)
 
-	for _, shard := range shardsResp.Shards {
+	for _, shard := range shards.Shards {
 		var tag, err = strconv.ParseInt(shard.Spec.LabelSet.ValueOf("mvTag"), 10, 64)
 		mbp.Must(err, "failed to parse view label", "shard", shard.Spec.Id)
 
@@ -72,10 +72,9 @@ func (cmd *cmdBackfillSpecify) Execute([]string) error {
 
 	var (
 		mapTaskEnc = json.NewEncoder(mapTasksOut)
-		urlTTL     = time.Hour * 24 * 7
+		urlTTL     = 7 * 24 * time.Hour // One week.
 		inputNames pb.LabelSelector
 	)
-
 	for journal, offsets := range fillOffsets {
 		var req = pb.FragmentsRequest{
 			Journal:      journal,
@@ -85,12 +84,12 @@ func (cmd *cmdBackfillSpecify) Execute([]string) error {
 			req.BeginModTime = cmd.MinModTime.Unix()
 		}
 
-		var fragResp, err = client.ListAllFragments(ctx, rjc, req)
+		var frags, err = client.ListAllFragments(ctx, rjc, req)
 		mbp.Must(err, "failed to fetch fragments", "journal", journal)
 
-		for _, frag := range fragResp.Fragments {
+		for _, frag := range frags.Fragments {
 			var task = &backfill.MapTaskSpec{
-				Fragment: frag.Fragment,
+				Fragment: frag.Spec,
 				URL:      frag.SignedUrl,
 			}
 			for tag, maxOffset := range offsets {
@@ -113,7 +112,7 @@ func (cmd *cmdBackfillSpecify) Execute([]string) error {
 	mbp.Must(err, "failed to list input journals")
 
 	var fillSpec = &backfill.JobSpec{
-		SchemaSpec: schemaResp.Spec,
+		SchemaSpec: schemaSpec.Spec,
 		Inputs:     make(map[pb.Journal]pb.JournalSpec),
 	}
 	for _, journal := range listResp.Journals {

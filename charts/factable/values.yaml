@@ -7,10 +7,10 @@ extractor:
     repository: liveramp/factable
     binary: /go/bin/extractor
 
-  extraArgsTemplate: |
-    --factable.instance={{ .Release.Name }} \
-    --factable.schema=/factable/schema \
-    --factable.deltas={{ .Values.global.deltasSelector | quote }}
+  extraArgs:
+    --factable.instance: "{{.Release.Name}}"
+    --factable.schema:   "/factable/schema/{{.Release.Name}}"
+    --factable.deltas:   "app.gazette.dev/message-type=DeltaEvent,app.gazette.dev/instance={{.Release.Name}}"
 
 vtable:
   replicaCount: 1
@@ -18,15 +18,7 @@ vtable:
     repository: liveramp/factable
     binary: /go/bin/vtable
 
-  arenaSize: "16777216"
-  maxArenas: 8
-
-  extraArgsTemplate: |
-    --factable.instance={{ .Release.Name }} \
-    --factable.schema=/factable/schema \
-    --factable.deltas={{ .Values.global.deltasSelector | quote }} \
-    --factable.arenaSize={{ .Values.arenaSize }} \
-    --factable.maxArenas={{ .Values.maxArenas }} \
-
-global:
-  deltasSelector: "app.gazette.dev/message-type = DeltaEvent"
+  extraArgs:
+    --factable.instance:  "{{.Release.Name}}"
+    --factable.schema:    "/factable/schema/{{.Release.Name}}"
+    --factable.deltas:    "app.gazette.dev/message-type=DeltaEvent,app.gazette.dev/instance={{.Release.Name}}"

@@ -174,7 +174,7 @@ func (s *APISuite) TestScanErrorCases(c *gc.C) {
 		},
 	})
 	var _, err = stream.Recv()
-	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = Input Dimension tag 19 appears more than once`)
+	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = Input Dimension tag \d+ appears more than once`)
 
 	// Case: Query of an unknown view.
 	stream, _ = vtable.ExecuteQuery(tc.Ctx, &factable.ExecuteQueryRequest{

@@ -18,16 +18,20 @@ children:
       value: Quote
     - name: content-type
       value: application/x-ndjson
+    fragment:
+      flush_interval: 1m
 
   # Partitions holding VTable DeltaEvents.
-  - name: examples/factable/vtable/deltas/
+  - name: examples/factable/vtable/RELEASE_NAME/deltas/
     labels:
+    - name: app.gazette.dev/instance
+      value: RELEASE_NAME
     - name: app.gazette.dev/message-type
       value: DeltaEvent
     - name: content-type
       value: application/x-protobuf-fixed
 
     children:
-    - name: examples/factable/vtable/deltas/part-000
-    - name: examples/factable/vtable/deltas/part-001
-    - name: examples/factable/vtable/deltas/part-002
+    - name: examples/factable/vtable/RELEASE_NAME/deltas/part-000
+    - name: examples/factable/vtable/RELEASE_NAME/deltas/part-001
+    - name: examples/factable/vtable/RELEASE_NAME/deltas/part-002
