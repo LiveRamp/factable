@@ -1,6 +1,8 @@
 package vtable
 
 import (
+	"runtime"
+
 	"git.liveramp.net/jgraet/factable/pkg/factable"
 	. "git.liveramp.net/jgraet/factable/pkg/internal"
 	"github.com/LiveRamp/gazette/v2/pkg/consumer"
@@ -11,15 +13,17 @@ import (
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/tecbot/gorocksdb"
 )
 
 // VTable is a runconsumer.Application which aggregates DeltaEvents into indexed
 // relation rows, and provides gRPC query APIs against those stored relations.
 type VTable struct {
-	schemaFn  func() *factable.Schema
-	arenaSize int
-	maxArenas int
-	svc       *consumer.Service
+	cfg              Config
+	schemaFn         func() *factable.Schema
+	svc              *consumer.Service
+	txnSemaphoreCh   chan struct{}
+	sharedBlockCache *gorocksdb.Cache
 }
 
 // Config utilized by VTable.
@@ -27,8 +31,10 @@ type Config struct {
 	Factable struct {
 		CommonConfig
 
-		ArenaSize int `long:"arenaSize" default:"16777216" description:"Byte size of arena buffers used for on-demand, query-time sorts"`
-		MaxArenas int `long:"maxArenas" default:"8" description:"Maximum number of arenas an on-demand query may consume before it errors"`
+		MemtableBudget uint `long:"memtableBudget" default:"536870912" description:"RocksDB Memtable size budget for tuning DB performance options."`
+		DisableWAL     bool `long:"disableWAL" description:"Disable the RocksDB WAL. This reduces recovery-log writes, at the cost of briefly returning stale data on Shard recovery."`
+		ArenaSize      int  `long:"arenaSize" default:"16777216" description:"Byte size of arena buffers used for on-demand, query-time sorts"`
+		MaxArenas      int  `long:"maxArenas" default:"8" description:"Maximum number of arenas an on-demand query may consume before it errors"`
 	} `group:"Factable" namespace:"factable"`
 
 	runconsumer.BaseConfig
@@ -47,6 +53,9 @@ func (t *VTable) InitApplication(args runconsumer.InitArgs) error {
 		return errors.New("ArenaSize must be >= 1024 bytes")
 	} else if cfg.Factable.MaxArenas < 2 {
 		return errors.New("ArenaSize must be >= 2")
+	}
+	if cfg.Factable.TxnConcurrency == 0 {
+		cfg.Factable.TxnConcurrency = uint(runtime.GOMAXPROCS(0))
 	}
 
 	// Fetch and watch the shared SchemaSpec from Etcd.
@@ -67,10 +76,11 @@ func (t *VTable) InitApplication(args runconsumer.InitArgs) error {
 		}
 	}()
 
+	t.cfg = *cfg
 	t.schemaFn = ss.Schema
-	t.arenaSize = cfg.Factable.ArenaSize
-	t.maxArenas = cfg.Factable.MaxArenas
 	t.svc = args.Service
+	t.txnSemaphoreCh = make(chan struct{}, cfg.Factable.TxnConcurrency)
+	t.sharedBlockCache = gorocksdb.NewLRUCache(1 << 25) // 32MB.
 
 	factable.RegisterSchemaServer(args.Server.GRPCServer, ss)
 	factable.RegisterQueryServer(args.Server.GRPCServer, t)
@@ -90,7 +100,29 @@ type shardState struct {
 func (t *VTable) NewStore(shard consumer.Shard, dir string, rec *recoverylog.Recorder) (consumer.Store, error) {
 	var rdb = consumer.NewRocksDBStore(rec, dir)
 
-	// TODO(johnny): tuning.
+	// Start with recommended tuning for the given MemtableBudget.
+	rdb.Options.OptimizeLevelStyleCompaction(uint64(t.cfg.Factable.MemtableBudget))
+	// Set file sizes to double at each lower level of the LSM tree. Given
+	// a 512MB budget, OptimizeLevelStyleCompaction sets the target file size
+	// for L1 at 64MB. L2 is 128MB, L3 is 256MB, and so on.
+	rdb.Options.SetTargetFileSizeMultiplier(2)
+	// We perform sequential scans, but never fetch specific keys.
+	rdb.Options.SetAdviseRandomOnOpen(false)
+	// Allow values to be updated in-place within memtables, where possible.
+	rdb.Options.SetInplaceUpdateSupport(true)
+	// Concurrent memtable writes are not compatible with inplace updates.
+	// Also, we exclusively write from a single goroutine anyway.
+	rdb.Options.SetAllowConcurrentMemtableWrites(false)
+
+	// Use a larger block size, which reduces index overhead. We generally
+	// read keys in order and modify only a small set of hot (cached) keys.
+	var bbto = gorocksdb.NewDefaultBlockBasedTableOptions()
+	bbto.SetBlockSize(1 << 15) // 32768.
+	bbto.SetBlockCache(t.sharedBlockCache)
+	rdb.Options.SetBlockBasedTableFactory(bbto)
+
+	rdb.Options.SetCompactionFilter(compactionFilter(t.schemaFn))
+	rdb.WriteOptions.DisableWAL(t.cfg.Factable.DisableWAL)
 
 	if err := rdb.Open(); err != nil {
 		return rdb, err
@@ -120,7 +152,8 @@ func (*VTable) NewMessage(spec *pb.JournalSpec) (message.Message, error) { retur
 
 func (t *VTable) BeginTxn(shard consumer.Shard, store consumer.Store) error {
 	var state = store.(*consumer.RocksDBStore).Cache.(*shardState)
-	state.schema = t.schemaFn() // Used through life of the current transaction.
+	t.txnSemaphoreCh <- struct{}{} // Block until we obtain the transaction concurrency semaphore.
+	state.schema = t.schemaFn()    // Used through life of the current transaction.
 	return nil
 }
 
@@ -178,7 +211,10 @@ func (*VTable) FinalizeTxn(shard consumer.Shard, store consumer.Store) error {
 	return nil
 }
 
-func (*VTable) FinishTxn(consumer.Shard, consumer.Store, error) error { return nil /* No-op */ }
+func (t *VTable) FinishTxn(consumer.Shard, consumer.Store, error) error {
+	_ = <-t.txnSemaphoreCh // Release the transaction concurrency semaphore.
+	return nil
+}
 
 func accumulate(cache *shardState, rdb *consumer.RocksDBStore, delta DeltaEvent) error {
 	var mvSpec, err = delta.ViewSpec(cache.schema)

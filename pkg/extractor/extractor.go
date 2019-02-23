@@ -1,6 +1,7 @@
 package extractor
 
 import (
+	"runtime"
 	"strconv"
 	"time"
 
@@ -26,6 +27,9 @@ type Extractor struct {
 	schemaFn func() *factable.Schema
 	// deltas maps a DeltaEvent to its partition.
 	deltas message.MappingFunc
+	// txnSemaphoreCh constrains the number of concurrent consumer transactions,
+	// encouraging more messages processed per-transaction.
+	txnSemaphoreCh chan struct{}
 }
 
 // Config utilized by Extractor.
@@ -39,15 +43,18 @@ type Config struct {
 func (Extractor) NewConfig() runconsumer.Config { return new(Config) }
 
 // InitApplication initializes the Extractor.
-func (c *Extractor) InitApplication(args runconsumer.InitArgs) error {
+func (ext *Extractor) InitApplication(args runconsumer.InitArgs) error {
 	var cfg = args.Config.(*Config)
 
 	if err := cfg.Factable.Validate(); err != nil {
 		return err
 	}
+	if cfg.Factable.TxnConcurrency == 0 {
+		cfg.Factable.TxnConcurrency = uint(runtime.GOMAXPROCS(0))
+	}
 
 	// Fetch and watch the shared SchemaSpec from Etcd.
-	var ks = NewSchemaKeySpace(cfg.Factable.SchemaKey, &c.Extractors)
+	var ks = NewSchemaKeySpace(cfg.Factable.SchemaKey, &ext.Extractors)
 
 	if err := ks.Load(args.Context, args.Service.Etcd, 0); err != nil {
 		return errors.WithMessagef(err, "loading schema KeySpace (%s)", ks.Root)
@@ -56,14 +63,15 @@ func (c *Extractor) InitApplication(args runconsumer.InitArgs) error {
 		Config:     cfg.Factable,
 		KS:         ks,
 		Etcd:       args.Service.Etcd,
-		ExtractFns: &c.Extractors,
+		ExtractFns: &ext.Extractors,
 	}
 	go func() {
 		if err := ks.Watch(args.Context, args.Service.Etcd); err != nil {
 			log.WithField("err", err).Error("schema KeySpace watch failed")
 		}
 	}()
-	c.schemaFn = ss.Schema
+	ext.schemaFn = ss.Schema
+	ext.txnSemaphoreCh = make(chan struct{}, cfg.Factable.TxnConcurrency)
 	factable.RegisterSchemaServer(args.Server.GRPCServer, ss)
 
 	// Fetch and watch partitions to which DeltaEvents are to be written.
@@ -74,7 +82,7 @@ func (c *Extractor) InitApplication(args runconsumer.InitArgs) error {
 	); err != nil {
 		return errors.WithMessage(err, "fetching deltas partitions")
 	} else {
-		c.deltas = DeltaMapping(parts.List)
+		ext.deltas = DeltaMapping(parts.List)
 	}
 
 	return nil
@@ -97,7 +105,7 @@ type shardState struct {
 
 // NewStore constructs a Store for |shard| around the recovered local directory
 // |dir| and initialized Recorder |rec|.
-func (c *Extractor) NewStore(shard consumer.Shard, dir string, rec *recoverylog.Recorder) (consumer.Store, error) {
+func (ext *Extractor) NewStore(shard consumer.Shard, dir string, rec *recoverylog.Recorder) (consumer.Store, error) {
 	var state = &shardState{
 		SeqNo:               1,
 		TransactionJournals: make(map[pb.Journal]string),
@@ -111,23 +119,25 @@ func (c *Extractor) NewStore(shard consumer.Shard, dir string, rec *recoverylog.
 	// Ensure acknowledgements of the last committed transaction are written
 	// to respective tracked journals. This also informs readers that they
 	// should roll back events of a larger SeqNo.
-	if err = c.FinishTxn(shard, store, nil); err != nil {
+	ext.txnSemaphoreCh <- struct{}{} // Obtain semaphore which FinishTxn releases.
+	if err = ext.FinishTxn(shard, store, nil); err != nil {
 		return nil, err
 	}
 	// Run BeginTxn to cause the Shard to fail immediately if the `mvTag` label
 	// or view are mis-configured. Without this, the Shard would still fail, but
 	// only after attempting to process an input message. BeginTxn is otherwise
 	// a no-op.
-	return store, c.BeginTxn(shard, store)
+	return store, ext.BeginTxn(shard, store)
 }
 
-func (c *Extractor) NewMessage(spec *pb.JournalSpec) (message.Message, error) {
-	return c.Extractors.NewMessage(spec)
+func (ext *Extractor) NewMessage(spec *pb.JournalSpec) (message.Message, error) {
+	return ext.Extractors.NewMessage(spec)
 }
 
-func (c *Extractor) BeginTxn(shard consumer.Shard, store consumer.Store) error {
+func (ext *Extractor) BeginTxn(shard consumer.Shard, store consumer.Store) error {
 	var state = store.(*consumer.JSONFileStore).State.(*shardState)
-	state.schema = c.schemaFn() // Used through life of the current transaction.
+	ext.txnSemaphoreCh <- struct{}{} // Block until we obtain the transaction concurrency semaphore.
+	state.schema = ext.schemaFn()    // Used through life of the current transaction.
 
 	// Map the `mvTag` label to a MaterializedViewSpec. Having verified that spec
 	// is present, we're then assured that all entities *referenced* by it are
@@ -136,7 +146,7 @@ func (c *Extractor) BeginTxn(shard consumer.Shard, store consumer.Store) error {
 		return errors.Errorf(`expected single "mvTag" label (%v)`, l)
 	} else if tag, err := strconv.ParseInt(l[0], 10, 64); err != nil {
 		return errors.WithMessagef(err, `parsing "mvTag" label value`)
-	} else if mv, ok := c.schemaFn().Views[factable.MVTag(tag)]; !ok {
+	} else if mv, ok := ext.schemaFn().Views[factable.MVTag(tag)]; !ok {
 		return errors.Wrapf(ErrViewNotFound, "mvTag %d", tag)
 	} else {
 		state.mvTag = mv.Tag
@@ -173,7 +183,7 @@ func (*Extractor) ConsumeMessage(shard consumer.Shard, store consumer.Store, env
 	return nil
 }
 
-func (c *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) error {
+func (ext *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) error {
 	var (
 		state  = store.(*consumer.JSONFileStore).State.(*shardState)
 		mvSpec = state.schema.Views[state.mvTag]
@@ -188,7 +198,7 @@ func (c *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) erro
 
 		// Map and publish the DeltaEvent. This parallels `message.Publish`,
 		// except we retain the mapped journal and framing for future use.
-		var journal, framing, err = c.deltas(delta)
+		var journal, framing, err = ext.deltas(delta)
 		if err != nil {
 			return err
 		}
@@ -203,7 +213,11 @@ func (c *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) erro
 	return nil
 }
 
-func (*Extractor) FinishTxn(shard consumer.Shard, store consumer.Store, err error) error {
+func (ext *Extractor) FinishTxn(shard consumer.Shard, store consumer.Store, err error) error {
+	defer func() {
+		_ = <-ext.txnSemaphoreCh // Release the transaction concurrency semaphore.
+	}()
+
 	if err != nil {
 		return nil // Don't write commit acknowledgments if the transaction failed.
 	}

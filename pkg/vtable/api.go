@@ -147,7 +147,7 @@ func (t *VTable) queryShard(req *factable.ExecuteQueryRequest, stream factable.Q
 	// repetitions of rows.
 	if !isPrefix(req.Query.View.DimTags, mvSpec.ResolvedView.DimTags) {
 		// Stage 3: Sort Stage 2 output, ordered on the desired query shape.
-		it = factable.NewSortingIterator(it, t.arenaSize, t.maxArenas)
+		it = factable.NewSortingIterator(it, t.cfg.Factable.ArenaSize, t.cfg.Factable.MaxArenas)
 
 		// Stage 4: Re-combine the sorted output into unique output rows. This
 		// combiner pass accepts and emits the query's Shape, and has no filters.

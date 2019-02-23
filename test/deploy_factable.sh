@@ -9,7 +9,6 @@ readonly BK_NAMESPACE="${3:-${NAMESPACE}}"
 . "${ROOT}/vendor/github.com/LiveRamp/gazette/v2/test/lib.sh"
 configure_environment "${1?Kubernetes context is required. ${USAGE}}"
 
-
 # GAZCTL runs gazctl in an ephemeral docker container which has direct access to
 # the kubernetes networking space. The alternative is to run gazctl on the host
 # and port-forward broker or consumer pods as required to expose the service (yuck).
@@ -31,11 +30,6 @@ readonly FACTCTL="${DOCKER} run \
   factctl"
 
 
-# Create all journal fixtures. Use `sed` to replace the MINIO_RELEASE token with the
-# correct Minio service address.
-sed -e "s/MINIO_RELEASE/$(helm_release ${BK_NAMESPACE} minio)-minio.${BK_NAMESPACE}/g" ${ROOT}/test/quotes.journalspace.yaml | \
-  BROKER_ADDRESS=$(release_address $(helm_release ${BK_NAMESPACE} gazette) gazette) ${GAZCTL} journals apply --specs /dev/stdin
-
 # Install a test "gazette-zonemap" ConfigMap in the namespace, if one doesn't already exist.
 install_zonemap ${NAMESPACE}
 
@@ -53,9 +47,34 @@ global:
     endpoint: http://$(helm_release ${BK_NAMESPACE} gazette)-gazette.${BK_NAMESPACE}:80
 EOF
 
-# Load the "quotes" example schema.
-${DOCKER} run --rm --interactive liveramp/factable quotes-publisher write-schema | \
-  EXTRACTOR_ADDRESS=$(release_address $(helm_release ${NAMESPACE} factable) extractor) \
-  ${FACTCTL} schema update --instance $(helm_release ${NAMESPACE} factable) --revision 0 --format yaml --path /dev/stdin
+# Create all journal fixtures. Use `sed` to replace the MINIO_RELEASE and
+# RELEASE_NAME tokens with the correct values.
+cat ${ROOT}/test/quotes.journalspace.yaml \
+  | sed -e "s/MINIO_RELEASE/$(helm_release ${BK_NAMESPACE} minio)-minio.${BK_NAMESPACE}/g" \
+  | sed -e "s/RELEASE_NAME/$(helm_release ${BK_NAMESPACE} factable)/g" \
+  | BROKER_ADDRESS=$(release_address $(helm_release ${BK_NAMESPACE} gazette) gazette) ${GAZCTL} journals apply --specs /dev/stdin
 
-# go install git.liveramp.net/jgraet/factable/cmd/examples/quotes-publisher && ~/go/bin/quotes-publisher publish --quotes pkg/
+# Load the "quotes" example schema.
+${DOCKER} run --rm --interactive liveramp/factable quotes-publisher write-schema \
+  | EXTRACTOR_ADDRESS=$(release_address $(helm_release ${NAMESPACE} factable) extractor) \
+    ${FACTCTL} schema update --instance $(helm_release ${NAMESPACE} factable) --revision 0 --format yaml --path /dev/stdin
+
+cat <<REAL_EOF
+# Factable is running. Run the following to update factctl.ini & gazctl.ini
+# with local service addresses:
+cat > ~/.config/gazette/factctl.ini << EOF
+[Broker]
+Address = $(release_address $(helm_release ${BK_NAMESPACE} gazette) gazette)
+
+[Extractor]
+Address = $(release_address $(helm_release ${NAMESPACE} factable) extractor)
+
+[VTable]
+Address = $(release_address $(helm_release ${NAMESPACE} factable) vtable)
+EOF
+
+cat > ~/.config/gazette/gazctl.ini << EOF
+[journals.Broker]
+Address = $(release_address $(helm_release ${BK_NAMESPACE} gazette) gazette)
+EOF
+REAL_EOF

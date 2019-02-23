@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f4c068b8b368ff28732fe7f2329b5b4cd9983d99a021ff343e6946dda7202f5d"
+  digest = "1:30500e8992074b243994035bdc2357683b5c6034dda29a711d597bee32a6bccf"
   name = "github.com/LiveRamp/gazette"
   packages = [
     "v2/cmd/gazctl/editor",
@@ -56,11 +56,11 @@
     "v2/pkg/server",
   ]
   pruneopts = ""
-  revision = "ac9a4d48986ec6ed4086b9e4612b028c6dfd9b56"
-  source = "https://github.com/LiveRamp/gazette.git"
+  revision = "ca252278420b28e842a357fe2bae389713a9bc28"
+  source = "https://github.com/jgraettinger/gazette.git"
 
 [[projects]]
-  digest = "1:9fec98899724a3809740252dd1f33d84b5ebfbbeab2b49b74d605bff98280548"
+  digest = "1:50c942ee74999c8a5c81aeace323986affb39a5c3aaaefb628ea69bd563de301"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -99,8 +99,8 @@
     "service/sts",
   ]
   pruneopts = ""
-  revision = "416a7057457ed9af569ea3682f7319ec3466044d"
-  version = "v1.17.3"
+  revision = "e8b22c9937cae1fee9bc364a88f3752cc4d1ac2f"
+  version = "v1.17.4"
 
 [[projects]]
   branch = "master"
@@ -549,12 +549,13 @@
   version = "v1.2.1"
 
 [[projects]]
-  digest = "1:6ef99b772e9252c54e362af989aa0ad6be34f304c04e9d52c8431d94b4e2fe2d"
+  digest = "1:833adfd78777b99abd9fcf6d24e687b5f3c4faea8894ad50ab0eb60f351fdf5f"
   name = "github.com/tecbot/gorocksdb"
   packages = ["."]
   pruneopts = ""
-  revision = "22dabfda16ecbdd40858aca4e7898ee8d592d647"
+  revision = "690866229953e77b91d3eae1fa42206001c5c7c9"
   source = "https://github.com/LiveRamp/gorocksdb.git"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -565,7 +566,7 @@
   revision = "0ad062ec5ee553a48f6dbd280b7a1b5638e8a113"
 
 [[projects]]
-  digest = "1:2c6f07b1cfb95e87dc50e1b0ea63c8fe884720c315baec76c1da65306ef4f68b"
+  digest = "1:2e7f653483e51243b6cd6de60ce39bde0d6927d10a3c24295ab0f82cb1efeae2"
   name = "github.com/ugorji/go"
   packages = ["codec"]
   pruneopts = ""
@@ -636,7 +637,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2f4d3a61f2c7faf6760476a600db3daefccfadd2480c2b9f330666b39a08474c"
+  digest = "1:d0f4eb7abce3fbd3f0dcbbc03ffe18464846afd34c815928d2ae11c1e5aded04"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
@@ -644,7 +645,7 @@
     "ssh/terminal",
   ]
   pruneopts = ""
-  revision = "a4c6cb3142f211c99e4bf4cd769535b29a9b616f"
+  revision = "ffb98f73852f696ea2bb21a617a5c4b3e067a439"
 
 [[projects]]
   branch = "master"
@@ -679,14 +680,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f812c5666fb8d762eb129c84116449155b135b93c348290ed46cc78e43606119"
+  digest = "1:798023f857a80303a8c539417e988e76a070524e340e4731d8a565cb4efc58a5"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "ec7b60b042fd2c54ad5ceaac0c891bd88843f4a2"
+  revision = "cd391775e71e684db52b63df9affd58269495083"
 
 [[projects]]
   digest = "1:5acd3512b047305d49e8763eef7ba423901e85d5dd2fd1e71778a0ea8de10bd4"

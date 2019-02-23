@@ -47,8 +47,5 @@ func Main(extractFns factable.ExtractFns) {
 		mbp.Must(err, "failed to add command")
 	*/
 
-	mbp.AddPrintConfigCmd(parser, iniFilename)
-	mbp.MustParseConfig(parser, iniFilename)
+	mbp.MustParseArgs(parser)
 }
-
-const iniFilename = "backfill.ini"

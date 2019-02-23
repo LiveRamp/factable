@@ -8,9 +8,10 @@ import (
 
 // CommonConfig shared between the VTable and Extractor consumers.
 type CommonConfig struct {
-	Instance  string `long:"instance" description:"Name of the Factable release instance"`
-	Deltas    string `long:"deltas" description:"Journal label selector to which row delta events are published"`
-	SchemaKey string `long:"schema" description:"Etcd key of shared SchemaSpec configuration"`
+	Deltas         string `long:"deltas" description:"Journal label selector to which row delta events are published"`
+	Instance       string `long:"instance" description:"Name of the Factable release instance"`
+	SchemaKey      string `long:"schema" description:"Etcd key of shared SchemaSpec configuration"`
+	TxnConcurrency uint   `long:"txnConcurrency" default:"0" description:"Concurrency of consumer transactions. 0 defaults to GOMAXPROCS."`
 }
 
 func (cfg CommonConfig) Validate() error {

@@ -278,7 +278,7 @@ func (cb *Combiner) transition(key []byte) (rejected bool, err error) {
 		// We must determine dimension |d|'s actual encoded length, and then
 		// determine whether and where the field indexes within the dimension's
 		// predicate ranges.
-		if rem, err := cb.dequeDimension(cb.input.next.key[nBeg:], cb.input.dimension.tags[d]); err != nil {
+		if rem, err := cb.DequeDimension(cb.input.next.key[nBeg:], cb.input.dimension.tags[d]); err != nil {
 			return true, errors.Wrapf(err, "decoding dimension %d of %v", d, cb.input.next)
 		} else {
 			nEnd = len(cb.input.next.key) - len(rem)
