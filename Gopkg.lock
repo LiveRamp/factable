@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:36a98eb36f0c9b87a7063a1b4533bc00ba1da6ed1a11992cee34e01fe8df09ce"
+  digest = "1:39b55a18a4e3c4e0dffd0643302edeb07d4b76f58bcb80f88911ab61a195508c"
   name = "github.com/LiveRamp/gazette"
   packages = [
     "v2/cmd/gazctl/editor",
@@ -56,7 +56,7 @@
     "v2/pkg/server",
   ]
   pruneopts = ""
-  revision = "95c90df46f9a303baaa64b99a3e1b99fb3826dba"
+  revision = "45788635dd7114b6088c732d534a1f8fbd93f7bb"
   source = "https://github.com/LiveRamp/gazette.git"
 
 [[projects]]
@@ -265,7 +265,7 @@
   revision = "788fd78401277ebd861206a03c884797c6ec5541"
 
 [[projects]]
-  digest = "1:0a4061d3989a201de7271f110ec9f79b432ba3b7aea7eef7838324091f7c2e28"
+  digest = "1:fd53b471edb4c28c7d297f617f4da0d33402755f58d6301e7ca1197ef0a90937"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -275,7 +275,8 @@
     "types",
   ]
   pruneopts = ""
-  revision = "e14cafb6a2c249986e51c4b65c3206bf18578715"
+  revision = "ba06b47c162d49f2af050fb4c75bcbc86a159d5c"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:d3d38150b6d77b2aad42a9e105170538b6563518993d43df78a1add6e31cce62"
@@ -375,11 +376,12 @@
   version = "v0.5.0"
 
 [[projects]]
-  digest = "1:41faf8c5d3ce975a4cbdaf774c9f3b87b2afb3289598087dec3511e2e4960012"
+  branch = "master"
+  digest = "1:91c8eb3edec61a3e4ce3af912510aaea7ba3d06dbf3fdb2df1538cfc906f2c77"
   name = "github.com/jessevdk/go-flags"
   packages = ["."]
   pruneopts = ""
-  revision = "1c38ed7ad0cc3d9e66649ac398c30e45f395c4eb"
+  revision = "c0795c8afcf41dd1d786bebce68636c199b3bb45"
 
 [[projects]]
   digest = "1:13fe471d0ed891e8544eddfeeb0471fd3c9f2015609a1c000aefdedf52a19d40"
@@ -633,7 +635,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:10f068b4b7d1a60a6d8a877c8f1d72b7e745cf1c32aaf9eaf11e2259938f0dfb"
+  digest = "1:99d10bdc8ddc072da4cd345f5c3113cf13cbb8178a5dbf135afce316fa862f6f"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
@@ -641,7 +643,7 @@
     "ssh/terminal",
   ]
   pruneopts = ""
-  revision = "7f87c0fbb88b590338857bcb720678c2583d4dea"
+  revision = "215aa809caaf1f5be699aef5e3ccebeb15d67b0b"
 
 [[projects]]
   branch = "master"

@@ -323,7 +323,7 @@ consumer binaries are compiled by the user for their application. After
 instantiating ``ExtractFns``, the binary calls into an ``extractor.Main``
 provided by Factable.
 
-Each processed source message is mapped to zero or more ``[]RelationRow``s,
+Each processed source message is mapped to zero or more ``[]RelationRow``,
 and fed into the defined dimension extractors to produce a "row key". The row key
 consists of extracted dimension fields of the view, encoded with an order-
 preserving byte encoding and prefixed with the view's MVTag. Importantly, the
