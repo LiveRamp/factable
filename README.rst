@@ -233,13 +233,9 @@ QuickStart
     # 
     # Now try publishing Quotes again. Note that both views update with new counts, as expected.
     
-    # Clear the backfill, by simply removing its label from its extractor shards.
+    # Clear the backfill, by simply removing the label from its extractor shards.
     $ ~/go/bin/gazctl shards edit -l app.factable.dev/backfill=sure-pony
     INFO[0005] successfully applied                          rev=122
-
-    # Confirm it's no longer listed.
-    $ ~/go/bin/factctl backfill list
-    INFO[0000] no shards in need of back-fill
 
 
 Architecture
