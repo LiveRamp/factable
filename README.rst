@@ -187,14 +187,14 @@ QuickStart
 
     # Try running a query against MVQuoteStats2. It returns no results.
 
-    # List the back-fill created by previous calls to "factctl sync"
-    # Multiple back-fills may co-exist simultaneously.
-    $ ~/go/bin/factctl backfill list
-    {
-     "sure-pony": [
-      "6e740c5e0777300ac155508e"
-       ]
-    }
+    # Extractor shards in need of back-fill are annotated with a label to
+    # that effect. List all extractor shards with current back-fill labels.
+    $ ~/go/bin/gazctl shards list -l app.factable.dev/backfill -L app.factable.dev/backfill
+    +--------------------------+---------+---------------------------+
+    |            ID            | STATUS  | APP FACTABLE DEV/BACKFILL |
+    +--------------------------+---------+---------------------------+
+    | 6e740c5e0777300ac155508e | PRIMARY | sure-pony                 |
+    +--------------------------+---------+---------------------------+
 
     # Create specifications for our backfill job. Require that only fragments
     # 6 hours old or newer should be filled over. The job will read each input
@@ -209,11 +209,15 @@ QuickStart
             | sort --stable --key=1,1 \
             | my-backfill-binary combine --spec sure-pony.spec
 
-    # Locally run the backfill as a map/reduce.
+    # Locally run the back-fill as a map/reduce.
     $ cat sure-pony.tasks \
       | ~/go/bin/quotes-backfill map --spec sure-pony.spec \
       | sort --stable --key=1,1 \
       | ~/go/bin/quotes-backfill combine --spec sure-pony.spec > sure-pony.results
+
+    # Back-fill jobs produce row keys and aggregates using hex-encoded key/value
+    # format intended for compatibility with Hadoop Streaming.
+    $ head -n 5 sure-pony.results
     9f12652e20652e2063756d6d696e67730001f72503      899191b548594c4c01000000000000000000000048628441a6844ca28440be804d74804d818440e780416e80416c8449cf
     9f12652e20652e2063756d6d696e67730001f72504      89a6abf048594c4c01000000000000000000000042849443f980439e80415084434c901e8442658044838c40e18441a784404c84413
     9f12652e20652e2063756d6d696e67730001f72505      898c8ca648594c4c010000000000000000000000515e8841eb8062e18441508c487d
@@ -337,8 +341,8 @@ the relation, regardless of when the view was created.
 
 *Discussion*
 ~~~~~~~~~~~~
-A Schema must be referentially consistent with itself-for example, a Metric's
-named Dimension must exist, with a type matching that of the Metric-but may
+A Schema must be referentially consistent with itself--for example, a Metric's
+named Dimension must exist, with a type matching that of the Metric--but may
 change over time as entities are added, removed, or renamed. An entity's *tag*,
 however, is immutable, and plays a role identical to that of Protocol Buffer tags.
 Schema transitions are likewise constrained on tags: it is an error, for example,
@@ -394,7 +398,7 @@ of each DeltaEvent message by the VTable service.
 No significant state is managed by the extractor consumer--just a small amount
 of metadata in support of the 2PC protocol. At the completion of each consumer
 transaction, the previously combined and emitted row keys and aggregates are
-discarded. As a result, even after combining its likely to see repetitions of
+discarded. As a result, even after combining it's likely to see repetitions of
 specific row key DeltaEvents co-occurring closely, both emitted from a single
 extractor shard, as well as across different extractor shards. Further
 aggregation is done by the VTable consumer.
@@ -410,7 +414,7 @@ time the MVTag is treated as just another dimension.
 Each VTable consumer Shard reads row-keys and aggregates from its assigned
 DeltaEvents partition, and aggregates updates to row-keys into its local store.
 Shard stores are configured to run regular RocksDB compactions, and a compaction
-filter is used to enforce view retention policies and removal of dropped views.
+filter is used to enforce view retention policies and the removal of dropped views.
 As DeltaEvents are mapped to partitions on row-key when written, each shard store
 will generally hold a non-overlapping and uniformly-sized subset of view rows
 (with the caveat that changing DeltaEvent partitioning can result in a small
@@ -452,12 +456,12 @@ VTable consumer shards surface a gRPC Query API. Queries are defined by:
 
 As each shard store holds disjoint subsets of the view, VTables serve queries
 using a distributed scatter/gather strategy. The VTable instance which receives
-the query coordinates its execution, by first scatter it to all VTable shards.
+the query coordinates its execution, by first scattering it to all VTable shards.
 Each shard independently executes the query, applying filter predicates and
 grouping to the requested query dimensions and metrics, and streams ordered
 query rows back to the coordinator. The coordinator then merges the results of
-each shard into final query results. Since the coordinator need only "merge"
-already-sorted streams produced by each shard, it can efficiently stream the
+each shard into final query results. Coordinator merges need only preserve the
+sorted ordering produced by each shard, and it can efficiently stream the
 result set to the client as the query is evaluated by shards.
 
 Syncing Shards & Backfills

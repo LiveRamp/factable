@@ -58,13 +58,6 @@ func main() {
 	)
 	mbp.Must(err, "failed to add command")
 
-	_, err = cmdBackfill.AddCommand("list",
-		"List outstanding backfills.",
-		"List backfills which have been identified but not completed.",
-		&cmdBackfillList{cfg: baseCfg},
-	)
-	mbp.Must(err, "failed to add command")
-
 	_, err = cmdBackfill.AddCommand("specify",
 		"Create back-fill job specification.",
 		"Create specifications of the named back-fill, generating an output job spec and mapper tasks.",
@@ -93,7 +86,7 @@ Rather than first copying inputs to the local machine, consider streaming them
 to this tool:
 
     gsutil cp gs://bucket/my/input/one gs://bucket/my/input/two - \
-    | factctl backfill load --name precious-penguin --id 0 --path /dev/stdin 
+    | factctl backfill load --name precious-penguin --id 0 --path /dev/stdin
 `,
 		&cmdBackfillLoad{cfg: baseCfg},
 	)
