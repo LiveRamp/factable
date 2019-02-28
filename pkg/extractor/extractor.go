@@ -116,18 +116,21 @@ func (ext *Extractor) NewStore(shard consumer.Shard, dir string, rec *recoverylo
 	if err != nil {
 		return nil, err
 	}
-	// Ensure acknowledgements of the last committed transaction are written
-	// to respective tracked journals. This also informs readers that they
-	// should roll back events of a larger SeqNo.
-	ext.txnSemaphoreCh <- struct{}{} // Obtain semaphore which FinishTxn releases.
-	if err = ext.FinishTxn(shard, store, nil); err != nil {
-		return nil, err
-	}
+
 	// Run BeginTxn to cause the Shard to fail immediately if the `mvTag` label
 	// or view are mis-configured. Without this, the Shard would still fail, but
 	// only after attempting to process an input message. BeginTxn is otherwise
 	// a no-op.
-	return store, ext.BeginTxn(shard, store)
+	err = ext.BeginTxn(shard, store)
+	// Ensure acknowledgements of the last committed transaction are written
+	// to respective tracked journals. This also informs readers that they
+	// should roll back events of a larger SeqNo.
+	if err2 := ext.FinishTxn(shard, store, err); err != nil {
+		return nil, err
+	} else if err2 != nil {
+		return nil, err2
+	}
+	return store, nil
 }
 
 func (ext *Extractor) NewMessage(spec *pb.JournalSpec) (message.Message, error) {

@@ -19,7 +19,7 @@ children:
     - name: content-type
       value: application/x-ndjson
     fragment:
-      flush_interval: 1m
+      flush_interval: 10m
 
   # Partitions holding VTable DeltaEvents.
   - name: examples/factable/vtable/RELEASE_NAME/deltas/

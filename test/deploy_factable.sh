@@ -76,5 +76,8 @@ EOF
 cat > ~/.config/gazette/gazctl.ini << EOF
 [journals.Broker]
 Address = $(release_address $(helm_release ${BK_NAMESPACE} gazette) gazette)
+
+[consumer.Address]
+Address = $(release_address $(helm_release ${NAMESPACE} factable) extractor)
 EOF
 REAL_EOF

@@ -22,8 +22,8 @@ import (
 type cmdBackfillSpecify struct {
 	cfg *BaseCfg
 
-	Name       string    `long:"name" required:"true" description:"Name of the backfill to write specifications for."`
-	MinModTime time.Time `long:"min-mod-time" description:"Minimum mod time of Fragments to process. Fragments with earlier mod times are ignored."`
+	Name   string        `long:"name" required:"true" description:"Name of the backfill to write specifications for."`
+	MaxAge time.Duration `long:"max-age" description:"Maximum age of Fragments to process. Fragments with earlier mod times are ignored."`
 }
 
 func (cmd *cmdBackfillSpecify) Execute([]string) error {
@@ -80,8 +80,8 @@ func (cmd *cmdBackfillSpecify) Execute([]string) error {
 			Journal:      journal,
 			SignatureTTL: &urlTTL,
 		}
-		if !cmd.MinModTime.IsZero() {
-			req.BeginModTime = cmd.MinModTime.Unix()
+		if cmd.MaxAge > 0 {
+			req.BeginModTime = time.Now().Add(-cmd.MaxAge).Unix()
 		}
 
 		var frags, err = client.ListAllFragments(ctx, rjc, req)

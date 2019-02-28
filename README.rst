@@ -120,21 +120,21 @@ QuickStart
 
     # Publish a collection of example quotes to the input journal. Optionally wait
     # a minute to ensure fragments are persisted, in order to test backfill.
-    $ ~/go/bin/quotes-publisher publish --broker.address=http://10.152.183.198:80 --quotes=pkg
+    $ ~/go/bin/quotes-publisher publish --broker.address=http://${BROKER_ADDRESS}:80 --quotes=pkg
     INFO[0000] done
 
     # "Sync" the set of Extractor & VTable shards with the current Schema and
     # DeltaEvent partitioning. Sync will drop you into an editor to review and tweak
     # ShardSpecs and JournalSpecs before application. When editing recoverylogs, we'll
-    # need to fill in our Minio fragment store endpoint listed above. If historical
-    # journal content is truly large, the --create-backfill flag instructs sync to create
-    # extractor shards starting with a recent input journal offset (rather than offset 0);
-    # historical messages are then processed via a separate map/reduce backfill.
-    $ ~/go/bin/factctl sync --create-backfill
-    INFO[0000] shard created                                 backfill=lenient-redbird id=20baf470ab314589bff6f822 journal=examples/factable/quotes/input view=MVQuoteStats
-    INFO[0000] shard created                                 backfill=lenient-redbird id=219141864c4e4ad742b3232e journal=examples/factable/quotes/input view=MVWordStats
+    # need to fill in our Minio fragment store endpoint listed above. 
+    $ ~/go/bin/factctl sync
+    INFO[0000] listed input journals                         numInputs=1 relation=RelQuoteWords
+    INFO[0000] shard created                                 backfill= id=33f40b6c5936b918c98fb7bc journal=examples/factable/quotes/input view=MVWordStats
+    INFO[0000] shard created                                 backfill= id=6a57b4e07c9316aa1b98adda journal=examples/factable/quotes/input view=MVQuoteStats
+    INFO[0000] shard created                                 backfill= id=1fd39b77d017766553ac97e6 journal=examples/factable/quotes/input view=MVRecentQuotes
 
-    # Query the "MVQuoteStats" view.
+    # Query the "MVQuoteStats" view. Note that views caught up with our Quotes,
+    # despite being created after they were published.
     $ ~/go/bin/factctl query --path /dev/stdin <<EOF
     materializedview: MVQuoteStats
     view:
@@ -156,44 +156,87 @@ QuickStart
     e. e. cummings  9479    1       7       7       7
 
     # Publish the examples again. Expect queries now reflect the new messages.
-    $ ~/go/bin/quotes-publisher publish --broker.address=http://10.152.183.198:80 --quotes=pkg
+    $ ~/go/bin/quotes-publisher publish --broker.address=http://${BROKER_ADDRESS}:80 --quotes=pkg
     INFO[0000] done
 
-    # List the backfill created by previous calls to "factctl sync"
+    # Let's try running a back-fill. First, fetch the schema for editing. Note the returned revision.
+    # Edit to add an exact copy of MVQuoteStats (eg, MVQuoteStats2) with a new tag.
+    $ ~/go/bin/factctl schema get > schema.yaml
+    # Now apply the updated schema. Use your release instance name, and previously fetched revision.
+    $ ~/go/bin/factctl schema update --path schema.yaml --instance opulent-wombat --revision 13
+     
+    # We want to be sure that input journal fragments have been persisted to cloud storage
+    # already (eg, Minio). We can either wait 10 minutes (its configured flush interval),
+    # or restart broker pods.
+     
+    # Also, we want to tweak the fragment store used by this journal to use the
+    # raw Minio IP rather than the named service. This just lets us read signed
+    # URLs returned by Minio directly from our Host, outside of the local
+    # Kubernetes environment. Eg, update:
+    #   s3://examples/fragments/?profile=minio&endpoint=http%3A%2F%2Fgoodly-echidna-minio.default%3A9000
+    # To:
+    #   s3://examples/fragments/?profile=minio&endpoint=http%3A%2F%2F10.152.183.198%3A9000
+    $ ~/go/bin/gazctl journals edit -l app.gazette.dev/message-type=Quote
+    
+    # Run sync again, this time asking it to create a back-fill job.
+    # Note that this time, we don't have to fill out the recovery log fragment store.
+    # The tool infers values for new journals & shards from those that already exist.
+    $ ~/go/bin/factctl sync --create-backfill
+    INFO[0000] listed input journals                         numInputs=1 relation=RelQuoteWords
+    INFO[0000] shard created                                 backfill=sure-pony id=6e740c5e0777300ac155508e journal=examples/factable/quotes/input view=MVQuoteStats2
+
+    # Try running a query against MVQuoteStats2. It returns no results.
+
+    # List the back-fill created by previous calls to "factctl sync"
+    # Multiple back-fills may co-exist simultaneously.
     $ ~/go/bin/factctl backfill list
     {
-     "lenient-redbird": [
-     "20baf470ab314589bff6f822",
-     "219141864c4e4ad742b3232e"
-     ]
-     }
+     "sure-pony": [
+      "6e740c5e0777300ac155508e"
+       ]
+    }
 
     # Create specifications for our backfill job. Require that only fragments
-    # 6 hours old or newer should be filled over.
-    $ ~/go/bin/factctl backfill specify --name lenient-redbird --max-age 6h
-    INFO[0000] generated backfill specification              spec=lenient-redbird.spec tasks=lenient-redbird.tasks
+    # 6 hours old or newer should be filled over. The job will read each input
+    # fragment just once, and compute all extracted views simultaneously. It is
+    # a good idea to bundle related view updates into a single sync & backfill.
+    $ ~/go/bin/factctl backfill specify --name sure-pony --max-age 6h
+    INFO[0000] generated backfill specification              spec=sure-pony.spec tasks=sure-pony.tasks
     Test your backfill job specification with:
 
-    head --lines=1 lenient-redbird.tasks \
-            | my-backfill-binary map --spec lenient-redbird.spec \
+    head --lines=1 sure-pony.tasks \
+            | my-backfill-binary map --spec sure-pony.spec \
             | sort --stable --key=1,1 \
-            | my-backfill-binary combine --spec lenient-redbird.spec
+            | my-backfill-binary combine --spec sure-pony.spec
 
     # Locally run the backfill as a map/reduce.
-    # You'll need to gazctl journals edit and replace the named Minio service
-    # with its direct service IP in order for this to work, since the host cannot
-    # access K8S DNS.
-    $ head --lines=1 lenient-redbird.tasks \
-      | ~/go/bin/quotes-backfill map --spec lenient-redbird.spec \
+    $ cat sure-pony.tasks \
+      | ~/go/bin/quotes-backfill map --spec sure-pony.spec \
       | sort --stable --key=1,1 \
-      | ~/go/bin/quotes-backfill combine --spec lenient-redbird.spec
+      | ~/go/bin/quotes-backfill combine --spec sure-pony.spec > sure-pony.results
     9f12652e20652e2063756d6d696e67730001f72503      899191b548594c4c01000000000000000000000048628441a6844ca28440be804d74804d818440e780416e80416c8449cf
     9f12652e20652e2063756d6d696e67730001f72504      89a6abf048594c4c01000000000000000000000042849443f980439e80415084434c901e8442658044838c40e18441a784404c84413
     9f12652e20652e2063756d6d696e67730001f72505      898c8ca648594c4c010000000000000000000000515e8841eb8062e18441508c487d
     9f12652e20652e2063756d6d696e67730001f72506      899799c548594c4c010000000000000000000000428494468190425684405e804209800c8845f28441b280438d80
     9f12652e20652e2063756d6d696e67730001f72507      898f8faf48594c4c01000000000000000000000042ae845ea48443148442ef8446888043b6804b35804329
 
-    # TODO(johnny): Loading completed map/reduce into DeltaEvents, with exactly-once guarantee.
+    # Load the backfill results into DeltaEvent partitions.
+    $ ~/go/bin/factctl backfill load --name sure-pony --id 0 --path sure-pony.results
+
+    # Now query to compare MVQuoteStats and MVQuoteStats2. They return identical results!
+    # Try "accidentally" loading the backfill results a second time. The second load
+    # is ignored (de-duplicated), and the views continue to return the same results.
+    # 
+    # Now try publishing Quotes again. Note that both views update with new counts, as expected.
+    
+    # Clear the backfill, by simply removing its label from its extractor shards.
+    $ ~/go/bin/gazctl shards edit -l app.factable.dev/backfill=sure-pony
+    INFO[0005] successfully applied                          rev=122
+
+    # Confirm it's no longer listed.
+    $ ~/go/bin/factctl backfill list
+    INFO[0000] no shards in need of back-fill
+
 
 Architecture
 ============

@@ -77,7 +77,7 @@ func (cmd *cmdSync) Execute([]string) error {
 			RecoveryLogPrefix: "examples/factable/" + releaseInstance + "/recovery/extractor",
 			HintPrefix:        "/gazette/hints/factable/" + releaseInstance + "/extractor",
 			MaxTxnDuration:    time.Minute,
-			MinTxnDuration:    time.Second * 10,
+			MinTxnDuration:    time.Second,
 		}
 	}
 
@@ -149,7 +149,7 @@ func (cmd *cmdSync) Execute([]string) error {
 			RecoveryLogPrefix: "examples/factable/" + releaseInstance + "/recovery/vtable",
 			HintPrefix:        "/gazette/hints/factable/" + releaseInstance + "/vtable",
 			MaxTxnDuration:    time.Minute,
-			MinTxnDuration:    time.Second * 10,
+			MinTxnDuration:    time.Second,
 		}
 	}
 
