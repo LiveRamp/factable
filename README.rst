@@ -80,6 +80,11 @@ QuickStart
 ==========
 
 .. code-block:: console
+    # Install git submodules so docker can build
+    $ git submodule update --init
+
+    # Install required cli tools for quickstart
+    $ go install -tags rocksdb ./cmd/...
 
     # Build and test Factable.
     $ docker build -t liveramp/factable .
