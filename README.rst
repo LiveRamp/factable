@@ -80,6 +80,7 @@ QuickStart
 ==========
 
 .. code-block:: console
+
     # Install git submodules so docker can build
     $ git submodule update --init
 
