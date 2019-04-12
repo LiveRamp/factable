@@ -1,7 +1,5 @@
-
 [[constraint]]
   name = "github.com/LiveRamp/gazette"
-  source = "https://github.com/LiveRamp/gazette.git"
   branch = "master"
 
 [[constraint]]
