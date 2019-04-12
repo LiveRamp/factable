@@ -57,11 +57,12 @@ type Schema struct {
 	Extract ExtractFns
 	Spec    SchemaSpec
 
-	Mappings   map[MapTag]MappingSpec
-	Dimensions map[DimTag]DimensionSpec
-	Metrics    map[MetTag]MetricSpec
-	Relations  map[RelTag]RelationSpec
-	Views      map[MVTag]MaterializedViewSpec
+	Mappings       map[MapTag]MappingSpec
+	Dimensions     map[DimTag]DimensionSpec
+	Metrics        map[MetTag]MetricSpec
+	Relations      map[RelTag]RelationSpec
+	ReservedMVTags map[MVTag]struct{}
+	Views          map[MVTag]MaterializedViewSpec
 
 	MapTags map[string]MapTag
 	DimTags map[string]DimTag
@@ -81,11 +82,12 @@ func NewSchema(optionalExtractors *ExtractFns, spec SchemaSpec) (Schema, error) 
 	var schema = Schema{
 		Spec: spec,
 
-		Mappings:   make(map[MapTag]MappingSpec),
-		Dimensions: make(map[DimTag]DimensionSpec),
-		Metrics:    make(map[MetTag]MetricSpec),
-		Relations:  make(map[RelTag]RelationSpec),
-		Views:      make(map[MVTag]MaterializedViewSpec),
+		Mappings:       make(map[MapTag]MappingSpec),
+		Dimensions:     make(map[DimTag]DimensionSpec),
+		Metrics:        make(map[MetTag]MetricSpec),
+		Relations:      make(map[RelTag]RelationSpec),
+		ReservedMVTags: make(map[MVTag]struct{}),
+		Views:          make(map[MVTag]MaterializedViewSpec),
 
 		MapTags: make(map[string]MapTag),
 		DimTags: make(map[string]DimTag),
@@ -126,6 +128,11 @@ func NewSchema(optionalExtractors *ExtractFns, spec SchemaSpec) (Schema, error) 
 	for i, spec := range spec.Relations {
 		if err := schema.addRelation(spec); err != nil {
 			return Schema{}, pb.ExtendContext(err, "Relations[%d]", i)
+		}
+	}
+	for i, spec := range spec.ReservedViewTags {
+		if err := schema.addReservedMVTag(spec); err != nil {
+			return Schema{}, pb.ExtendContext(err, "ReservedViewTags[%d]", i)
 		}
 	}
 	for i, spec := range spec.Views {
@@ -232,9 +239,22 @@ func (schema *Schema) addRelation(spec RelationSpec) error {
 	return nil
 }
 
+func (schema *Schema) addReservedMVTag(spec ReservedMVTagSpec) error {
+	if _, ok := schema.ReservedMVTags[spec.Tag]; ok {
+		return pb.NewValidationError("MVTag already reserved (%d)", spec.Tag)
+	} else if _, ok := schema.Views[spec.Tag]; ok {
+		return pb.NewValidationError("MVTag in use and cannot be reserved (%d)", spec.Tag)
+	}
+
+	schema.ReservedMVTags[spec.Tag] = struct{}{}
+	return nil
+}
+
 func (schema *Schema) addMaterializedView(spec MaterializedViewSpec) error {
 	if err := schema.validateName(spec.Name); err != nil {
 		return err
+	} else if _, ok := schema.ReservedMVTags[spec.Tag]; ok {
+		return pb.NewValidationError("MVTag reserved (%d)", spec.Tag)
 	} else if _, ok := schema.Views[spec.Tag]; ok {
 		return pb.NewValidationError("MVTag already specified (%d)", spec.Tag)
 	} else if spec.RelTag, ok = schema.RelTags[spec.Relation]; !ok {

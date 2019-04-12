@@ -42,14 +42,17 @@ func (s *SchemaSuite) TestSchemaValidationCases(c *gc.C) {
 				Tag: mvTestTag,
 			},
 		},
+		ReservedViewTags: []ReservedMVTagSpec{
+			{Tag: resMVTag},
+		},
 	}
 
 	var verify = func(str string) {
 		var _, err = NewSchema(&ext, spec)
 		if str == "" {
-			c.Check(err, gc.IsNil)
+			c.Assert(err, gc.IsNil)
 		} else {
-			c.Check(err, gc.ErrorMatches, str)
+			c.Assert(err, gc.ErrorMatches, str)
 		}
 	}
 	verify("") // Initial fixture builds without error.
@@ -135,6 +138,13 @@ func (s *SchemaSuite) TestSchemaValidationCases(c *gc.C) {
 	spec.Relations[1].Dimensions[0] = dimAStr
 	verify("")
 
+	// ReservedMVTag verification cases.
+	spec.ReservedViewTags = append(spec.ReservedViewTags, ReservedMVTagSpec{
+		Tag: resMVTag,
+	})
+	verify(`ReservedViewTags\[1\]: MVTag already reserved \(\d+\)`)
+	spec.ReservedViewTags[1].Tag = resOtherMVTag
+
 	// MaterializedView verification cases.
 	spec.Views = append(spec.Views, MaterializedViewSpec{
 		Name:     "in valid",
@@ -152,7 +162,9 @@ func (s *SchemaSuite) TestSchemaValidationCases(c *gc.C) {
 	verify(`Views\[1\]: duplicated Name \(mvTest\)`)
 	spec.Views[1].Name = "mvOther"
 	verify(`Views\[1\]: MVTag already specified \(\d+\)`)
-	spec.Views[1].Tag = 1234 // Invent.
+	spec.Views[1].Tag = resMVTag
+	verify(`Views\[1\]: MVTag reserved \(\d+\)`)
+	spec.Views[1].Tag = 1234 // Invent new tag.
 	verify(`Views\[1\]: no such Relation \(unknown-relation\)`)
 	spec.Views[1].Relation = relTest
 	verify(`Views\[1\].Dimensions\[0\]: no such Dimension \(unknown-dim\)`)

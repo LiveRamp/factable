@@ -597,6 +597,8 @@ const (
 	metOtherStrUniqTag = iota
 	relTestTag         = iota
 	mvTestTag          = iota
+	resMVTag           = iota
+	resOtherMVTag      = iota
 )
 
 func makeTestConfig(views ...MaterializedViewSpec) SchemaSpec {

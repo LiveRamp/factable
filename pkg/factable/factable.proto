@@ -125,6 +125,18 @@ message ResolvedView {
   repeated uint64 met_tags = 2 [(gogoproto.casttype) = "MetTag"];
 }
 
+// ReservedMVTagSpec defines MVTags that cannot be used in this schema. This
+// can be used to reserve tags for future materialized views or to tombstone
+// deleted materialized views. Re-using materialized view tags requires careful
+// consideration of previously used delta journals and shard recovery logs
+// because the tag is an input for generating shard IDs in `factctl sync`.
+message ReservedMVTagSpec {
+  // Reserved tag in the same space as MaterializedView.
+  uint64 tag = 1 [(gogoproto.casttype) = "MVTag" ];
+  // Longer, free-form description of the reserved MVTag.
+  string desc = 2;
+}
+
 // MaterializedViewSpec defines a materialization of a ViewSpec. Its Metrics
 // are continuously aggregated as RelationRows are processed, and the total
 // storage commitment is limited to the cardinality of the View Dimensions.
@@ -294,6 +306,7 @@ message SchemaSpec {
   repeated MetricSpec           metrics = 3 [(gogoproto.nullable) = false ];
   repeated RelationSpec         relations = 4 [(gogoproto.nullable) = false ];
   repeated MaterializedViewSpec views = 5 [(gogoproto.nullable) = false ];
+  repeated ReservedMVTagSpec    reserved_view_tags = 6 [(gogoproto.nullable) = false ];
 }
 
 // GetSchemaResponse is the response of the GetSchema RPC.
