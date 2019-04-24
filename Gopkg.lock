@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8e3c7e52da99bfe2a854af4582df5a124cc46622a4d81afa38d969029a339d8d"
+  digest = "1:580a2d825249b3867b9cdde7f76e461ded9fc57d9179e46293bb0d4911a6d1fb"
   name = "github.com/LiveRamp/gazette"
   packages = [
     "v2/cmd/gazctl/editor",
@@ -54,10 +54,10 @@
     "v2/pkg/protocol/journalspace",
     "v2/pkg/recoverylog",
     "v2/pkg/server",
+    "v2/pkg/task",
   ]
   pruneopts = ""
-  revision = "911b00d84c74e086eb7348898eb8b1334c8d0373"
-  source = "https://github.com/LiveRamp/gazette.git"
+  revision = "91166b9c6eac9fec35beafaf290acc2665210870"
 
 [[projects]]
   digest = "1:e406b224e471569444261f237e63ce8177747514862463be7a81df756c02e340"
@@ -679,6 +679,14 @@
   ]
   pruneopts = ""
   revision = "e64efc72b421e893cbf63f17ba2221e7d6d0b0f3"
+
+[[projects]]
+  branch = "master"
+  digest = "1:9f6efefb4e401a4f699a295d14518871368eb89403f2dd23ec11dfcd2c0836ba"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  pruneopts = ""
+  revision = "112230192c580c3556b8cee6403af37a4fc5f28c"
 
 [[projects]]
   branch = "master"
