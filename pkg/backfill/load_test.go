@@ -49,8 +49,8 @@ func (s *LoadSuite) TestCombineWithMultipleViews(c *gc.C) {
 		"{\"extractor\":\"an-extractor\",\"seq_no\":3,\"row_key\":\"BQ==\",\"row_value\":\"Bg==\"}\n"+
 		"{\"extractor\":\"an-extractor\",\"seq_no\":3}\n")
 
-	broker.RevokeLease(c)
-	broker.WaitForExit()
+	broker.Tasks.Cancel()
+	c.Check(broker.Tasks.Wait(), gc.IsNil)
 }
 
 var _ = gc.Suite(&LoadSuite{})

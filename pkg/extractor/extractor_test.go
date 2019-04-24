@@ -47,8 +47,8 @@ func (s *ExtractorSuite) TestFoldsOverUniqueWords(c *gc.C) {
 	})
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func (s *ExtractorSuite) TestDistinctRowsForUniqueWords(c *gc.C) {
@@ -82,8 +82,8 @@ func (s *ExtractorSuite) TestDistinctRowsForUniqueWords(c *gc.C) {
 	}
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func (s *ExtractorSuite) TestMultipleTransactionsAndRecovery(c *gc.C) {
@@ -115,8 +115,8 @@ func (s *ExtractorSuite) TestMultipleTransactionsAndRecovery(c *gc.C) {
 	c.Assert(txn.nextDeltas, gc.HasLen, 0)
 
 	// Crash this consumer.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 
 	// Start a new consumer.
 	cmr = quotes.StartApplication(tc, &Extractor{Extractors: quotes.BuildExtractors()})
@@ -128,8 +128,8 @@ func (s *ExtractorSuite) TestMultipleTransactionsAndRecovery(c *gc.C) {
 	c.Check(msg, gc.DeepEquals, txn.Extractor[fmt.Sprintf("extractor-%d", quotes.MVQuoteStatsTag)].Events[0])
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func (s *ExtractorSuite) TestSupportsFetchingSchema(c *gc.C) {
@@ -143,8 +143,8 @@ func (s *ExtractorSuite) TestSupportsFetchingSchema(c *gc.C) {
 	c.Check(resp.Spec, gc.DeepEquals, quotes.BuildSchemaSpec())
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 type txnReader struct {
@@ -177,9 +177,11 @@ func (tr *txnReader) next(c *gc.C) DeltaEvent {
 }
 
 var (
-	expectExtractorIsBeginFinisher consumer.BeginFinisher  = new(Extractor)
-	expectExtractorIsApplication   runconsumer.Application = new(Extractor)
-	_                                                      = gc.Suite(&ExtractorSuite{})
+	_ = gc.Suite(&ExtractorSuite{})
+	// Expect Extractor implements BeginFinisher
+	_ consumer.BeginFinisher = new(Extractor)
+	// Expect Extractor implements Application
+	_ runconsumer.Application = new(Extractor)
 )
 
 func TestT(t *testing.T) { gc.TestingT(t) }

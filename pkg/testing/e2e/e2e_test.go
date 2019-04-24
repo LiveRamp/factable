@@ -60,10 +60,10 @@ func (s *E2ESuite) TestE2EWithFixtures(c *gc.C) {
 	)
 
 	// Shutdown.
-	extCmr.RevokeLease(c)
-	vtCmr.RevokeLease(c)
-	extCmr.WaitForExit(c)
-	vtCmr.WaitForExit(c)
+	extCmr.Tasks.Cancel()
+	vtCmr.Tasks.Cancel()
+	c.Check(extCmr.Tasks.Wait(), gc.IsNil)
+	c.Check(vtCmr.Tasks.Wait(), gc.IsNil)
 }
 
 func (s *E2ESuite) TestE2EWithSmallQuoteSet(c *gc.C) {
@@ -105,10 +105,10 @@ func (s *E2ESuite) TestE2EWithSmallQuoteSet(c *gc.C) {
 	)
 
 	// Shutdown.
-	extCmr.RevokeLease(c)
-	vtCmr.RevokeLease(c)
-	extCmr.WaitForExit(c)
-	vtCmr.WaitForExit(c)
+	extCmr.Tasks.Cancel()
+	vtCmr.Tasks.Cancel()
+	c.Check(extCmr.Tasks.Wait(), gc.IsNil)
+	c.Check(vtCmr.Tasks.Wait(), gc.IsNil)
 }
 
 func queryRelationCSV(c *gc.C, ctx context.Context, conn *grpc.ClientConn, tag factable.MVTag) string {

@@ -86,8 +86,8 @@ func (s *VTableSuite) TestAccumulateCases(c *gc.C) {
 	})
 
 	res.Done()
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
@@ -142,8 +142,8 @@ func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
 	})
 
 	// Crash this consumer, and start a new one.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 
 	cmr = quotes.StartApplication(tc, new(VTable))
 	<-cmr.AllocateIdleCh() // Shard is assigned.
@@ -159,8 +159,8 @@ func (s *VTableSuite) TestExtractorTransactions(c *gc.C) {
 		string(factable.PackKey(quotes.MVWordStatsTag, "a", "record")): factable.PackValue(105, 200, 309),
 	})
 
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func expectDB(c *gc.C, cmr *consumertest.Consumer, expect map[string][]byte) {
@@ -192,9 +192,11 @@ func boxInts(args ...int64) (out []factable.Aggregate) {
 }
 
 var (
-	expectVTableIsBeginFinisher consumer.BeginFinisher  = new(VTable)
-	expectVTableIsApplication   runconsumer.Application = new(VTable)
-	_                                                   = gc.Suite(&VTableSuite{})
+	_ = gc.Suite(&VTableSuite{})
+	// Expect VTable implements BeginFinisher
+	_ consumer.BeginFinisher = new(VTable)
+	// Expect VTable implements Application
+	_ runconsumer.Application = new(VTable)
 )
 
 func TestT(t *testing.T) { gc.TestingT(t) }

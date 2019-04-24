@@ -63,8 +63,8 @@ func NewTestCase(c *gc.C, specs Specs) (TestCase, func()) {
 			Journals: pb.NewRoutedJournalClient(broker.Client(), pb.NoopDispatchRouter{}),
 			Specs:    specs,
 		}, func() {
-			broker.RevokeLease(c)
-			broker.WaitForExit()
+			broker.Tasks.Cancel()
+			c.Check(broker.Tasks.Wait(), gc.IsNil)
 
 			cancel()
 			etcdtest.Cleanup()
@@ -98,7 +98,7 @@ func StartApplication(tc TestCase, app runconsumer.Application) *consumertest.Co
 		Server:  cmr.Server,
 		Service: cmr.Service,
 	}), gc.IsNil)
-	go cmr.Serve(tc.C, tc.Ctx)
+	go cmr.Tasks.GoRun()
 
 	return cmr
 }
@@ -179,7 +179,7 @@ func PublishQuotes(begin, end int, relPath string, ajc client.AsyncJournalClient
 }
 
 // Mapping is a message.MappingFunc which maps all Quotes to InputJournal.
-func Mapping(message.Message) (journal pb.Journal, framing message.Framing, e error) {
+func Mapping(_ message.Message) (journal pb.Journal, framing message.Framing, e error) {
 	return InputJournal, message.JSONFraming, nil
 }
 

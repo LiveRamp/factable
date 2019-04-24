@@ -31,8 +31,8 @@ func (s *APISuite) TestSupportsFetchingSchema(c *gc.C) {
 	c.Check(resp.Spec, gc.DeepEquals, quotes.BuildSchemaSpec())
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func (s *APISuite) TestScanShardCases(c *gc.C) {
@@ -51,8 +51,8 @@ func (s *APISuite) TestScanShardCases(c *gc.C) {
 	runQueryCases(c, tc, cmr.Service.Loopback, "vtable-part-000")
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func (s *APISuite) TestScanTableCases(c *gc.C) {
@@ -76,8 +76,8 @@ func (s *APISuite) TestScanTableCases(c *gc.C) {
 	runQueryCases(c, tc, cmr.Service.Loopback, "")
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func runQueryCases(c *gc.C, tc quotes.TestCase, conn *grpc.ClientConn, shard consumer.ShardID) {
@@ -218,8 +218,8 @@ func (s *APISuite) TestScanErrorCases(c *gc.C) {
 	c.Check(err, gc.ErrorMatches, `rpc error: code = Unknown desc = MvTag not found \(0\)`)
 
 	// Shutdown.
-	cmr.RevokeLease(c)
-	cmr.WaitForExit(c)
+	cmr.Tasks.Cancel()
+	c.Check(cmr.Tasks.Wait(), gc.IsNil)
 }
 
 func writeDataFixtures(c *gc.C, wc io.WriteCloser, begin, end, stride int64) {
