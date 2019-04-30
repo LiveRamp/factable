@@ -26,7 +26,6 @@
   version = "v1.3.5"
 
 [[projects]]
-  branch = "master"
   digest = "1:580a2d825249b3867b9cdde7f76e461ded9fc57d9179e46293bb0d4911a6d1fb"
   name = "github.com/LiveRamp/gazette"
   packages = [
@@ -58,6 +57,7 @@
   ]
   pruneopts = ""
   revision = "91166b9c6eac9fec35beafaf290acc2665210870"
+  version = "v2.0.210"
 
 [[projects]]
   digest = "1:e406b224e471569444261f237e63ce8177747514862463be7a81df756c02e340"

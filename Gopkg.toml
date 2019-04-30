@@ -1,8 +1,4 @@
 [[constraint]]
-  name = "github.com/LiveRamp/gazette"
-  branch = "master"
-
-[[constraint]]
   name = "github.com/retailnext/hllpp"
   revision = "01496c854800396a767f4f034a2bb58af2924b25"
   source = "https://github.com/LiveRamp/hllpp"
