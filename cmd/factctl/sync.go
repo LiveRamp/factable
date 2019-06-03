@@ -27,8 +27,10 @@ import (
 type cmdSync struct {
 	cfg *BaseCfg
 
-	MaxTxnSize     int  `long:"max-txn-size" default:"0" description:"Maximum number of specs to be applied at a time. If 0, all changes are issued in a single transaction"`
-	CreateBackfill bool `long:"create-backfill" description:"If set, a backfill job should be created, and new extractor shards will begin reading from a recent offset rather than the beginning of the journal"`
+	MaxTxnSize     int   `long:"max-txn-size" default:"0" description:"Maximum number of specs to be applied at a time. If 0, all changes are issued in a single transaction"`
+	CreateBackfill bool  `long:"create-backfill" description:"If set, a backfill job should be created, and new extractor shards will begin reading from a recent offset rather than the beginning of the journal"`
+	ExtHintBackups int32 `long:"extractor-hint-backups" description:"Specifies the number of hint backups to stored in etcd for extractors shards (default: 0)"`
+	VtHintBackups  int32 `long:"vtable-hint-backups" description:"Specifies the number of hint backups to stored in etcd for vtable shards (default: 0)"`
 }
 
 func (cmd *cmdSync) Execute([]string) error {
@@ -76,6 +78,7 @@ func (cmd *cmdSync) Execute([]string) error {
 		extShards.Common = consumer.ShardSpec{
 			RecoveryLogPrefix: "examples/factable/" + releaseInstance + "/recovery/extractor",
 			HintPrefix:        "/gazette/hints/factable/" + releaseInstance + "/extractor",
+			HintBackups:       cmd.ExtHintBackups,
 			MaxTxnDuration:    time.Minute,
 			MinTxnDuration:    time.Second,
 		}
@@ -148,6 +151,7 @@ func (cmd *cmdSync) Execute([]string) error {
 		vtShards.Common = consumer.ShardSpec{
 			RecoveryLogPrefix: "examples/factable/" + releaseInstance + "/recovery/vtable",
 			HintPrefix:        "/gazette/hints/factable/" + releaseInstance + "/vtable",
+			HintBackups:       cmd.VtHintBackups,
 			MaxTxnDuration:    time.Minute,
 			MinTxnDuration:    time.Second,
 		}
