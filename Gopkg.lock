@@ -26,7 +26,7 @@
   version = "v1.3.5"
 
 [[projects]]
-  digest = "1:dcc79f67a67a254bb2650de5fa09464952079bc03efd1971dad879be5c46876c"
+  digest = "1:93fc3c75986aeb31ce0974e8c3d1bde3458f9b284784894e963c260ed2c7560d"
   name = "github.com/LiveRamp/gazette"
   packages = [
     "v2/cmd/gazctl/editor",
@@ -56,8 +56,8 @@
     "v2/pkg/task",
   ]
   pruneopts = ""
-  revision = "4cb481276041999c00c3abd1eb37920b2dbf3548"
-  version = "v2.0.212"
+  revision = "c2f92d136744a7897be6a9e278c1da1b4e3c778c"
+  source = "https://github.com/gazette/core"
 
 [[projects]]
   digest = "1:e406b224e471569444261f237e63ce8177747514862463be7a81df756c02e340"

@@ -19,3 +19,9 @@
   version = "=v1.2.0"
   source = "https://github.com/LiveRamp/gorocksdb.git"
 
+# TODO: remove this constraint once the import paths are fixed to omit v2/pkg
+# PS-1135
+[[constraint]]
+  name = "github.com/LiveRamp/gazette"
+  revision = "c2f92d136744a7897be6a9e278c1da1b4e3c778c"
+  source = "https://github.com/gazette/core"
