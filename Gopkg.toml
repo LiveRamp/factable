@@ -23,5 +23,5 @@
 # PS-1135
 [[constraint]]
   name = "github.com/LiveRamp/gazette"
-  revision = "c2f92d136744a7897be6a9e278c1da1b4e3c778c"
+  revision = "49c4ae6934cabaf52f21b5fc57bb7d6379c06ec5"
   source = "https://github.com/gazette/core"
