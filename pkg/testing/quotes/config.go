@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/brokertest"
 	"github.com/LiveRamp/gazette/v2/pkg/consumer"
 	"github.com/LiveRamp/gazette/v2/pkg/labels"

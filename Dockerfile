@@ -3,7 +3,7 @@ FROM liveramp/gazette AS base
 FROM base AS build
 
 ARG DEP_VERSION=v0.5.0
-ARG IMPORT_PATH=git.liveramp.net/jgraet/factable
+ARG IMPORT_PATH=github.com/LiveRamp/factable
 
 RUN curl -fsSL -o /usr/local/bin/dep \
     https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 \

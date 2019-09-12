@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"git.liveramp.net/jgraet/factable/pkg/backfill"
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/backfill"
+	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/client"
 	"github.com/LiveRamp/gazette/v2/pkg/consumer"
 	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"

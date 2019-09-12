@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
-	. "git.liveramp.net/jgraet/factable/pkg/internal"
-	"git.liveramp.net/jgraet/factable/pkg/testing/quotes"
+	"github.com/LiveRamp/factable/pkg/factable"
+	. "github.com/LiveRamp/factable/pkg/internal"
+	"github.com/LiveRamp/factable/pkg/testing/quotes"
 	"github.com/LiveRamp/gazette/v2/pkg/client"
 	"github.com/LiveRamp/gazette/v2/pkg/consumer"
 	"github.com/LiveRamp/gazette/v2/pkg/consumertest"

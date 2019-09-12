@@ -43,7 +43,7 @@ import "C"
 import (
 	"unsafe"
 
-	"git.liveramp.net/jgraet/factable/pkg/hll"
+	"github.com/LiveRamp/factable/pkg/hll"
 )
 
 func wrapMurmurHash64A(input []byte, seed int) uint64 {

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/consumer"
 	"github.com/LiveRamp/gazette/v2/pkg/protocol"
 	"github.com/cockroachdb/cockroach/util/encoding"

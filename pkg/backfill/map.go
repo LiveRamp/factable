@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
-	"git.liveramp.net/jgraet/factable/pkg/internal"
+	"github.com/LiveRamp/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/internal"
 	"github.com/LiveRamp/gazette/v2/pkg/client"
 	"github.com/LiveRamp/gazette/v2/pkg/labels"
 	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"

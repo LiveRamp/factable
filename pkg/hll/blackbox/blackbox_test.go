@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"git.liveramp.net/jgraet/factable/pkg/hll"
+	"github.com/LiveRamp/factable/pkg/hll"
 	gc "github.com/go-check/check"
 )
 
