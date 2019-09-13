@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/keyspace"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"

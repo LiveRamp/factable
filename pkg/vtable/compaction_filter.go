@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	log "github.com/sirupsen/logrus"
 )

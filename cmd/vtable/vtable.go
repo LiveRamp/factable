@@ -2,7 +2,7 @@
 package main
 
 import (
-	"git.liveramp.net/jgraet/factable/pkg/vtable"
+	"github.com/LiveRamp/factable/pkg/vtable"
 	"github.com/LiveRamp/gazette/v2/pkg/mainboilerplate/runconsumer"
 )
 

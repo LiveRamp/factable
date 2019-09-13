@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
-	"git.liveramp.net/jgraet/factable/pkg/testing/quotes"
+	"github.com/LiveRamp/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/testing/quotes"
 	"github.com/LiveRamp/gazette/v2/pkg/client"
 	"github.com/LiveRamp/gazette/v2/pkg/labels"
 	"github.com/LiveRamp/gazette/v2/pkg/message"

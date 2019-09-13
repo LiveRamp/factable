@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"os"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
-	"git.liveramp.net/jgraet/factable/pkg/internal"
+	"github.com/LiveRamp/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/internal"
 	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
 	"github.com/pkg/errors"
 )

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/brokertest"
 	"github.com/LiveRamp/gazette/v2/pkg/client"
 	"github.com/LiveRamp/gazette/v2/pkg/consumertest"

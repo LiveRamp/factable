@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.liveramp.net/jgraet/factable/pkg/hll"
+	"github.com/LiveRamp/factable/pkg/hll"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 )

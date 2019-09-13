@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/factable"
 	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
 	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
 	"github.com/golang/protobuf/ptypes/empty"

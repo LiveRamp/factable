@@ -2,8 +2,8 @@
 package main
 
 import (
-	"git.liveramp.net/jgraet/factable/pkg/extractor"
-	"git.liveramp.net/jgraet/factable/pkg/testing/quotes"
+	"github.com/LiveRamp/factable/pkg/extractor"
+	"github.com/LiveRamp/factable/pkg/testing/quotes"
 	"github.com/LiveRamp/gazette/v2/pkg/mainboilerplate/runconsumer"
 )
 

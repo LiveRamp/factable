@@ -2,8 +2,8 @@
 package main
 
 import (
-	"git.liveramp.net/jgraet/factable/pkg/backfill"
-	"git.liveramp.net/jgraet/factable/pkg/testing/quotes"
+	"github.com/LiveRamp/factable/pkg/backfill"
+	"github.com/LiveRamp/factable/pkg/testing/quotes"
 )
 
 func main() { backfill.Main(quotes.BuildExtractors()) }

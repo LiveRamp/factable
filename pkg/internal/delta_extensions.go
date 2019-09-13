@@ -2,7 +2,7 @@
 package internal
 
 import (
-	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/gazette/v2/pkg/message"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"

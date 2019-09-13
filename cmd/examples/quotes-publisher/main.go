@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"git.liveramp.net/jgraet/factable/pkg/testing/quotes"
+	"github.com/LiveRamp/factable/pkg/testing/quotes"
 	"github.com/LiveRamp/gazette/v2/pkg/client"
 	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
 	"github.com/LiveRamp/gazette/v2/pkg/metrics"
