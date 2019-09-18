@@ -16,6 +16,9 @@ import (
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"git.liveramp.net/jgraet/factable/pkg/factable"
+	"git.liveramp.net/jgraet/factable/pkg/internal"
 )
 
 type cmdMap struct {
@@ -82,7 +85,7 @@ func decode(mt MapTaskSpec, schema factable.Schema, out chan<- message.Envelope)
 
 	var br = bufio.NewReaderSize(fr, 32*1024)
 	for {
-		if b, err := framing.Unpack(br); err == io.EOF {
+		if b, err := framing.Unpack(br); errors.Cause(err) == io.EOF {
 			return nil
 		} else if err != nil {
 			return errors.WithMessage(err, "unpacking message")
