@@ -5,8 +5,6 @@ import (
 	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
 	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
 	"github.com/jessevdk/go-flags"
-
-	"git.liveramp.net/jgraet/factable/pkg/factable"
 )
 
 // JobSpec defines common specifications of a backfill job.

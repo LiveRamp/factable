@@ -16,9 +16,6 @@ import (
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	"git.liveramp.net/jgraet/factable/pkg/factable"
-	"git.liveramp.net/jgraet/factable/pkg/internal"
 )
 
 type cmdMap struct {
