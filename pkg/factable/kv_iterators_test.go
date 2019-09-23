@@ -275,6 +275,13 @@ func (s *IteratorsSuite) TestHexIteratorRoundTrip(c *gc.C) {
 	verify(c, it, NewSliceIterator(seq...), false, false)
 }
 
+func (s *IteratorsSuite) TextHexIteratorErrBufferFull (c *gc.C) {
+	var (
+		buf bytes.Buffer
+		bw = bufio.NewWriter(&buf)
+	)
+}
+
 func buildTestKeyValueSequence() (kvs [][2][]byte) {
 	var arena = make(kvsArena, 1<<12)
 	var value = encoding.EncodeVarintAscending(nil, 1)
