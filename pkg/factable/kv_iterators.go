@@ -326,18 +326,38 @@ type hexIter struct {
 	key, val []byte
 }
 
+func bufferFullFallback(b *bufio.Reader, delim byte, orig []byte) ([]byte, error) {
+	var rest, full []byte
+	var err error
+	// Preserve read contents.
+	full = append(full, orig...)
+	if rest, err = b.ReadBytes(delim); err == io.EOF {
+		return nil, io.ErrUnexpectedEOF
+	} else if err != nil {
+		return nil, err
+	}
+	full = append(full, rest...)
+	return full, nil
+}
+
 func (h *hexIter) Next() ([]byte, []byte, error) {
 	var raw []byte
 	var err error
 
 	// Read hex-encoded row key.
-	if raw, err = h.br.ReadSlice('\t'); err == io.EOF {
+	if raw, err = h.br.ReadSlice('\t'); err == nil {
+		// no-op - continue.
+	} else if err == io.EOF {
 		if len(raw) == 0 {
 			return nil, nil, KVIteratorDone
 		} else {
 			return nil, nil, io.ErrUnexpectedEOF
 		}
-	} else if err != nil {
+	} else if err == bufio.ErrBufferFull {
+		if raw, err = bufferFullFallback(h.br, '\t', raw); err != nil {
+			return nil, nil, err
+		}
+	}  else {
 		return nil, nil, err
 	}
 
@@ -359,16 +379,9 @@ func (h *hexIter) Next() ([]byte, []byte, error) {
 	} else if err == io.EOF {
 		return nil, nil, io.ErrUnexpectedEOF
 	} else if err == bufio.ErrBufferFull {
-		var rest, full []byte
-		// Preserve read contents.
-		full = append(full, raw...)
-		if rest, err = h.br.ReadBytes('\n'); err == io.EOF {
-			return nil, nil, io.ErrUnexpectedEOF
-		} else if err != nil {
+		if raw, err = bufferFullFallback(h.br, '\n', raw); err != nil {
 			return nil, nil, err
 		}
-		full = append(full, rest...)
-		raw = full
 	} else {
 		return nil, nil, err
 	}

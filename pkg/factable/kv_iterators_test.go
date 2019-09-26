@@ -278,7 +278,7 @@ func (s *IteratorsSuite) TestHexIteratorRoundTrip(c *gc.C) {
 func (s *IteratorsSuite) TestHexIteratorBufferFull(c *gc.C) {
 	var (
 		buf bytes.Buffer
-		seq            = buildFatValueSequence()
+		seq            = buildOverflowSequences()
 		it  KVIterator = NewSliceIterator(seq...)
 		bw             = bufio.NewWriter(&buf)
 		hw             = NewHexEncoder(bw)
@@ -298,13 +298,21 @@ func (s *IteratorsSuite) TestHexIteratorBufferFull(c *gc.C) {
 	verify(c, it, NewSliceIterator(seq...), false, false)
 }
 
-func buildFatValueSequence() (kvs [][2][]byte) {
-	// value will fit into 16 byte buffer (including '\n' byte suffix).
-	var fit = [2][]byte{{0x01, 0x10}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}
+func buildOverflowSequences() (kvs [][2][]byte) {
+	// key and value will fit into 16 byte buffer (including '\n' and '\t' byte suffixes).
+	var kvFit = [2][]byte{{0x01, 0x10}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}
+	// key won't fit into 16 byte buffer.
+	var kNoFit = [2][]byte{{0x01, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
+		{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}
 	// value won't fit into 16 byte buffer.
-	var noFit = [2][]byte{{0x01, 0x11}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}}
-	kvs = append(kvs, fit)
-	kvs = append(kvs, noFit)
+	var vNoFit = [2][]byte{{0x01, 0x11}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}}
+	// key and value wont fit into 16 byte buffer (including '\n' and '\t' byte suffixes).
+	var kvNoFit = [2][]byte{{0x01, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
+		{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}}
+	kvs = append(kvs, kvFit)
+	kvs = append(kvs, kNoFit)
+	kvs = append(kvs, vNoFit)
+	kvs = append(kvs, kvNoFit)
 	return
 }
 
