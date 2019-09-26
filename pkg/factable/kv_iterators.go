@@ -354,23 +354,23 @@ func (h *hexIter) Next() ([]byte, []byte, error) {
 	}
 
 	// Read hex-encoded row value.
-	if raw, err = h.br.ReadSlice('\n'); err == io.EOF {
+	if raw, err = h.br.ReadSlice('\n'); err == nil {
+		// no-op - continue.
+	} else if err == io.EOF {
 		return nil, nil, io.ErrUnexpectedEOF
-	} else if err != nil {
-		if err == bufio.ErrBufferFull {
-			var rest, full []byte
-			// Preserve read contents.
-			full = append(full, raw...)
-			if rest, err = h.br.ReadBytes('\n'); err == io.EOF {
-				return nil, nil, io.ErrUnexpectedEOF
-			} else if err != nil {
-				return nil, nil, err
-			}
-			full = append(full, rest...)
-			raw = full
-		} else {
+	} else if err == bufio.ErrBufferFull {
+		var rest, full []byte
+		// Preserve read contents.
+		full = append(full, raw...)
+		if rest, err = h.br.ReadBytes('\n'); err == io.EOF {
+			return nil, nil, io.ErrUnexpectedEOF
+		} else if err != nil {
 			return nil, nil, err
 		}
+		full = append(full, rest...)
+		raw = full
+	} else {
+		return nil, nil, err
 	}
 
 	l = len(raw) - 1
