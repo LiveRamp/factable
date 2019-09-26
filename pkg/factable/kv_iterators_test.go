@@ -275,11 +275,37 @@ func (s *IteratorsSuite) TestHexIteratorRoundTrip(c *gc.C) {
 	verify(c, it, NewSliceIterator(seq...), false, false)
 }
 
-func (s *IteratorsSuite) TextHexIteratorErrBufferFull (c *gc.C) {
+func (s *IteratorsSuite) TestHexIteratorBufferFull(c *gc.C) {
 	var (
 		buf bytes.Buffer
-		bw = bufio.NewWriter(&buf)
+		seq            = buildFatValueSequence()
+		it  KVIterator = NewSliceIterator(seq...)
+		bw             = bufio.NewWriter(&buf)
+		hw             = NewHexEncoder(bw)
 	)
+	// Encode |seq| into |buf|.
+	for {
+		var key, value, err = it.Next()
+		if err == KVIteratorDone {
+			break
+		}
+		c.Assert(err, gc.IsNil)
+		c.Assert(hw.Encode(key, value), gc.IsNil)
+	}
+	c.Assert(bw.Flush(), gc.IsNil)
+
+	it = NewHexIterator(bufio.NewReaderSize(&buf, 16))
+	verify(c, it, NewSliceIterator(seq...), false, false)
+}
+
+func buildFatValueSequence() (kvs [][2][]byte) {
+	// value will fit into 16 byte buffer (including '\n' byte suffix).
+	var fit = [2][]byte{{0x01, 0x10}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}
+	// value won't fit into 16 byte buffer.
+	var noFit = [2][]byte{{0x01, 0x11}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}}
+	kvs = append(kvs, fit)
+	kvs = append(kvs, noFit)
+	return
 }
 
 func buildTestKeyValueSequence() (kvs [][2][]byte) {
