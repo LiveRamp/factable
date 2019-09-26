@@ -326,38 +326,18 @@ type hexIter struct {
 	key, val []byte
 }
 
-func bufferFullFallback(b *bufio.Reader, delim byte, orig []byte) ([]byte, error) {
-	var rest, full []byte
-	var err error
-	// Preserve read contents.
-	full = append(full, orig...)
-	if rest, err = b.ReadBytes(delim); err == io.EOF {
-		return nil, io.ErrUnexpectedEOF
-	} else if err != nil {
-		return nil, err
-	}
-	full = append(full, rest...)
-	return full, nil
-}
-
 func (h *hexIter) Next() ([]byte, []byte, error) {
 	var raw []byte
 	var err error
 
 	// Read hex-encoded row key.
-	if raw, err = h.br.ReadSlice('\t'); err == nil {
-		// no-op - continue.
-	} else if err == io.EOF {
+	if raw, err = readUntil(h.br, '\t'); err == io.EOF {
 		if len(raw) == 0 {
 			return nil, nil, KVIteratorDone
 		} else {
 			return nil, nil, io.ErrUnexpectedEOF
 		}
-	} else if err == bufio.ErrBufferFull {
-		if raw, err = bufferFullFallback(h.br, '\t', raw); err != nil {
-			return nil, nil, err
-		}
-	}  else {
+	} else if err != nil{
 		return nil, nil, err
 	}
 
@@ -374,15 +354,9 @@ func (h *hexIter) Next() ([]byte, []byte, error) {
 	}
 
 	// Read hex-encoded row value.
-	if raw, err = h.br.ReadSlice('\n'); err == nil {
-		// no-op - continue.
-	} else if err == io.EOF {
+	if raw, err = readUntil(h.br, '\n'); err == io.EOF {
 		return nil, nil, io.ErrUnexpectedEOF
-	} else if err == bufio.ErrBufferFull {
-		if raw, err = bufferFullFallback(h.br, '\n', raw); err != nil {
-			return nil, nil, err
-		}
-	} else {
+	} else if err != nil {
 		return nil, nil, err
 	}
 
@@ -417,6 +391,21 @@ func (e *HexEncoder) Encode(key, value []byte) error {
 	_ = e.bw.WriteByte('\t')
 	_, _ = e.hw.Write(value)
 	return e.bw.WriteByte('\n')
+}
+
+func readUntil(br *bufio.Reader, delim byte) ([]byte, error) {
+	var b, err = br.ReadSlice(delim)
+	if err == bufio.ErrBufferFull {
+		var full, rest []byte
+		// Preserve read contents as as the reader overwrites `b` in subsequent
+		// reads with contents of its internal buffer.
+		full = append(full, b...)
+
+		rest, err = br.ReadBytes(delim)
+		full = append(full, rest...)
+		b = full
+	}
+	return b, err
 }
 
 // NewStreamIterator returns a KVIterator which wraps a stream. |recvFn| reads
