@@ -397,7 +397,7 @@ func readUntil(br *bufio.Reader, delim byte) ([]byte, error) {
 	var b, err = br.ReadSlice(delim)
 	if err == bufio.ErrBufferFull {
 		var full, rest []byte
-		// Preserve read contents as as the reader overwrites `b` in subsequent
+		// Preserve read contents as the reader overwrites `b` in subsequent
 		// reads with contents of its internal buffer.
 		full = append(full, b...)
 
