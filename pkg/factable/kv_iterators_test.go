@@ -275,6 +275,47 @@ func (s *IteratorsSuite) TestHexIteratorRoundTrip(c *gc.C) {
 	verify(c, it, NewSliceIterator(seq...), false, false)
 }
 
+func (s *IteratorsSuite) TestHexIteratorBufferFull(c *gc.C) {
+	var (
+		buf bytes.Buffer
+		seq            = buildOverflowSequences()
+		it  KVIterator = NewSliceIterator(seq...)
+		bw             = bufio.NewWriter(&buf)
+		hw             = NewHexEncoder(bw)
+	)
+	// Encode |seq| into |buf|.
+	for {
+		var key, value, err = it.Next()
+		if err == KVIteratorDone {
+			break
+		}
+		c.Assert(err, gc.IsNil)
+		c.Assert(hw.Encode(key, value), gc.IsNil)
+	}
+	c.Assert(bw.Flush(), gc.IsNil)
+
+	it = NewHexIterator(bufio.NewReaderSize(&buf, 16))
+	verify(c, it, NewSliceIterator(seq...), false, false)
+}
+
+func buildOverflowSequences() (kvs [][2][]byte) {
+	// key and value will fit into 16 byte buffer (including '\n' and '\t' byte suffixes).
+	var kvFit = [2][]byte{{0x01, 0x10}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}
+	// key won't fit into 16 byte buffer.
+	var kNoFit = [2][]byte{{0x01, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
+		{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}
+	// value won't fit into 16 byte buffer.
+	var vNoFit = [2][]byte{{0x01, 0x11}, {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}}
+	// key and value wont fit into 16 byte buffer (including '\n' and '\t' byte suffixes).
+	var kvNoFit = [2][]byte{{0x01, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
+		{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}}
+	kvs = append(kvs, kvFit)
+	kvs = append(kvs, kNoFit)
+	kvs = append(kvs, vNoFit)
+	kvs = append(kvs, kvNoFit)
+	return
+}
+
 func buildTestKeyValueSequence() (kvs [][2][]byte) {
 	var arena = make(kvsArena, 1<<12)
 	var value = encoding.EncodeVarintAscending(nil, 1)
