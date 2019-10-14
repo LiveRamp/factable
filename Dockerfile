@@ -17,7 +17,7 @@ RUN go install -tags rocksdb ./cmd/...
 RUN go test -tags rocksdb ./cmd/...
 
 # Stage 4: Pluck factable binaries & plugins onto base.
-FROM build as factable
+FROM base as factable
 
 COPY --from=build \
     /go/bin/vtable \
