@@ -4,5 +4,4 @@ jobs:
    machine: true
    steps:
      - checkout
-     # build the application image
      - run: docker build -t liveramp/factable:$CIRCLE_BRANCH .
