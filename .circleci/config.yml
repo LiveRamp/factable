@@ -1,7 +1,9 @@
 version: 2
 jobs:
- build:
-   machine: true
-   steps:
-     - checkout
-     - run: docker build -t liveramp/factable:$CIRCLE_BRANCH .
+  build:
+    docker:
+      - image: circleci/golang:1.12.9
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: make clean test

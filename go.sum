@@ -11,6 +11,8 @@ github.com/LiveRamp/gazette v0.0.0-20190701211740-49c4ae6934ca h1:ZdFRlZTA7/rK9E
 github.com/LiveRamp/gazette v0.0.0-20190701211740-49c4ae6934ca/go.mod h1:m1VggI0ai4P3WsF7XOEAw3IscdRjz9rjzZfX8AlRFdQ=
 github.com/LiveRamp/gorocksdb v1.2.0 h1:eaVI/BKgerrA86hf+MnhMKVsaXQD4kjHBs+4qcuqgXs=
 github.com/LiveRamp/gorocksdb v1.2.0/go.mod h1:DW7q7z1Mdo7XQBR1LXESFYx1fUWkj6YvBv4X0nYZWYQ=
+github.com/LiveRamp/hllpp v0.0.0-20170130195621-01496c854800 h1:GGVpMMi7deTRlRlBo2jTJTCrdYRRI8hGlQFnoDU/hO0=
+github.com/LiveRamp/hllpp v0.0.0-20170130195621-01496c854800/go.mod h1:vmyYQmJM+phkAt6/0Cizpo8sD+Y52d8Q9M3niKNp3Jo=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/aws/aws-sdk-go v1.19.32 h1:/usjSR6qsKfOKzk4tDNvZq7LqmP5+J0Cq/Uwsr2XVG8=
@@ -136,8 +138,6 @@ github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d/go.mod h1:c3At6R
 github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/prometheus/procfs v0.0.0-20190227231451-bbced9601137 h1:3l8oligPtjd4JuM+OZ+U8sjtwFGJs98cdWsqs6QZRWs=
 github.com/prometheus/procfs v0.0.0-20190227231451-bbced9601137/go.mod h1:TjEm7ze935MbeOT/UhFTIMYKhuLP4wbCsTZCD3I8kEA=
-github.com/retailnext/hllpp v1.0.0 h1:7+NffI2mo7lZG78NruEsf3jEnjJ6Z0n1otEyFqdK8zA=
-github.com/retailnext/hllpp v1.0.0/go.mod h1:RDpi1RftBQPUCDRw6SmxeaREsAaRKnOclghuzp/WRzc=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.3.0 h1:hI/7Q+DtNZ2kINb6qt/lS+IyXnHQe9e90POfeewL/ME=
