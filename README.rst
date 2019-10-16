@@ -1,3 +1,6 @@
+.. image:: https://circleci.com/gh/LiveRamp/factable.svg?style=svg
+    :target: https://circleci.com/gh/LiveRamp/factable
+
 Overview
 ========
 

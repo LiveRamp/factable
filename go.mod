@@ -37,7 +37,7 @@ require (
 	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/prometheus/procfs v0.0.0-20190227231451-bbced9601137 // indirect
-	github.com/retailnext/hllpp v1.0.0
+	github.com/retailnext/hllpp v0.0.0-20170130195621-01496c854800
 	github.com/sirupsen/logrus v1.3.0
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
@@ -60,5 +60,6 @@ require (
 
 replace (
 	github.com/cockroachdb/cockroach => github.com/jgraettinger/cockroach-encoding v1.0.0
+	github.com/retailnext/hllpp => github.com/LiveRamp/hllpp v0.0.0-20170130195621-01496c854800
 	github.com/tecbot/gorocksdb => github.com/LiveRamp/gorocksdb v1.2.0
 )
