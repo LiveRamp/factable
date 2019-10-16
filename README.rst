@@ -1,3 +1,6 @@
+.. image:: https://circleci.com/gh/LiveRamp/factable.svg?style=svg
+    :target: https://circleci.com/gh/LiveRamp/factable
+
 Overview
 ========
 
@@ -15,11 +18,6 @@ efficient "productionization" of insights discovered by internal analysts.
 LiveRamp uses Factable to power structured and limited ad-hoc queries over
 systems authoring tens of billions of messages every day, with look-back
 windows spanning months and even years.
-
-Build Status
-============
-.. image:: https://circleci.com/gh/LiveRamp/factable.svg?style=svg
-    :target: https://circleci.com/gh/LiveRamp/factable
 
 Background
 ==========
