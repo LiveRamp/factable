@@ -5,7 +5,7 @@ go 1.12
 require (
 	cloud.google.com/go v0.43.0 // indirect
 	github.com/DataDog/zstd v1.4.0 // indirect
-	github.com/LiveRamp/gazette v0.0.0-20190701211740-49c4ae6934ca
+	github.com/LiveRamp/gazette v0.0.0-20190703144706-49c4ae6934ca
 	github.com/aws/aws-sdk-go v1.19.32 // indirect
 	github.com/cockroachdb/cockroach v1.0.0
 	github.com/coreos/bbolt v1.3.2 // indirect
@@ -60,6 +60,6 @@ require (
 
 replace (
 	github.com/cockroachdb/cockroach => github.com/jgraettinger/cockroach-encoding v1.0.0
-	github.com/retailnext/hllpp => github.com/LiveRamp/hllpp v0.0.0-20170130195621-01496c854800
+	github.com/retailnext/hllpp => github.com/LiveRamp/hllpp v0.0.0-20170131005621-01496c854800
 	github.com/tecbot/gorocksdb => github.com/LiveRamp/gorocksdb v1.2.0
 )
