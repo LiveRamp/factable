@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/LiveRamp/factable/pkg/factable"
-	"github.com/LiveRamp/gazette/v2/pkg/brokertest"
-	"github.com/LiveRamp/gazette/v2/pkg/consumer"
-	"github.com/LiveRamp/gazette/v2/pkg/labels"
-	"github.com/LiveRamp/gazette/v2/pkg/message"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/brokertest"
+	"go.gazette.dev/core/consumer"
+	"go.gazette.dev/core/labels"
+	"go.gazette.dev/core/message"
+	pb "go.gazette.dev/core/consumer/protocol"
 )
 
 const (

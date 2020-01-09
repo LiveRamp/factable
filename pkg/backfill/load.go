@@ -8,9 +8,9 @@ import (
 
 	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/factable/pkg/internal"
-	"github.com/LiveRamp/gazette/v2/pkg/client"
-	"github.com/LiveRamp/gazette/v2/pkg/message"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/mainboilerplate"
+	"go.gazette.dev/core/message"
+	pb "go.gazette.dev/core/consumer/protocol"
 	"github.com/pkg/errors"
 )
 

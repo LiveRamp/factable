@@ -4,8 +4,8 @@ package factable
 import (
 	"time"
 
-	"github.com/LiveRamp/gazette/v2/pkg/message"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/message"
+	pb "go.gazette.dev/core/consumer/protocol"
 )
 
 // Field is a simple data type (eg, int64, float64, time.Time, string). A

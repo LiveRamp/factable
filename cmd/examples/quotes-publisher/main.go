@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/LiveRamp/factable/pkg/testing/quotes"
-	"github.com/LiveRamp/gazette/v2/pkg/client"
-	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
-	"github.com/LiveRamp/gazette/v2/pkg/metrics"
+	"go.gazette.dev/core/mainboilerplate"
+	mbp "go.gazette.dev/core/mainboilerplate"
+	"go.gazette.dev/core/metrics"
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"

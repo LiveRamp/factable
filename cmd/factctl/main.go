@@ -1,7 +1,7 @@
 package main
 
 import (
-	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
+	mbp "go.gazette.dev/core/mainboilerplate"
 	"github.com/jessevdk/go-flags"
 )
 

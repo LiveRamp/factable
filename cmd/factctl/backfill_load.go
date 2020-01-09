@@ -7,8 +7,8 @@ import (
 
 	"github.com/LiveRamp/factable/pkg/backfill"
 	"github.com/LiveRamp/factable/pkg/factable"
-	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	mbp "go.gazette.dev/core/mainboilerplate"
+	pb "go.gazette.dev/core/consumer/protocol"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 

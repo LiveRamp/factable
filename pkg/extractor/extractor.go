@@ -5,17 +5,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/LiveRamp/factable/pkg/factable"
-	. "github.com/LiveRamp/factable/pkg/internal"
-	"github.com/LiveRamp/gazette/v2/pkg/client"
-	"github.com/LiveRamp/gazette/v2/pkg/consumer"
-	"github.com/LiveRamp/gazette/v2/pkg/mainboilerplate/runconsumer"
-	"github.com/LiveRamp/gazette/v2/pkg/message"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
-	"github.com/LiveRamp/gazette/v2/pkg/recoverylog"
+	"go.gazette.dev/core/consumer"
+	"go.gazette.dev/core/message"
+	pb "go.gazette.dev/core/consumer/protocol"
+	"go.gazette.dev/core/consumer/recoverylog"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.gazette.dev/core/mainboilerplate"
+	"go.gazette.dev/core/mainboilerplate/runconsumer"
+
+	"github.com/LiveRamp/factable/pkg/factable"
+	. "github.com/LiveRamp/factable/pkg/internal"
+	"go.gazette.dev/core/broker/client"
 )
 
 // Extractor is a runconsumer.Application which extracts and locally combines

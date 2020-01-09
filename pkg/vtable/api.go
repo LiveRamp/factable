@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/LiveRamp/factable/pkg/factable"
-	"github.com/LiveRamp/gazette/v2/pkg/consumer"
-	"github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/consumer"
+	"go.gazette.dev/core/consumer/protocol"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"

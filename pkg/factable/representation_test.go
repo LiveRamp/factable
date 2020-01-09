@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/LiveRamp/gazette/v2/pkg/message"
+	"go.gazette.dev/core/message"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	gc "github.com/go-check/check"
 )

@@ -8,7 +8,7 @@ import (
 
 	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/factable/pkg/internal"
-	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
+	mbp "go.gazette.dev/core/mainboilerplate"
 	"github.com/pkg/errors"
 )
 

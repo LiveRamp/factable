@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/LiveRamp/gazette/v2/pkg/message"
-	"github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/message"
+	"go.gazette.dev/core/consumer/protocol"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	gc "github.com/go-check/check"
 )

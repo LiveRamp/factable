@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/LiveRamp/factable/pkg/factable"
-	mbp "github.com/LiveRamp/gazette/v2/pkg/mainboilerplate"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	mbp "go.gazette.dev/core/mainboilerplate"
+	pb "go.gazette.dev/core/consumer/protocol"
 	"github.com/gogo/protobuf/proto"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"

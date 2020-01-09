@@ -6,14 +6,14 @@ package factable
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import protocol "github.com/LiveRamp/gazette/v2/pkg/protocol"
+import protocol "go.gazette.dev/core/consumer/protocol"
 import _ "github.com/gogo/protobuf/gogoproto"
 import _ "github.com/golang/protobuf/ptypes/duration"
 import empty "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 import time "time"
-import github_com_LiveRamp_gazette_v2_pkg_consumer "github.com/LiveRamp/gazette/v2/pkg/consumer"
+import github_com_LiveRamp_gazette_v2_pkg_consumer "go.gazette.dev/core/consumer"
 
 import (
 	context "golang.org/x/net/context"
@@ -910,7 +910,7 @@ type ExecuteQueryRequest struct {
 	// Header attached by a proxy-ing peer. Not directly set by clients.
 	Header *protocol.Header `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
 	// Shard to query. Set iff |header| is also set.
-	Shard github_com_LiveRamp_gazette_v2_pkg_consumer.ShardID `protobuf:"bytes,2,opt,name=shard,proto3,casttype=github.com/LiveRamp/gazette/v2/pkg/consumer.ShardID" json:"shard,omitempty"`
+	Shard github_com_LiveRamp_gazette_v2_pkg_consumer.ShardID `protobuf:"bytes,2,opt,name=shard,proto3,casttype=go.gazette.dev/core/consumer.ShardID" json:"shard,omitempty"`
 	// Query specification.
 	Query ResolvedQuery `protobuf:"bytes,3,opt,name=query" json:"query"`
 }

@@ -3,7 +3,7 @@ package factable
 import (
 	"time"
 
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	pb "go.gazette.dev/core/consumer/protocol"
 	gc "github.com/go-check/check"
 )
 

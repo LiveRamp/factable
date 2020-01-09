@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/LiveRamp/factable/pkg/factable"
-	"github.com/LiveRamp/gazette/v2/pkg/keyspace"
-	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/golang/protobuf/ptypes/empty"
+	"go.gazette.dev/core/keyspace"
+
+	"github.com/LiveRamp/factable/pkg/factable"
+
+	"go.etcd.io/etcd/clientv3"
 )
 
 // NewSchemaKeySpace returns a KeySpace over the singular shared SchemaSpec key.

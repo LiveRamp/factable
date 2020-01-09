@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"time"
 
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	pb "go.gazette.dev/core/consumer/protocol"
 	"github.com/cockroachdb/cockroach/util/encoding"
 )
 

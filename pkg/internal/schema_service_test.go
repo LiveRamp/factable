@@ -6,8 +6,8 @@ import (
 
 	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/factable/pkg/testing/quotes"
-	"github.com/LiveRamp/gazette/v2/pkg/etcdtest"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/etcdtest"
+	pb "go.gazette.dev/core/consumer/protocol"
 	gc "github.com/go-check/check"
 	"github.com/golang/protobuf/ptypes/empty"
 )

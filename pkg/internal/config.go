@@ -3,7 +3,7 @@ package internal
 import (
 	"errors"
 
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	pb "go.gazette.dev/core/consumer/protocol"
 )
 
 // CommonConfig shared between the VTable and Extractor consumers.

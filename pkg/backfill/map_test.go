@@ -10,10 +10,10 @@ import (
 
 	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/factable/pkg/testing/quotes"
-	"github.com/LiveRamp/gazette/v2/pkg/client"
-	"github.com/LiveRamp/gazette/v2/pkg/labels"
-	"github.com/LiveRamp/gazette/v2/pkg/message"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/mainboilerplate"
+	"go.gazette.dev/core/labels"
+	"go.gazette.dev/core/message"
+	pb "go.gazette.dev/core/consumer/protocol"
 	gc "github.com/go-check/check"
 )
 

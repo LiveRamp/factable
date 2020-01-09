@@ -2,13 +2,13 @@ package backfill
 
 import (
 	"context"
-	"github.com/LiveRamp/gazette/v2/pkg/client"
-	"github.com/LiveRamp/gazette/v2/pkg/labels"
+	"go.gazette.dev/core/mainboilerplate"
+	"go.gazette.dev/core/labels"
 	"io/ioutil"
 
-	"github.com/LiveRamp/gazette/v2/pkg/brokertest"
-	"github.com/LiveRamp/gazette/v2/pkg/etcdtest"
-	pb "github.com/LiveRamp/gazette/v2/pkg/protocol"
+	"go.gazette.dev/core/brokertest"
+	"go.gazette.dev/core/etcdtest"
+	pb "go.gazette.dev/core/consumer/protocol"
 	gc "github.com/go-check/check"
 )
 

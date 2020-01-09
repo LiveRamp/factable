@@ -4,7 +4,7 @@ package main
 import (
 	"github.com/LiveRamp/factable/pkg/extractor"
 	"github.com/LiveRamp/factable/pkg/testing/quotes"
-	"github.com/LiveRamp/gazette/v2/pkg/mainboilerplate/runconsumer"
+	"go.gazette.dev/core/mainboilerplate/runconsumer"
 )
 
 func main() { runconsumer.Main(&extractor.Extractor{Extractors: quotes.BuildExtractors()}) }
