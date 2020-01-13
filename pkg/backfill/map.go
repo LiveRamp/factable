@@ -7,15 +7,18 @@ import (
 	"io"
 	"os"
 
-	"github.com/LiveRamp/factable/pkg/factable"
-	"github.com/LiveRamp/factable/pkg/internal"
-	"go.gazette.dev/core/mainboilerplate"
-	"go.gazette.dev/core/labels"
-	mbp "go.gazette.dev/core/mainboilerplate"
-	"go.gazette.dev/core/message"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.gazette.dev/core/labels"
+	"go.gazette.dev/core/mainboilerplate"
+	mbp "go.gazette.dev/core/mainboilerplate"
+	"go.gazette.dev/core/message"
+
+	"go.gazette.dev/core/broker/client"
+
+	"github.com/LiveRamp/factable/pkg/factable"
+	"github.com/LiveRamp/factable/pkg/internal"
 )
 
 type cmdMap struct {

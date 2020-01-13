@@ -3,7 +3,7 @@ package factable
 import (
 	"fmt"
 
-	pb "go.gazette.dev/core/consumer/protocol"
+	pb "go.gazette.dev/core/broker/protocol"
 )
 
 // MarshalYAML returns the string DimensionType name.

@@ -3,7 +3,7 @@ syntax = "proto3";
 package factable;
 
 import "gogoproto/gogo.proto";
-import "go.gazette.dev/core/broker/protocol/protocol.proto";
+import "broker/protocol/protocol.proto";
 import "ptypes/duration/duration.proto";
 import "ptypes/timestamp/timestamp.proto";
 import "ptypes/empty/empty.proto";
@@ -282,8 +282,12 @@ message ResolvedQuery {
 message ExecuteQueryRequest {
   // Header attached by a proxy-ing peer. Not directly set by clients.
   protocol.Header header = 1;
-  // Shard to query. Set iff |header| is also set.
-  string shard = 2 [(gogoproto.casttype) = "github.com/LiveRamp/gazette/v2/pkg/consumer.ShardID"];
+  // Shard to query. Set iff |header| is also set
+  // TODO (chris): if this is go.gazette.dev/core/consumer.ShardID instead of a string
+  // the .pb.go file is not valid.
+  string shard = 2 [(gogoproto.casttype) = "go.gazette.dev/core/consumer/protocol.ShardID"];
+//  string shard = 2;
+
   // Query specification.
   ResolvedQuery query = 3 [(gogoproto.nullable) = false];
 }

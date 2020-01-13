@@ -4,8 +4,8 @@ package factable
 import (
 	"time"
 
+	pb "go.gazette.dev/core/broker/protocol"
 	"go.gazette.dev/core/message"
-	pb "go.gazette.dev/core/consumer/protocol"
 )
 
 // Field is a simple data type (eg, int64, float64, time.Time, string). A

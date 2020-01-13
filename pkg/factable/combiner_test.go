@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"go.gazette.dev/core/message"
-	"go.gazette.dev/core/consumer/protocol"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	gc "github.com/go-check/check"
+	"go.gazette.dev/core/consumer/protocol"
+	"go.gazette.dev/core/message"
 )
 
 type CombinerSuite struct{}
