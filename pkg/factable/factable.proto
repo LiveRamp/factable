@@ -12,9 +12,7 @@ option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_unrecognized_all) = false;
-option (gogoproto.marshaler_all) = true;
 option (gogoproto.protosizer_all) = true;
-option (gogoproto.unmarshaler_all) = true;
 
 enum DimensionType {
   INVALID_DIM_TYPE = 0;

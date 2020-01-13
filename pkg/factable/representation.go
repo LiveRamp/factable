@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/LiveRamp/factable/pkg/hll"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
+
+	"github.com/LiveRamp/factable/pkg/hll"
 )
 
 // ExtractAndMarshalDimension extracts ordered dimensions |dims| from the
