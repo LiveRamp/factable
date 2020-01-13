@@ -2,13 +2,8 @@ syntax = "proto3";
 
 package factable;
 
-//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "gogoproto/gogo.proto";
-//import "github.com/LiveRamp/gazette/v2/pkg/protocol/protocol.proto";
 import "go.gazette.dev/core/broker/protocol/protocol.proto";
-//import "google/protobuf/duration.proto";
-//import "google/protobuf/timestamp.proto";
-//import "google/protobuf/empty.proto";
 import "ptypes/duration/duration.proto";
 import "ptypes/timestamp/timestamp.proto";
 import "ptypes/empty/empty.proto";

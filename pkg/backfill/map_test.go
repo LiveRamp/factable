@@ -126,7 +126,7 @@ func buildJobFixture(schema factable.Schema) JobSpec {
 	return JobSpec{
 		SchemaSpec: schema.Spec,
 
-		Inputs: map[pb.Journal]pb.JournalSpec{
+		Inputs: map[protocol.Journal]pb.JournalSpec{
 			quotes.InputJournal: {
 				Name: quotes.InputJournal,
 				LabelSet: pb.MustLabelSet(

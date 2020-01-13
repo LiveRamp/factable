@@ -179,11 +179,11 @@ func PublishQuotes(begin, end int, relPath string, ajc client.AsyncJournalClient
 }
 
 // Mapping is a message.MappingFunc which maps all Quotes to InputJournal.
-func Mapping(_ message.Message) (journal pb.Journal, framing message.Framing, e error) {
+func Mapping(_ message.Message) (journal protocol.Journal, framing message.Framing, e error) {
 	return InputJournal, message.JSONFraming, nil
 }
 
 const (
-	InputJournal  pb.Journal = "examples/factable/quotes/input"
+	InputJournal  protocol.Journal = "examples/factable/quotes/input"
 	SchemaSpecKey            = "/path/to/schema/key"
 )

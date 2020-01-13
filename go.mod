@@ -28,7 +28,6 @@ require (
 	github.com/ugorji/go v1.1.1 // indirect
 	go.etcd.io/etcd v0.0.0-20190711162406-e56e8471ec18
 	go.gazette.dev/core v0.85.2
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 	google.golang.org/grpc v1.22.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2

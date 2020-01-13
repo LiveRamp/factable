@@ -5,18 +5,20 @@ import (
 	"strconv"
 	"time"
 
-	"go.gazette.dev/core/consumer"
-	"go.gazette.dev/core/message"
-	pb "go.gazette.dev/core/consumer/protocol"
-	"go.gazette.dev/core/consumer/recoverylog"
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"go.gazette.dev/core/mainboilerplate"
+	broker "go.gazette.dev/core/broker/protocol"
+	"go.gazette.dev/core/consumer"
+	"go.gazette.dev/core/consumer/recoverylog"
 	"go.gazette.dev/core/mainboilerplate/runconsumer"
+	"go.gazette.dev/core/message"
+
+	"go.gazette.dev/core/broker/protocol"
 
 	"github.com/LiveRamp/factable/pkg/factable"
 	. "github.com/LiveRamp/factable/pkg/internal"
+
 	"go.gazette.dev/core/broker/client"
 )
 
@@ -80,7 +82,7 @@ func (ext *Extractor) InitApplication(args runconsumer.InitArgs) error {
 	if parts, err := client.NewPolledList(args.Context,
 		args.Service.Journals,
 		time.Minute,
-		pb.ListRequest{Selector: cfg.Factable.DeltasSelector()},
+		broker.ListRequest{Selector: cfg.Factable.DeltasSelector()},
 	); err != nil {
 		return errors.WithMessage(err, "fetching deltas partitions")
 	} else {
@@ -94,7 +96,7 @@ type shardState struct {
 	// SeqNo of the next row DeltaEvent. Persisted by JSONStore.
 	SeqNo int64
 	// Journals written to as part of the current transaction. Persisted by JSONStore.
-	TransactionJournals map[pb.Journal]string
+	TransactionJournals map[protocol.Journal]string
 
 	// Tag of MaterializedViewSpec being served by this Shard.
 	mvTag factable.MVTag
@@ -107,14 +109,14 @@ type shardState struct {
 
 // NewStore constructs a Store for |shard| around the recovered local directory
 // |dir| and initialized Recorder |rec|.
-func (ext *Extractor) NewStore(shard consumer.Shard, dir string, rec *recoverylog.Recorder) (consumer.Store, error) {
+func (ext *Extractor) NewStore(shard consumer.Shard, rec *recoverylog.Recorder) (consumer.Store, error) {
 	var state = &shardState{
 		SeqNo:               1,
-		TransactionJournals: make(map[pb.Journal]string),
+		TransactionJournals: make(map[protocol.Journal]string),
 		pending:             make(map[string][]factable.Aggregate),
 	}
 
-	var store, err = consumer.NewJSONFileStore(rec, dir, state)
+	var store, err = consumer.NewJSONFileStore(rec, state)
 	if err != nil {
 		return nil, err
 	}
@@ -124,10 +126,12 @@ func (ext *Extractor) NewStore(shard consumer.Shard, dir string, rec *recoverylo
 	// only after attempting to process an input message. BeginTxn is otherwise
 	// a no-op.
 	err = ext.BeginTxn(shard, store)
+	var finOp = client.FinishedOperation(err)
 	// Ensure acknowledgements of the last committed transaction are written
 	// to respective tracked journals. This also informs readers that they
 	// should roll back events of a larger SeqNo.
-	if err2 := ext.FinishTxn(shard, store, err); err != nil {
+
+	if err2 := ext.FinishTxn(shard, store, finOp); err != nil {
 		return nil, err
 	} else if err2 != nil {
 		return nil, err2
@@ -135,7 +139,7 @@ func (ext *Extractor) NewStore(shard consumer.Shard, dir string, rec *recoverylo
 	return store, nil
 }
 
-func (ext *Extractor) NewMessage(spec *pb.JournalSpec) (message.Message, error) {
+func (ext *Extractor) NewMessage(spec *broker.JournalSpec) (message.Message, error) {
 	return ext.Extractors.NewMessage(spec)
 }
 
@@ -160,7 +164,7 @@ func (ext *Extractor) BeginTxn(shard consumer.Shard, store consumer.Store) error
 	return nil
 }
 
-func (*Extractor) ConsumeMessage(shard consumer.Shard, store consumer.Store, envelope message.Envelope) error {
+func (*Extractor) ConsumeMessage(_ consumer.Shard, store consumer.Store, envelope message.Envelope, _ *message.Publisher) error {
 	var (
 		state   = store.(*consumer.JSONFileStore).State.(*shardState)
 		mvSpec  = state.schema.Views[state.mvTag]
@@ -188,7 +192,7 @@ func (*Extractor) ConsumeMessage(shard consumer.Shard, store consumer.Store, env
 	return nil
 }
 
-func (ext *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) error {
+func (ext *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store, publisher *message.Publisher) error {
 	var (
 		state  = store.(*consumer.JSONFileStore).State.(*shardState)
 		mvSpec = state.schema.Views[state.mvTag]
@@ -203,11 +207,19 @@ func (ext *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) er
 
 		// Map and publish the DeltaEvent. This parallels `message.Publish`,
 		// except we retain the mapped journal and framing for future use.
-		var journal, framing, err = ext.deltas(delta)
+		var journal, contentType, err = ext.deltas(delta)
 		if err != nil {
 			return err
 		}
-		var aa = shard.JournalClient().StartAppend(journal)
+
+		framing, err := message.FramingByContentType(contentType)
+		if err != nil {
+			return err
+		}
+
+		var ar = broker.AppendRequest{Journal: journal}
+
+		var aa = shard.JournalClient().StartAppend(ar, nil)
 		if err = aa.Require(framing.Marshal(delta, aa.Writer())).Release(); err != nil {
 			return err
 		}
@@ -218,32 +230,47 @@ func (ext *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store) er
 	return nil
 }
 
-func (ext *Extractor) FinishTxn(shard consumer.Shard, store consumer.Store, err error) error {
+func (ext *Extractor) FinishTxn(shard consumer.Shard, store consumer.Store, op consumer.OpFuture) error {
 	defer func() {
 		_ = <-ext.txnSemaphoreCh // Release the transaction concurrency semaphore.
 	}()
 
-	if err != nil {
+	if op.Err() != nil {
 		return nil // Don't write commit acknowledgments if the transaction failed.
 	}
+
+	select {
+	case <-op.Done():
+
+	}
+
 	var (
 		state     = store.(*consumer.JSONFileStore).State.(*shardState)
-		barrier   = store.Recorder().WeakBarrier()
 		commitAck = &DeltaEvent{
 			Extractor: shard.Spec().Id.String(),
 			SeqNo:     state.SeqNo - 1, // Acknowledge last row DeltaEvent SeqNo.
 		}
 	)
+
+	var checkpoint, err = store.RestoreCheckpoint(shard)
+	if err != nil {
+		return err
+	}
+
+	var commitOp = store.StartCommit(shard, checkpoint, consumer.OpFutures{op: {}})
+
 	// 2PC: When |barrier| resolves, our transaction has committed. For each
 	// Journal of the transaction, queue a "commit acknowledgement" message
 	// which informs readers that all messages previously read under the
 	// transaction ID may now be applied.
 	for journal, contentType := range state.TransactionJournals {
 		var framing, err = message.FramingByContentType(contentType)
-		if err != nil {
+		if err != nil   {
 			return errors.Wrapf(err, "journal %s", journal)
 		}
-		var aa = shard.JournalClient().StartAppend(journal, barrier)
+
+		var ar = broker.AppendRequest{Journal: journal}
+		var aa = shard.JournalClient().StartAppend(ar, consumer.OpFutures{commitOp: {}})
 		if err = aa.Require(framing.Marshal(commitAck, aa.Writer())).Release(); err != nil {
 			return err
 		}

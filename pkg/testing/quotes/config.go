@@ -262,7 +262,7 @@ func BuildSpecs(parts int, views ...factable.MVTag) Specs {
 			}))
 	}
 	for i := 0; i != parts; i++ {
-		var part = pb.Journal(fmt.Sprintf("deltas/part-%03d", i))
+		var part = protocol.Journal(fmt.Sprintf("deltas/part-%03d", i))
 
 		var shard = &consumer.ShardSpec{
 			Id:                consumer.ShardID(fmt.Sprintf("vtable-part-%03d", i)),

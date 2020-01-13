@@ -10,7 +10,7 @@ import (
 // JobSpec defines common specifications of a backfill job.
 type JobSpec struct {
 	SchemaSpec factable.SchemaSpec
-	Inputs     map[pb.Journal]pb.JournalSpec
+	Inputs     map[protocol.Journal]pb.JournalSpec
 }
 
 // MapTaskSpec defines a map tasks to be performed as part of a backfill.
