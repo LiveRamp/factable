@@ -13,16 +13,24 @@ import (
 	"strings"
 	"time"
 
+	"go.gazette.dev/core/labels"
+
 	"github.com/LiveRamp/factable/pkg/factable"
+
+	broker_pb "go.gazette.dev/core/broker/protocol"
+
+	"go.gazette.dev/core/broker/client"
+
+	gc "github.com/go-check/check"
+	//"github.com/coreos/etcd/clientv3"
+	"go.etcd.io/etcd/clientv3"
 	"go.gazette.dev/core/brokertest"
-	"go.gazette.dev/core/mainboilerplate"
+	consumer_pb "go.gazette.dev/core/consumer/protocol"
 	"go.gazette.dev/core/consumertest"
 	"go.gazette.dev/core/etcdtest"
+	"go.gazette.dev/core/mainboilerplate"
 	"go.gazette.dev/core/mainboilerplate/runconsumer"
 	"go.gazette.dev/core/message"
-	pb "go.gazette.dev/core/consumer/protocol"
-	"github.com/coreos/etcd/clientv3"
-	gc "github.com/go-check/check"
 )
 
 // TestCase packages boilerplate runtime state used in the writing of tests
@@ -32,7 +40,7 @@ type TestCase struct {
 	Ctx      context.Context
 	Etcd     *clientv3.Client
 	Broker   *brokertest.Broker
-	Journals pb.RoutedJournalClient
+	Journals broker_pb.RoutedJournalClient
 
 	Specs
 	SchemaPath string
@@ -41,7 +49,7 @@ type TestCase struct {
 // NewTestCase stands up runtime state for a test using the given configured Specs.
 // It returns a cleanup closure which should be invoked on test completion.
 func NewTestCase(c *gc.C, specs Specs) (TestCase, func()) {
-	var ctx, cancel = context.WithCancel(pb.WithDispatchDefault(context.Background()))
+	var ctx, cancel = context.WithCancel(broker_pb.WithDispatchDefault(context.Background()))
 	var etcd = etcdtest.TestClient()
 
 	// Write SchemaSpec fixture to Etcd.
@@ -60,7 +68,7 @@ func NewTestCase(c *gc.C, specs Specs) (TestCase, func()) {
 			Ctx:      ctx,
 			Etcd:     etcd,
 			Broker:   broker,
-			Journals: pb.NewRoutedJournalClient(broker.Client(), pb.NoopDispatchRouter{}),
+			Journals: broker_pb.NewRoutedJournalClient(broker.Client(), pb.NoopDispatchRouter{}),
 			Specs:    specs,
 		}, func() {
 			broker.Tasks.Cancel()
@@ -169,21 +177,27 @@ func PublishQuotes(begin, end int, relPath string, ajc client.AsyncJournalClient
 		quote.ID = int64(i)
 		quote.Time = time.Now()
 
-		if _, err = message.Publish(ajc, Mapping, &quote); err != nil {
+		var publisher = message.NewPublisher(ajc, nil)
+		if _, err = publisher.PublishCommitted(Mapping, &quote); err != nil {
 			return
 		}
 	}
 
-	client.WaitForPendingAppends(ajc.PendingExcept(""))
+	//client.WaitForPendingAppends(ajc.PendingExcept(""))
+
+	for op, _ := range ajc.PendingExcept("") {
+		<-op.Done()
+	}
+
 	return
 }
 
 // Mapping is a message.MappingFunc which maps all Quotes to InputJournal.
-func Mapping(_ message.Message) (journal protocol.Journal, framing message.Framing, e error) {
-	return InputJournal, message.JSONFraming, nil
+func Mapping(_ message.Mappable) (journal protocol.Journal, contentType string, e error) {
+	return InputJournal, labels.ContentType_JSONLines, nil
 }
 
 const (
-	InputJournal  protocol.Journal = "examples/factable/quotes/input"
+	InputJournal  broker_pb.Journal = "examples/factable/quotes/input"
 	SchemaSpecKey            = "/path/to/schema/key"
 )

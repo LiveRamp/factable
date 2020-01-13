@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/LiveRamp/factable/pkg/factable"
+	"github.com/google/uuid"
+	pb "go.gazette.dev/core/broker/protocol"
 	"go.gazette.dev/core/brokertest"
 	"go.gazette.dev/core/consumer"
 	"go.gazette.dev/core/labels"
 	"go.gazette.dev/core/message"
-	pb "go.gazette.dev/core/consumer/protocol"
+
+	"github.com/LiveRamp/factable/pkg/factable"
 )
 
 const (
@@ -49,6 +51,20 @@ type Quote struct {
 	Author string    // Language of the Quote.
 	Text   string    // Text of the Document.
 	Time   time.Time // Timestamp of the Quote.
+}
+
+// Keep it simple. Do not opt into exactly-once semantics. Do this at a later time.
+func (q Quote) GetUUID() uuid.UUID {
+	return uuid.UUID{}
+}
+
+func (q Quote) SetUUID(uuid uuid.UUID) {
+	return
+}
+
+// TODO is this correct? (If it is, why have such a trivial method in the first place?)
+func (q Quote) NewAcknowledgement(journal pb.Journal) message.Message {
+	return q
 }
 
 func BuildExtractors() factable.ExtractFns {

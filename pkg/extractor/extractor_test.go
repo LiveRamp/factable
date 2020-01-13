@@ -6,17 +6,19 @@ import (
 	"io"
 	"testing"
 
-	"github.com/LiveRamp/factable/pkg/factable"
-	. "github.com/LiveRamp/factable/pkg/internal"
-	"github.com/LiveRamp/factable/pkg/testing/quotes"
-	"go.gazette.dev/core/mainboilerplate"
+	gc "github.com/go-check/check"
+	"github.com/golang/protobuf/ptypes/empty"
+	pb "go.gazette.dev/core/broker/protocol"
 	"go.gazette.dev/core/consumer"
 	"go.gazette.dev/core/consumertest"
 	"go.gazette.dev/core/mainboilerplate/runconsumer"
 	"go.gazette.dev/core/message"
-	pb "go.gazette.dev/core/consumer/protocol"
-	gc "github.com/go-check/check"
-	"github.com/golang/protobuf/ptypes/empty"
+
+	"go.gazette.dev/core/broker/client"
+
+	"github.com/LiveRamp/factable/pkg/factable"
+	. "github.com/LiveRamp/factable/pkg/internal"
+	"github.com/LiveRamp/factable/pkg/testing/quotes"
 )
 
 type ExtractorSuite struct{}
@@ -30,7 +32,8 @@ func (s *ExtractorSuite) TestFoldsOverUniqueWords(c *gc.C) {
 	consumertest.CreateShards(c, cmr, tc.ExtractorShards...)
 
 	var as = client.NewAppendService(tc.Ctx, tc.Journals)
-	var _, err = message.Publish(as, quotes.Mapping, quotes.Quote{
+	var publisher = message.NewPublisher(as, nil)
+	var _, err = publisher.PublishCommitted(quotes.Mapping, quotes.Quote{
 		ID: 1234, Author: "John Doe", Text: "One two, one four?"})
 	c.Assert(err, gc.IsNil)
 
@@ -59,7 +62,8 @@ func (s *ExtractorSuite) TestDistinctRowsForUniqueWords(c *gc.C) {
 	consumertest.CreateShards(c, cmr, tc.ExtractorShards...)
 
 	var as = client.NewAppendService(tc.Ctx, tc.Journals)
-	var _, err = message.Publish(as, quotes.Mapping, quotes.Quote{
+	var publisher = message.NewPublisher(as, nil)
+	var _, err = publisher.PublishCommitted(quotes.Mapping, quotes.Quote{
 		ID: 1234, Author: "John Doe", Text: "One two, one three?"})
 	c.Assert(err, gc.IsNil)
 
@@ -120,7 +124,9 @@ func (s *ExtractorSuite) TestMultipleTransactionsAndRecovery(c *gc.C) {
 
 	// Start a new consumer.
 	cmr = quotes.StartApplication(tc, &Extractor{Extractors: quotes.BuildExtractors()})
-	<-cmr.AllocateIdleCh() // Shard is assigned.
+
+	// No longer a method on consumertest.Consumer in V2.
+	//<-cmr.AllocateIdleCh() // Shard is assigned.
 
 	// Expect the new consumer writes a replay of the previous acknowledgement.
 	var msg DeltaEvent

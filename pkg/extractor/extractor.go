@@ -131,7 +131,7 @@ func (ext *Extractor) NewStore(shard consumer.Shard, rec *recoverylog.Recorder) 
 	// to respective tracked journals. This also informs readers that they
 	// should roll back events of a larger SeqNo.
 
-	if err2 := ext.FinishTxn(shard, store, finOp); err != nil {
+	if err2 := ext.FinishedTxn(shard, store, finOp); err != nil {
 		return nil, err
 	} else if err2 != nil {
 		return nil, err2
@@ -230,18 +230,13 @@ func (ext *Extractor) FinalizeTxn(shard consumer.Shard, store consumer.Store, pu
 	return nil
 }
 
-func (ext *Extractor) FinishTxn(shard consumer.Shard, store consumer.Store, op consumer.OpFuture) error {
+func (ext *Extractor) FinishedTxn(shard consumer.Shard, store consumer.Store, op client.OpFuture) {
 	defer func() {
 		_ = <-ext.txnSemaphoreCh // Release the transaction concurrency semaphore.
 	}()
 
 	if op.Err() != nil {
 		return nil // Don't write commit acknowledgments if the transaction failed.
-	}
-
-	select {
-	case <-op.Done():
-
 	}
 
 	var (
@@ -257,7 +252,7 @@ func (ext *Extractor) FinishTxn(shard consumer.Shard, store consumer.Store, op c
 		return err
 	}
 
-	var commitOp = store.StartCommit(shard, checkpoint, consumer.OpFutures{op: {}})
+	var commitOp = store.StartCommit(shard, checkpoint, client.OpFutures{op: {}})
 
 	// 2PC: When |barrier| resolves, our transaction has committed. For each
 	// Journal of the transaction, queue a "commit acknowledgement" message
@@ -265,7 +260,7 @@ func (ext *Extractor) FinishTxn(shard consumer.Shard, store consumer.Store, op c
 	// transaction ID may now be applied.
 	for journal, contentType := range state.TransactionJournals {
 		var framing, err = message.FramingByContentType(contentType)
-		if err != nil   {
+		if err != nil {
 			return errors.Wrapf(err, "journal %s", journal)
 		}
 
