@@ -180,8 +180,6 @@ func PublishQuotes(begin, end int, relPath string, ajc client.AsyncJournalClient
 		}
 	}
 
-	//client.WaitForPendingAppends(ajc.PendingExcept(""))
-
 	for op, _ := range ajc.PendingExcept("") {
 		<-op.Done()
 	}

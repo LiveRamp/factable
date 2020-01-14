@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.gazette.dev/core/labels"
-	"go.gazette.dev/core/mainboilerplate"
 	mbp "go.gazette.dev/core/mainboilerplate"
 	"go.gazette.dev/core/message"
 
@@ -84,21 +83,19 @@ func decode(mt MapTaskSpec, schema factable.Schema, out chan<- message.Envelope)
 	}
 
 	var br = bufio.NewReaderSize(fr, 32*1024)
+	var unmarshal = framing.NewUnmarshalFunc(br)
+
 	for {
-		if b, err := framing.Unpack(br); errors.Cause(err) == io.EOF {
-			return nil
-		} else if err != nil {
-			return errors.WithMessage(err, "unpacking message")
-		} else if msg, err := schema.Extract.NewMessage(&journal); err != nil {
+		if msg, err := schema.Extract.NewMessage(&journal); err != nil {
 			return errors.WithMessage(err, "newMsg")
-		} else if err = framing.Unmarshal(b, msg); err != nil {
+		} else if err = unmarshal(msg); err != nil {
 			log.WithField("err", err).Warn("failed to unmarshal message")
 		} else {
 			out <- message.Envelope{
 				Message:     msg,
-				Fragment:    &fr.Fragment,
-				JournalSpec: &journal,
-				NextOffset:  fr.Offset - int64(br.Buffered()),
+				Journal: &journal,
+				Begin: fr.Begin,
+				End: fr.End,
 			}
 		}
 	}

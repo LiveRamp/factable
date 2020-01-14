@@ -1,16 +1,18 @@
 package backfill
 
 import (
-	"github.com/LiveRamp/factable/pkg/factable"
-	mbp "go.gazette.dev/core/mainboilerplate"
-	pb "go.gazette.dev/core/consumer/protocol"
 	"github.com/jessevdk/go-flags"
+	mbp "go.gazette.dev/core/mainboilerplate"
+
+	pb "go.gazette.dev/core/broker/protocol"
+
+	"github.com/LiveRamp/factable/pkg/factable"
 )
 
 // JobSpec defines common specifications of a backfill job.
 type JobSpec struct {
 	SchemaSpec factable.SchemaSpec
-	Inputs     map[protocol.Journal]pb.JournalSpec
+	Inputs     map[pb.Journal]pb.JournalSpec
 }
 
 // MapTaskSpec defines a map tasks to be performed as part of a backfill.
