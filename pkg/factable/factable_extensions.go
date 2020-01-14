@@ -6,6 +6,14 @@ import (
 	pb "go.gazette.dev/core/broker/protocol"
 )
 
+func (x SchemaSpec) Marshal() ([]byte, error) {
+	return nil, nil
+}
+
+func (x SchemaSpec) Unmarshal(b []byte) error {
+	return nil
+}
+
 // MarshalYAML returns the string DimensionType name.
 func (x DimensionType) MarshalYAML() (interface{}, error) {
 	return x.String(), nil

@@ -25,10 +25,8 @@ import (
 	//"github.com/coreos/etcd/clientv3"
 	"go.etcd.io/etcd/clientv3"
 	"go.gazette.dev/core/brokertest"
-	consumer_pb "go.gazette.dev/core/consumer/protocol"
 	"go.gazette.dev/core/consumertest"
 	"go.gazette.dev/core/etcdtest"
-	"go.gazette.dev/core/mainboilerplate"
 	"go.gazette.dev/core/mainboilerplate/runconsumer"
 	"go.gazette.dev/core/message"
 )

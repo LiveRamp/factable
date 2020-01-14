@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/golang/protobuf/ptypes/empty"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 	"go.gazette.dev/core/keyspace"
 
 	"github.com/LiveRamp/factable/pkg/factable"
