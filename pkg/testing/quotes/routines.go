@@ -17,12 +17,11 @@ import (
 
 	"github.com/LiveRamp/factable/pkg/factable"
 
-	broker_pb "go.gazette.dev/core/broker/protocol"
+	pb "go.gazette.dev/core/broker/protocol"
 
 	"go.gazette.dev/core/broker/client"
 
 	gc "github.com/go-check/check"
-	//"github.com/coreos/etcd/clientv3"
 	"go.etcd.io/etcd/clientv3"
 	"go.gazette.dev/core/brokertest"
 	"go.gazette.dev/core/consumertest"
@@ -38,7 +37,7 @@ type TestCase struct {
 	Ctx      context.Context
 	Etcd     *clientv3.Client
 	Broker   *brokertest.Broker
-	Journals broker_pb.RoutedJournalClient
+	Journals pb.RoutedJournalClient
 
 	Specs
 	SchemaPath string
@@ -47,7 +46,7 @@ type TestCase struct {
 // NewTestCase stands up runtime state for a test using the given configured Specs.
 // It returns a cleanup closure which should be invoked on test completion.
 func NewTestCase(c *gc.C, specs Specs) (TestCase, func()) {
-	var ctx, cancel = context.WithCancel(broker_pb.WithDispatchDefault(context.Background()))
+	var ctx, cancel = context.WithCancel(pb.WithDispatchDefault(context.Background()))
 	var etcd = etcdtest.TestClient()
 
 	// Write SchemaSpec fixture to Etcd.
@@ -57,8 +56,8 @@ func NewTestCase(c *gc.C, specs Specs) (TestCase, func()) {
 		var _, err = etcd.Put(ctx, SchemaSpecKey, string(val))
 		c.Assert(err, gc.IsNil)
 	}
-	// Start a broker & create journal fixtures.
-	var broker = brokertest.NewBroker(c, etcd, "local", "broker")
+	// Start a pb & create journal fixtures.
+	var broker = brokertest.NewBroker(c, etcd, "local", "pb")
 	brokertest.CreateJournals(c, broker, specs.Journals...)
 
 	return TestCase{
@@ -66,7 +65,7 @@ func NewTestCase(c *gc.C, specs Specs) (TestCase, func()) {
 			Ctx:      ctx,
 			Etcd:     etcd,
 			Broker:   broker,
-			Journals: broker_pb.NewRoutedJournalClient(broker.Client(), pb.NoopDispatchRouter{}),
+			Journals: pb.NewRoutedJournalClient(broker.Client(), pb.NoopDispatchRouter{}),
 			Specs:    specs,
 		}, func() {
 			broker.Tasks.Cancel()
@@ -191,11 +190,11 @@ func PublishQuotes(begin, end int, relPath string, ajc client.AsyncJournalClient
 }
 
 // Mapping is a message.MappingFunc which maps all Quotes to InputJournal.
-func Mapping(_ message.Mappable) (journal protocol.Journal, contentType string, e error) {
+func Mapping(_ message.Mappable) (journal pb.Journal, contentType string, e error) {
 	return InputJournal, labels.ContentType_JSONLines, nil
 }
 
 const (
-	InputJournal  broker_pb.Journal = "examples/factable/quotes/input"
+	InputJournal  pb.Journal = "examples/factable/quotes/input"
 	SchemaSpecKey            = "/path/to/schema/key"
 )

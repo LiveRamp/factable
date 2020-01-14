@@ -6,12 +6,14 @@ import (
 	"io"
 	"time"
 
+	"github.com/pkg/errors"
+	pb "go.gazette.dev/core/broker/protocol"
+	"go.gazette.dev/core/message"
+
+	"go.gazette.dev/core/broker/client"
+
 	"github.com/LiveRamp/factable/pkg/factable"
 	"github.com/LiveRamp/factable/pkg/internal"
-	"go.gazette.dev/core/mainboilerplate"
-	"go.gazette.dev/core/message"
-	pb "go.gazette.dev/core/consumer/protocol"
-	"github.com/pkg/errors"
 )
 
 // Load a Reader of hex-encoded key/values into DeltaEvent partitions identified
@@ -47,12 +49,20 @@ func Load(ctx context.Context, r io.Reader, rjc pb.RoutedJournalClient, selector
 		}
 
 		// Map the DeltaEvent to its journal & framing.
-		journal, framing, err := mapping(delta)
+		journal, contentType, err := mapping(delta)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to map DeltaEvent")
 		}
 		// Atomically write the DeltaEvent and its acknowledgement.
-		var aa = as.StartAppend(journal)
+
+		var ar = pb.AppendRequest{Journal: journal}
+		var aa = as.StartAppend(ar, nil)
+
+		framing, err := message.FramingByContentType(contentType)
+		if err != nil {
+			return errors.WithMessagef(err, "invalid content type: %s", contentType)
+		}
+
 		aa.Require(framing.Marshal(delta, aa.Writer()))
 
 		delta.RowKey, delta.RowValue = nil, nil
@@ -64,6 +74,9 @@ func Load(ctx context.Context, r io.Reader, rjc pb.RoutedJournalClient, selector
 		delta.SeqNo += 1
 	}
 
-	client.WaitForPendingAppends(as.PendingExcept(""))
+	for op, _ := range as.PendingExcept("") {
+		<-op.Done()
+	}
+
 	return nil
 }
