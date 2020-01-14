@@ -2,11 +2,31 @@
 package internal
 
 import (
+	"io"
+
+	"github.com/google/uuid"
+
+	broker "go.gazette.dev/core/broker/protocol"
+
 	"github.com/LiveRamp/factable/pkg/factable"
-	"go.gazette.dev/core/message"
+
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
+	"go.gazette.dev/core/message"
 )
+
+// Keep it simple. Do not opt into exactly-once just yet. Do this later.
+func (m *DeltaEvent) GetUUID() uuid.UUID {
+	return uuid.UUID{}
+}
+
+func (m *DeltaEvent) SetUUID(uuid uuid.UUID) {
+	return
+}
+
+func (m *DeltaEvent) NewAcknowledgement(journal broker.Journal) message.Message {
+	return m
+}
 
 // ViewSpec maps the aggregated DeltaEvent to its MaterializedViewSpec.
 func (m *DeltaEvent) ViewSpec(s *factable.Schema) (factable.MaterializedViewSpec, error) {
@@ -79,7 +99,7 @@ func MustViewSpecOfRow(key []byte, s *factable.Schema) factable.MaterializedView
 // DeltaMapping returns a ModuloMapping of DeltaEvent on RowKey.
 func DeltaMapping(partsFn message.PartitionsFunc) message.MappingFunc {
 	return message.ModuloMapping(
-		func(msg message.Message, b []byte) []byte { return msg.(*DeltaEvent).RowKey },
+		func(msg message.Mappable, w io.Writer) { _, _ = w.Write(msg.(*DeltaEvent).RowKey) },
 		partsFn,
 	)
 }

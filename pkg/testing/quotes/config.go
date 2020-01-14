@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	pb "go.gazette.dev/core/broker/protocol"
+	broker "go.gazette.dev/core/broker/protocol"
 	"go.gazette.dev/core/brokertest"
-	"go.gazette.dev/core/consumer"
+	consumer "go.gazette.dev/core/consumer/protocol"
 	"go.gazette.dev/core/labels"
 	"go.gazette.dev/core/message"
 
@@ -63,13 +63,13 @@ func (q Quote) SetUUID(uuid uuid.UUID) {
 }
 
 // TODO is this correct? (If it is, why have such a trivial method in the first place?)
-func (q Quote) NewAcknowledgement(journal pb.Journal) message.Message {
+func (q Quote) NewAcknowledgement(journal broker.Journal) message.Message {
 	return q
 }
 
 func BuildExtractors() factable.ExtractFns {
 	return factable.ExtractFns{
-		NewMessage: func(spec *pb.JournalSpec) (message message.Message, e error) {
+		NewMessage: func(spec *broker.JournalSpec) (message message.Message, e error) {
 			return new(Quote), nil
 		},
 		Mapping: map[factable.MapTag]func(message.Envelope) []factable.RelationRow{
@@ -186,8 +186,8 @@ func BuildSchemaSpec() factable.SchemaSpec {
 				Name:    RelQuoteWords,
 				Desc:    "Quote events, mapped on unique words",
 				Mapping: MapQuoteWords,
-				Selector: pb.LabelSelector{
-					Include: pb.MustLabelSet("name", InputJournal.String()),
+				Selector: broker.LabelSelector{
+					Include: broker.MustLabelSet("name", InputJournal.String()),
 				},
 				Dimensions: []string{
 					DimQuoteAuthor,
@@ -242,7 +242,7 @@ func BuildSchemaSpec() factable.SchemaSpec {
 // Specs bundles JournalSpecs and ShardSpecs for extractor and vtable consumers
 // operating against the `quotes` package.
 type Specs struct {
-	Journals        []*pb.JournalSpec
+	Journals        []*broker.JournalSpec
 	ExtractorShards []*consumer.ShardSpec
 	VTableShards    []*consumer.ShardSpec
 }
@@ -252,9 +252,9 @@ func BuildSpecs(parts int, views ...factable.MVTag) Specs {
 	var specs Specs
 
 	specs.Journals = append(specs.Journals,
-		brokertest.Journal(pb.JournalSpec{
+		brokertest.Journal(broker.JournalSpec{
 			Name: InputJournal,
-			LabelSet: pb.MustLabelSet(
+			LabelSet: broker.MustLabelSet(
 				labels.MessageType, "Quote",
 				labels.ContentType, labels.ContentType_JSONLines,
 			),
@@ -267,18 +267,18 @@ func BuildSpecs(parts int, views ...factable.MVTag) Specs {
 			RecoveryLogPrefix: "recovery/logs",
 			HintPrefix:        "/hints/extractor",
 			MaxTxnDuration:    time.Second,
-			LabelSet:          pb.MustLabelSet("mvTag", fmt.Sprintf("%d", view)),
+			LabelSet:          broker.MustLabelSet("mvTag", fmt.Sprintf("%d", view)),
 		}
 		specs.ExtractorShards = append(specs.ExtractorShards, shard)
 
 		specs.Journals = append(specs.Journals,
-			brokertest.Journal(pb.JournalSpec{
+			brokertest.Journal(broker.JournalSpec{
 				Name:     shard.RecoveryLog(),
-				LabelSet: pb.MustLabelSet(labels.ContentType, labels.ContentType_RecoveryLog),
+				LabelSet: broker.MustLabelSet(labels.ContentType, labels.ContentType_RecoveryLog),
 			}))
 	}
 	for i := 0; i != parts; i++ {
-		var part = protocol.Journal(fmt.Sprintf("deltas/part-%03d", i))
+		var part = broker.Journal(fmt.Sprintf("deltas/part-%03d", i))
 
 		var shard = &consumer.ShardSpec{
 			Id:                consumer.ShardID(fmt.Sprintf("vtable-part-%03d", i)),
@@ -290,16 +290,16 @@ func BuildSpecs(parts int, views ...factable.MVTag) Specs {
 		specs.VTableShards = append(specs.VTableShards, shard)
 
 		specs.Journals = append(specs.Journals,
-			brokertest.Journal(pb.JournalSpec{
+			brokertest.Journal(broker.JournalSpec{
 				Name: part,
-				LabelSet: pb.MustLabelSet(
+				LabelSet: broker.MustLabelSet(
 					labels.MessageType, "DeltaEvent",
 					labels.ContentType, labels.ContentType_JSONLines,
 				),
 			}),
-			brokertest.Journal(pb.JournalSpec{
+			brokertest.Journal(broker.JournalSpec{
 				Name:     shard.RecoveryLog(),
-				LabelSet: pb.MustLabelSet(labels.ContentType, labels.ContentType_RecoveryLog),
+				LabelSet: broker.MustLabelSet(labels.ContentType, labels.ContentType_RecoveryLog),
 			}),
 		)
 	}

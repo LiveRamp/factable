@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"time"
 
-	pb "go.gazette.dev/core/consumer/protocol"
 	"github.com/cockroachdb/cockroach/util/encoding"
+	pb "go.gazette.dev/core/broker/protocol"
 )
 
 // ResolveQuery maps a QuerySpec through the Schema into a ResolvedQuery.

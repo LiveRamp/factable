@@ -3,7 +3,7 @@ package internal
 import (
 	"errors"
 
-	pb "go.gazette.dev/core/consumer/protocol"
+	pb "go.gazette.dev/core/broker/protocol"
 )
 
 // CommonConfig shared between the VTable and Extractor consumers.

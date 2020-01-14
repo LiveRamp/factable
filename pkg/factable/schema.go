@@ -332,7 +332,7 @@ func (schema *Schema) addMaterializedView(spec MaterializedViewSpec) error {
 // validateName returns an error if |name| is not a valid token or is duplicated
 // by another Schema entity.
 func (schema *Schema) validateName(name string) error {
-	if err := pb.ValidateToken(name, 2, 128); err != nil {
+	if err := pb.ValidateToken(name, "-_+/.", 2, 128); err != nil {
 		return pb.ExtendContext(err, "Name")
 	} else if _, ok := schema.MapTags[name]; ok {
 	} else if _, ok = schema.DimTags[name]; ok {
