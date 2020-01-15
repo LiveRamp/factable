@@ -24,7 +24,8 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190227231451-bbced9601137 // indirect
 	github.com/retailnext/hllpp v0.0.0-20170130195621-01496c854800
 	github.com/sirupsen/logrus v1.3.0
-	github.com/tecbot/gorocksdb v1.2.0
+	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
+	// github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/ugorji/go v1.1.1 // indirect
 	go.etcd.io/etcd v0.0.0-20190711162406-e56e8471ec18
