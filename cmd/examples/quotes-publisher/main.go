@@ -4,14 +4,16 @@ import (
 	"context"
 	"os"
 
-	"github.com/LiveRamp/factable/pkg/testing/quotes"
-	"go.gazette.dev/core/mainboilerplate"
-	mbp "go.gazette.dev/core/mainboilerplate"
-	"go.gazette.dev/core/metrics"
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	mbp "go.gazette.dev/core/mainboilerplate"
+	"go.gazette.dev/core/metrics"
 	"gopkg.in/yaml.v2"
+
+	"go.gazette.dev/core/broker/client"
+
+	"github.com/LiveRamp/factable/pkg/testing/quotes"
 )
 
 // cfg is the top-level configuration object of quotes-publisher.
@@ -32,11 +34,14 @@ func (cfg publishQuotes) Execute(args []string) error {
 	mbp.InitLog(cfg.base.Log)
 	prometheus.MustRegister(metrics.GazetteClientCollectors()...)
 
-	var rjc = cfg.Broker.RoutedJournalClient(context.Background())
+	var rjc = cfg.Broker.MustRoutedJournalClient(context.Background())
 	var as = client.NewAppendService(context.Background(), rjc)
 
 	mbp.Must(quotes.PublishQuotes(cfg.Begin, cfg.End, cfg.Path, as), "failed to publish quotes")
-	client.WaitForPendingAppends(as.PendingExcept(""))
+
+	for op, _ := range as.PendingExcept("") {
+		<-op.Done()
+	}
 
 	log.Info("done")
 	return nil
