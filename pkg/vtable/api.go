@@ -5,12 +5,17 @@ import (
 	"context"
 	"fmt"
 
+	"go.gazette.dev/core/broker/protocol"
+
 	"github.com/LiveRamp/factable/pkg/factable"
-	"go.gazette.dev/core/consumer"
-	"go.gazette.dev/core/consumer/protocol"
+
 	"github.com/cockroachdb/cockroach/util/encoding"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.gazette.dev/core/consumer"
+	pb "go.gazette.dev/core/consumer/protocol"
+
+	"go.gazette.dev/core/consumer/store-rocksdb"
 )
 
 func (t *VTable) ResolveQuery(ctx context.Context, spec *factable.QuerySpec) (*factable.ResolvedQuery, error) {
@@ -35,10 +40,10 @@ func (t *VTable) ExecuteQuery(req *factable.ExecuteQueryRequest, stream factable
 
 func (t *VTable) queryTable(req *factable.ExecuteQueryRequest, stream factable.Query_ExecuteQueryServer, schema *factable.Schema) error {
 	// Enumerate all VTable shards.
-	var shards, err = t.svc.List(stream.Context(), &consumer.ListRequest{})
+	var shards, err = t.svc.List(stream.Context(), &pb.ListRequest{})
 	if err != nil {
 		return err
-	} else if shards.Status != consumer.Status_OK {
+	} else if shards.Status != pb.Status_OK {
 		return fmt.Errorf(shards.Status.String())
 	}
 	// Perform fail-fast sanity check that all shards are assigned.
@@ -112,7 +117,7 @@ func (t *VTable) queryShard(req *factable.ExecuteQueryRequest, stream factable.Q
 
 	if err != nil {
 		return err
-	} else if res.Status != consumer.Status_OK {
+	} else if res.Status != pb.Status_OK {
 		return fmt.Errorf(res.Status.String())
 	}
 	defer res.Done()
@@ -134,7 +139,10 @@ func (t *VTable) queryShard(req *factable.ExecuteQueryRequest, stream factable.Q
 		MetTags: mvSpec.ResolvedView.MetTags,
 	}
 	var it factable.KVIterator
-	var store = res.Store.(*consumer.RocksDBStore)
+
+	//var store = res.Store.(*consumer.RocksDBStore)
+
+	var store = res.Store.(*store_rocksdb.Store)
 
 	// Stage 1: Iterate over raw DB rows.
 	it = factable.NewRocksDBIterator(store.DB, store.ReadOptions, nil, nil)

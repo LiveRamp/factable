@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/cockroachdb/cockroach v1.0.0
 	github.com/coreos/bbolt v1.3.2 // indirect
-	github.com/coreos/etcd v3.3.12+incompatible
+	github.com/coreos/etcd v3.3.12+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142 // indirect
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // indirect
 	github.com/dustinkirkland/golang-petname v0.0.0-20190613200456-11339a705ed2
