@@ -1,9 +1,10 @@
 module github.com/LiveRamp/factable
 
-go 1.12
+go 1.13
 
 require (
-	github.com/cockroachdb/cockroach v1.0.0
+	github.com/LiveRamp/hllpp v0.0.0-20170131005621-01496c854800 // indirect
+	github.com/cockroachdb/cockroach v0.0.0-00010101000000-000000000000
 	github.com/coreos/bbolt v1.3.2 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142 // indirect
@@ -22,10 +23,9 @@ require (
 	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/prometheus/procfs v0.0.0-20190227231451-bbced9601137 // indirect
-	github.com/retailnext/hllpp v0.0.0-20170130195621-01496c854800
+	github.com/retailnext/hllpp v1.0.0
 	github.com/sirupsen/logrus v1.3.0
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
-	// github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/ugorji/go v1.1.1 // indirect
 	go.etcd.io/etcd v0.0.0-20190711162406-e56e8471ec18
