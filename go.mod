@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/LiveRamp/hllpp v0.0.0-20170131005621-01496c854800 // indirect
-	github.com/cockroachdb/cockroach v0.0.0-00010101000000-000000000000
+	github.com/cockroachdb/cockroach v1.0.0
 	github.com/coreos/bbolt v1.3.2 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142 // indirect
