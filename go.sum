@@ -7,12 +7,14 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/zstd v1.4.0 h1:vhoV+DUHnRZdKW1i5UMjAk2G4JY8wN4ayRfYDNdEhwo=
 github.com/DataDog/zstd v1.4.0/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
-github.com/LiveRamp/gazette v0.0.0-20190701211740-49c4ae6934ca h1:ZdFRlZTA7/rK9EFnYBoBcBvsSuvNngVhXKcbBPWUqv8=
-github.com/LiveRamp/gazette v0.0.0-20190701211740-49c4ae6934ca/go.mod h1:m1VggI0ai4P3WsF7XOEAw3IscdRjz9rjzZfX8AlRFdQ=
+github.com/LiveRamp/gazette v0.1.0 h1:7mfhBNKVFqnH2vYcKLjVnrbJBZMI7pO+HAwBiVm2y1w=
+github.com/LiveRamp/gazette v0.1.0/go.mod h1:m1VggI0ai4P3WsF7XOEAw3IscdRjz9rjzZfX8AlRFdQ=
 github.com/LiveRamp/gorocksdb v1.2.0 h1:eaVI/BKgerrA86hf+MnhMKVsaXQD4kjHBs+4qcuqgXs=
 github.com/LiveRamp/gorocksdb v1.2.0/go.mod h1:DW7q7z1Mdo7XQBR1LXESFYx1fUWkj6YvBv4X0nYZWYQ=
-github.com/LiveRamp/hllpp v0.0.0-20170130195621-01496c854800 h1:GGVpMMi7deTRlRlBo2jTJTCrdYRRI8hGlQFnoDU/hO0=
-github.com/LiveRamp/hllpp v0.0.0-20170130195621-01496c854800/go.mod h1:vmyYQmJM+phkAt6/0Cizpo8sD+Y52d8Q9M3niKNp3Jo=
+github.com/LiveRamp/hllpp v0.0.0-20191008174803-d263cd5e9fc6 h1:4JUyxAmg/6TsYfWaJHEPpT/yicDoGqvQyxe0sBM2oZo=
+github.com/LiveRamp/hllpp v0.0.0-20191008174803-d263cd5e9fc6/go.mod h1:vmyYQmJM+phkAt6/0Cizpo8sD+Y52d8Q9M3niKNp3Jo=
+github.com/adayNU/cockroach-encoding v1.0.2 h1:DnajoKG0P5eEnjpZLb07dnGAKlDdxV5+c/sLjoWJ9FE=
+github.com/adayNU/cockroach-encoding v1.0.2/go.mod h1:mMvpzjnWVHcJW3nUcRERpF1Iq6ODS9dXZRF6ZxPk/HI=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/aws/aws-sdk-go v1.19.32 h1:/usjSR6qsKfOKzk4tDNvZq7LqmP5+J0Cq/Uwsr2XVG8=
@@ -94,8 +96,6 @@ github.com/hashicorp/golang-lru v0.5.1 h1:0hERBMJE1eitiLkihrMvRVBYAkpHzc/J3QdDN+
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/jessevdk/go-flags v1.4.1-0.20181221193153-c0795c8afcf4 h1:xKkUL6QBojwguhKKetf1SocCAKqc6W7S/mGm9xEGllo=
 github.com/jessevdk/go-flags v1.4.1-0.20181221193153-c0795c8afcf4/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
-github.com/jgraettinger/cockroach-encoding v1.0.0 h1:tks/QnxvUSqrkKnbAcpawarl+7MklBNaljVOccsnsWI=
-github.com/jgraettinger/cockroach-encoding v1.0.0/go.mod h1:OQ+8X94RWNORmxJMsxqZcRPNQY4/C37Y/KnO4KAJV20=
 github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af h1:pmfjZENx5imkbgOkpRUYLnmbU7UEFbjtDA2hxJ1ichM=
 github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/jonboulle/clockwork v0.1.0 h1:VKV+ZcuP6l3yW9doeqz6ziZGgcynBVQO+obU0+0hcPo=
