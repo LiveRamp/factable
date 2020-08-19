@@ -22,6 +22,7 @@ FROM base as factable
 COPY --from=build \
     /go/bin/vtable \
     /go/bin/factctl \
+    /go/bin/quotes-backfill \
     /go/bin/quotes-extractor \
     /go/bin/quotes-publisher \
     /go/bin/
